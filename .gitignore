@@ -239,3 +239,7 @@ src/animatediff/_version.py
 # envrc
 .env*
 !.envrc.example
+.pdm-python
+.idea/
+.pdm-build
+.ruff_cache

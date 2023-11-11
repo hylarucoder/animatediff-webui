@@ -123,9 +123,7 @@ class FfmpegEncoder:
 
     @staticmethod
     def _interpolate(stream, out_fps: int) -> FilterNode:
-        return stream.filter(
-            "minterpolate", fps=out_fps, mi_mode="mci", mc_mode="aobmc", me_mode="bidir", vsbmc=1
-        )
+        return stream.filter("minterpolate", fps=out_fps, mi_mode="mci", mc_mode="aobmc", me_mode="bidir", vsbmc=1)
 
     def _encode_gif(self) -> tuple:
         stream: FilterNode = self.input
@@ -140,9 +138,7 @@ class FfmpegEncoder:
 
         # generate the palette, then use it to encode the GIF
         palette = split_stream[0].filter("palettegen")
-        stream = ffmpeg.filter([split_stream[1], palette], "paletteuse").output(
-            self._out_file, vcodec="gif", loop=0
-        )
+        stream = ffmpeg.filter([split_stream[1], palette], "paletteuse").output(self._out_file, vcodec="gif", loop=0)
         return stream.run()
 
     def _encode_webm(self) -> tuple:
@@ -150,15 +146,13 @@ class FfmpegEncoder:
         if self.in_fps != self.out_fps:
             stream = self._interpolate(stream, self.out_fps)
         param = {
-            "pix_fmt":"yuv420p",
-            "vcodec":"libvpx-vp9",
-            "video_bitrate":0,
-            "crf":24,
+            "pix_fmt": "yuv420p",
+            "vcodec": "libvpx-vp9",
+            "video_bitrate": 0,
+            "crf": 24,
         }
         param.update(**self.param)
-        stream = stream.output(
-            self._out_file, **param
-        )
+        stream = stream.output(self._out_file, **param)
         return stream.run()
 
     def _encode_webp(self) -> tuple:
@@ -168,32 +162,26 @@ class FfmpegEncoder:
 
         if self.lossless:
             param = {
-                "pix_fmt":"bgra",
-                "vcodec":"libwebp_anim",
-                "lossless":1,
-                "compression_level":5,
-                "qscale":75,
-                "loop":0,
+                "pix_fmt": "bgra",
+                "vcodec": "libwebp_anim",
+                "lossless": 1,
+                "compression_level": 5,
+                "qscale": 75,
+                "loop": 0,
             }
             param.update(**self.param)
-            stream = stream.output(
-                self._out_file,
-                **param
-            )
+            stream = stream.output(self._out_file, **param)
         else:
             param = {
-                "pix_fmt":"yuv420p",
-                "vcodec":"libwebp_anim",
-                "lossless":0,
-                "compression_level":5,
-                "qscale":90,
-                "loop":0,
+                "pix_fmt": "yuv420p",
+                "vcodec": "libwebp_anim",
+                "lossless": 0,
+                "compression_level": 5,
+                "qscale": 90,
+                "loop": 0,
             }
             param.update(**self.param)
-            stream = stream.output(
-                self._out_file,
-                **param
-            )
+            stream = stream.output(self._out_file, **param)
         return stream.run()
 
     def _encode_h264(self) -> tuple:
@@ -202,16 +190,14 @@ class FfmpegEncoder:
             stream = self._interpolate(stream, self.out_fps)
 
         param = {
-            "pix_fmt":"yuv420p",
-            "vcodec":"libx264",
-            "crf":21,
-            "tune":"animation",
+            "pix_fmt": "yuv420p",
+            "vcodec": "libx264",
+            "crf": 21,
+            "tune": "animation",
         }
         param.update(**self.param)
 
-        stream = stream.output(
-            self._out_file, **param
-        )
+        stream = stream.output(self._out_file, **param)
         return stream.run()
 
     def _encode_hevc(self) -> tuple:
@@ -220,10 +206,10 @@ class FfmpegEncoder:
             stream = self._interpolate(stream, self.out_fps)
 
         param = {
-            "pix_fmt":"yuv420p",
-            "vcodec":"libx264",
-            "crf":21,
-            "tune":"animation",
+            "pix_fmt": "yuv420p",
+            "vcodec": "libx264",
+            "crf": 21,
+            "tune": "animation",
         }
         param.update(**self.param)
 

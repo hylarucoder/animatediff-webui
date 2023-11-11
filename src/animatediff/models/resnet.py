@@ -17,6 +17,7 @@ class InflatedConv3d(nn.Conv2d):
         x = rearrange(x, "(b f) c h w -> b c f h w", f=frames)
         return x
 
+
 class InflatedGroupNorm(nn.GroupNorm):
     def forward(self, x):
         video_length = x.shape[2]
@@ -26,6 +27,7 @@ class InflatedGroupNorm(nn.GroupNorm):
         x = rearrange(x, "(b f) c h w -> b c f h w", f=video_length)
 
         return x
+
 
 class Upsample3D(nn.Module):
     def __init__(
@@ -179,9 +181,7 @@ class ResnetBlock3D(nn.Module):
         elif non_linearity == "silu":
             self.nonlinearity = nn.SiLU()
 
-        self.use_in_shortcut = (
-            self.in_channels != self.out_channels if use_in_shortcut is None else use_in_shortcut
-        )
+        self.use_in_shortcut = self.in_channels != self.out_channels if use_in_shortcut is None else use_in_shortcut
 
         self.conv_shortcut = None
         if self.use_in_shortcut:

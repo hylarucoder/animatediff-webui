@@ -5,9 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
 from pydantic import BaseConfig, BaseSettings, Field
-from pydantic.env_settings import (EnvSettingsSource, InitSettingsSource,
-                                   SecretsSettingsSource,
-                                   SettingsSourceCallable)
+from pydantic.env_settings import EnvSettingsSource, InitSettingsSource, SecretsSettingsSource, SettingsSourceCallable
 
 from animatediff import get_dir
 from animatediff.schedulers import DiffusionScheduler
@@ -85,9 +83,11 @@ class InferenceConfig(BaseSettings):
 
 
 def get_infer_config(
-    is_v2:bool,
+    is_v2: bool,
 ) -> InferenceConfig:
-    config_path: Path = get_dir("config").joinpath("inference/default.json" if not is_v2 else "inference/motion_v2.json")
+    config_path: Path = get_dir("config").joinpath(
+        "inference/default.json" if not is_v2 else "inference/motion_v2.json"
+    )
     settings = InferenceConfig(json_config_path=config_path)
     return settings
 
@@ -107,20 +107,20 @@ class ModelConfig(BaseSettings):
     clip_skip: int = 1  # skip the last N-1 layers of the CLIP text encoder
     prompt_fixed_ratio: float = 0.5
     head_prompt: str = ""
-    prompt_map: Dict[str,str]= Field({})
+    prompt_map: Dict[str, str] = Field({})
     tail_prompt: str = ""
     n_prompt: list[str] = Field([])  # Anti-prompt(s) to use
-    is_single_prompt_mode : bool = Field(False)
-    lora_map: Dict[str,Any]= Field({})
-    motion_lora_map: Dict[str,float]= Field({})
-    ip_adapter_map: Dict[str,Any]= Field({})
-    img2img_map: Dict[str,Any]= Field({})
-    region_map: Dict[str,Any]= Field({})
-    controlnet_map: Dict[str,Any]= Field({})
-    upscale_config: Dict[str,Any]= Field({})
-    stylize_config: Dict[str,Any]= Field({})
-    output: Dict[str,Any]= Field({})
-    result: Dict[str,Any]= Field({})
+    is_single_prompt_mode: bool = Field(False)
+    lora_map: Dict[str, Any] = Field({})
+    motion_lora_map: Dict[str, float] = Field({})
+    ip_adapter_map: Dict[str, Any] = Field({})
+    img2img_map: Dict[str, Any] = Field({})
+    region_map: Dict[str, Any] = Field({})
+    controlnet_map: Dict[str, Any] = Field({})
+    upscale_config: Dict[str, Any] = Field({})
+    stylize_config: Dict[str, Any] = Field({})
+    output: Dict[str, Any] = Field({})
+    result: Dict[str, Any] = Field({})
 
     class Config(JsonConfig):
         json_config_path: Path

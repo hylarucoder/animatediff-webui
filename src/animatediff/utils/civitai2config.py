@@ -12,25 +12,25 @@ logger = logging.getLogger(__name__)
 
 data_dir = get_dir("data")
 
-extra_loading_regex = r'(<[^>]+?>)'
+extra_loading_regex = r"(<[^>]+?>)"
+
 
 def generate_config_from_civitai_info(
-    lora_dir:Path,
-    config_org:Path,
-    out_dir:Path,
-    lora_weight:float,
+    lora_dir: Path,
+    config_org: Path,
+    out_dir: Path,
+    lora_weight: float,
 ):
     lora_abs_dir = lora_dir.absolute()
     config_org = config_org.absolute()
     out_dir = out_dir.absolute()
 
-    civitais = sorted(glob.glob( os.path.join(lora_abs_dir, "*.civitai.info"), recursive=False))
+    civitais = sorted(glob.glob(os.path.join(lora_abs_dir, "*.civitai.info"), recursive=False))
 
     with open(config_org, "r") as cf:
         org_config = json.load(cf)
 
         for civ in civitais:
-
             logger.info(f"convert {civ}")
 
             with open(civ, "r") as f:
@@ -43,9 +43,9 @@ def generate_config_from_civitai_info(
                     logger.info("already converted -> skip")
                     continue
 
-                if os.path.isfile( lora_abs_dir.joinpath(name + ".safetensors")):
+                if os.path.isfile(lora_abs_dir.joinpath(name + ".safetensors")):
                     lora_path = os.path.relpath(lora_abs_dir.joinpath(name + ".safetensors"), data_dir)
-                elif os.path.isfile( lora_abs_dir.joinpath(name + ".ckpt")):
+                elif os.path.isfile(lora_abs_dir.joinpath(name + ".ckpt")):
                     lora_path = os.path.relpath(lora_abs_dir.joinpath(name + ".ckpt"), data_dir)
                 else:
                     logger.info("lora file not found -> skip")
@@ -57,7 +57,7 @@ def generate_config_from_civitai_info(
                     logger.info(f"empty civitai info -> skip")
                     continue
 
-                if info["model"]["type"] not in ("LORA","lora"):
+                if info["model"]["type"] not in ("LORA", "lora"):
                     logger.info(f"unsupported type {info['model']['type']} -> skip")
                     continue
 
@@ -68,7 +68,6 @@ def generate_config_from_civitai_info(
                 new_prompt_map = {}
                 new_n_prompt = ""
                 new_seed = -1
-
 
                 raw_prompt_map = {}
 
@@ -81,9 +80,9 @@ def generate_config_from_civitai_info(
                             logger.info("missing prompt")
                             continue
 
-                        raw_prompt_map[str(10000 + i*32)] = raw_prompt
+                        raw_prompt_map[str(10000 + i * 32)] = raw_prompt
 
-                        new_prompt_map[str(i*32)] = re.sub(extra_loading_regex, '', raw_prompt)
+                        new_prompt_map[str(i * 32)] = re.sub(extra_loading_regex, "", raw_prompt)
 
                         if not new_n_prompt:
                             try:
@@ -109,14 +108,12 @@ def generate_config_from_civitai_info(
                 new_config["n_prompt"] = [new_n_prompt]
                 new_config["seed"] = [new_seed]
 
-                new_config["lora_map"] = {lora_path.replace(os.sep,'/'):lora_weight}
+                new_config["lora_map"] = {lora_path.replace(os.sep, "/"): lora_weight}
 
-                with open( out_dir.joinpath(name + ".json"), 'w') as wf:
+                with open(out_dir.joinpath(name + ".json"), "w") as wf:
                     json.dump(new_config, wf, indent=4)
                     logger.info("converted!")
 
                 preview = lora_abs_dir.joinpath(name + ".preview.png")
                 if preview.is_file():
                     shutil.copy(preview, out_dir.joinpath(name + ".preview.png"))
-
-

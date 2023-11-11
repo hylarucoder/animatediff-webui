@@ -43,9 +43,7 @@ def get_hf_file(
 ) -> Path:
     target_path = target_dir.joinpath(filename)
     if target_path.exists() and force is not True:
-        raise FileExistsError(
-            f"File {path_from_cwd(target_path)} already exists! Pass force=True to overwrite"
-        )
+        raise FileExistsError(f"File {path_from_cwd(target_path)} already exists! Pass force=True to overwrite")
 
     target_dir.mkdir(exist_ok=True, parents=True)
     save_path = hf_hub_download(
@@ -69,9 +67,7 @@ def get_hf_repo(
     force: bool = False,
 ) -> Path:
     if target_dir.exists() and force is not True:
-        raise FileExistsError(
-            f"Target dir {path_from_cwd(target_dir)} already exists! Pass force=True to overwrite"
-        )
+        raise FileExistsError(f"Target dir {path_from_cwd(target_dir)} already exists! Pass force=True to overwrite")
 
     target_dir.mkdir(exist_ok=True, parents=True)
     save_path = snapshot_download(

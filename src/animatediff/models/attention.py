@@ -15,6 +15,7 @@ from torch import Tensor, nn
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Transformer3DModelOutput(BaseOutput):
     sample: torch.FloatTensor
@@ -50,9 +51,7 @@ class Transformer3DModel(ModelMixin, ConfigMixin):
         # Define input layers
         self.in_channels = in_channels
 
-        self.norm = torch.nn.GroupNorm(
-            num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True
-        )
+        self.norm = torch.nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
         if use_linear_projection:
             self.proj_in = nn.Linear(in_channels, inner_dim)
         else:
@@ -157,15 +156,11 @@ class Transformer3DModel(ModelMixin, ConfigMixin):
 
         # 3. Output
         if not self.use_linear_projection:
-            hidden_states = (
-                hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
-            )
+            hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
             hidden_states = self.proj_out(hidden_states)
         else:
             hidden_states = self.proj_out(hidden_states)
-            hidden_states = (
-                hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
-            )
+            hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
 
         output = hidden_states + residual
 
@@ -316,9 +311,7 @@ class BasicTransformerBlock(nn.Module):
             d = hidden_states.shape[1]
             hidden_states = rearrange(hidden_states, "(b f) d c -> (b d) f c", f=video_length)
             norm_hidden_states = (
-                self.norm_temp(hidden_states, timestep)
-                if self.use_ada_layer_norm
-                else self.norm_temp(hidden_states)
+                self.norm_temp(hidden_states, timestep) if self.use_ada_layer_norm else self.norm_temp(hidden_states)
             )
             hidden_states = self.attn_temp(norm_hidden_states) + hidden_states
             hidden_states = rearrange(hidden_states, "(b d) f c -> (b f) d c", d=d)

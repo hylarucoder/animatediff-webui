@@ -23,7 +23,7 @@ def send_to_device(
 
     # Freeze model weights and force-disable training
     if freeze or compile:
-#        pipeline.freeze()
+        #        pipeline.freeze()
         pipeline.vae.requires_grad_(False)
         pipeline.unet.requires_grad_(False)
         pipeline.text_encoder.requires_grad_(False)
@@ -38,25 +38,31 @@ def send_to_device(
     unet_dtype, tenc_dtype, vae_dtype = get_model_dtypes(device, force_half)
     model_memory_format = get_memory_format(device)
 
-    if hasattr(pipeline, 'controlnet'):
+    if hasattr(pipeline, "controlnet"):
         unet_dtype = tenc_dtype = vae_dtype
 
         logger.info(f"-> Selected data types: {unet_dtype=},{tenc_dtype=},{vae_dtype=}")
 
-        if hasattr(pipeline.controlnet, 'nets'):
+        if hasattr(pipeline.controlnet, "nets"):
             for i in range(len(pipeline.controlnet.nets)):
-                pipeline.controlnet.nets[i] = pipeline.controlnet.nets[i].to(device=device, dtype=vae_dtype, memory_format=model_memory_format)
+                pipeline.controlnet.nets[i] = pipeline.controlnet.nets[i].to(
+                    device=device, dtype=vae_dtype, memory_format=model_memory_format
+                )
         else:
             if pipeline.controlnet:
-                pipeline.controlnet = pipeline.controlnet.to(device=device, dtype=vae_dtype, memory_format=model_memory_format)
+                pipeline.controlnet = pipeline.controlnet.to(
+                    device=device, dtype=vae_dtype, memory_format=model_memory_format
+                )
 
-    if hasattr(pipeline, 'controlnet_map'):
+    if hasattr(pipeline, "controlnet_map"):
         if pipeline.controlnet_map:
             for c in pipeline.controlnet_map:
-                #pipeline.controlnet_map[c] = pipeline.controlnet_map[c].to(device=device, dtype=unet_dtype, memory_format=model_memory_format)
-                pipeline.controlnet_map[c] = pipeline.controlnet_map[c].to(dtype=unet_dtype, memory_format=model_memory_format)
+                # pipeline.controlnet_map[c] = pipeline.controlnet_map[c].to(device=device, dtype=unet_dtype, memory_format=model_memory_format)
+                pipeline.controlnet_map[c] = pipeline.controlnet_map[c].to(
+                    dtype=unet_dtype, memory_format=model_memory_format
+                )
 
-    if hasattr(pipeline, 'lora_map'):
+    if hasattr(pipeline, "lora_map"):
         if pipeline.lora_map:
             pipeline.lora_map.to(device=device, dtype=unet_dtype)
 

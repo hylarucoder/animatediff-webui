@@ -33,6 +33,7 @@ def nms(boxes, scores, nms_thr):
 
     return keep
 
+
 def multiclass_nms(boxes, scores, nms_thr, score_thr):
     """Multiclass NMS implemented in Numpy. Class-aware version."""
     final_dets = []
@@ -48,13 +49,12 @@ def multiclass_nms(boxes, scores, nms_thr, score_thr):
             keep = nms(valid_boxes, valid_scores, nms_thr)
             if len(keep) > 0:
                 cls_inds = np.ones((len(keep), 1)) * cls_ind
-                dets = np.concatenate(
-                    [valid_boxes[keep], valid_scores[keep, None], cls_inds], 1
-                )
+                dets = np.concatenate([valid_boxes[keep], valid_scores[keep, None], cls_inds], 1)
                 final_dets.append(dets)
     if len(final_dets) == 0:
         return None
     return np.concatenate(final_dets, 0)
+
 
 def demo_postprocess(outputs, img_size, p6=False):
     grids = []
@@ -78,6 +78,7 @@ def demo_postprocess(outputs, img_size, p6=False):
 
     return outputs
 
+
 def preprocess(img, input_size, swap=(2, 0, 1)):
     if len(img.shape) == 3:
         padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
@@ -96,8 +97,9 @@ def preprocess(img, input_size, swap=(2, 0, 1)):
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
     return padded_img, r
 
+
 def inference_detector(session, oriImg):
-    input_shape = (640,640)
+    input_shape = (640, 640)
     img, ratio = preprocess(oriImg, input_shape)
 
     ort_inputs = {session.get_inputs()[0].name: img[None, :, :, :]}
@@ -108,17 +110,17 @@ def inference_detector(session, oriImg):
     scores = predictions[:, 4:5] * predictions[:, 5:]
 
     boxes_xyxy = np.ones_like(boxes)
-    boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
-    boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
-    boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
-    boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
+    boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2] / 2.0
+    boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3] / 2.0
+    boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2] / 2.0
+    boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3] / 2.0
     boxes_xyxy /= ratio
     dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
     if dets is not None:
         final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
-        isscore = final_scores>0.3
+        isscore = final_scores > 0.3
         iscat = final_cls_inds == 0
-        isbbox = [ i and j for (i, j) in zip(isscore, iscat)]
+        isbbox = [i and j for (i, j) in zip(isscore, iscat)]
         final_boxes = final_boxes[isbbox]
     else:
         return []
