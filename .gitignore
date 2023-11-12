@@ -244,3 +244,4 @@ src/animatediff/_version.py
 .pdm-build
 .ruff_cache
 output/
+upscaled/

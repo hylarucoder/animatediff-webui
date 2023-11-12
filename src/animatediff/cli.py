@@ -682,6 +682,7 @@ def tile_upscale(
 
         if model_config.upscale_config:
             upscaled_output = run_upscale(
+                project_dir,
                 org_imgs=org_images,
                 pipeline=us_pipeline,
                 prompt_map=prompt_map,
