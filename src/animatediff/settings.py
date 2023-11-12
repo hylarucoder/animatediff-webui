@@ -98,8 +98,9 @@ def get_infer_config(
 class ModelConfig(BaseSettings):
     name: str = Field(...)  # Config name, not actually used for much of anything
     path: Path = Field(...)  # Path to the model
+    checkpoint: Path = Field(...)  # Path to the model
     vae_path: str = ""  # Path to the model
-    motion_module: Path = Field(...)  # Path to the motion module
+    motion: Path = Field(...)  # Path to the motion module
     compile: bool = Field(False)  # whether to compile the model with TorchDynamo
     tensor_interpolation_slerp: bool = Field(True)
     seed: list[int] = Field([])  # Seed(s) for the random number generators
@@ -130,7 +131,7 @@ class ModelConfig(BaseSettings):
 
     @property
     def save_name(self):
-        return f"{self.name.lower()}-{self.path.stem.lower()}"
+        return f"{self.name.lower()}-{self.checkpoint.stem.lower()}"
 
 
 def get_model_config(config_path: Path) -> ModelConfig:

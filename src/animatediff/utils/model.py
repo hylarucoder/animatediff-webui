@@ -8,6 +8,7 @@ from huggingface_hub import hf_hub_download
 from torch import nn
 
 from animatediff import HF_HUB_CACHE, HF_MODULE_REPO, get_dir
+from animatediff.consts import MOTIONS_DIR
 from animatediff.settings import CKPT_EXTENSIONS
 from animatediff.utils.huggingface import get_hf_pipeline
 from animatediff.utils.util import path_from_cwd
@@ -150,7 +151,7 @@ def ensure_motion_modules(
 ):
     """Retrieve the motion modules from HuggingFace Hub."""
     module_files = ["mm_sd_v14.safetensors", "mm_sd_v15.safetensors"]
-    module_dir = get_dir("data/models/motion-module")
+    module_dir = MOTIONS_DIR
     for file in module_files:
         target_path = module_dir.joinpath(file)
         if fp16:

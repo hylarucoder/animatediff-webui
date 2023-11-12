@@ -11,6 +11,7 @@ from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosi
 from rich.logging import RichHandler
 
 from animatediff import __version__, console, get_dir
+from animatediff.consts import path_mgr
 from animatediff.generate import (
     controlnet_preprocess,
     create_pipeline,
@@ -294,9 +295,10 @@ def generate(
     set_diffusers_verbosity_error()
 
     config_path = config_path.absolute()
+    project_dir = config_path.parent
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
-    is_v2 = is_v2_motion_module(data_dir.joinpath(model_config.motion_module))
+    is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
     infer_config: InferenceConfig = get_infer_config(is_v2)
 
     set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
@@ -313,7 +315,7 @@ def generate(
 
     # Get the base model if we don't have it already
     logger.info(f"Using base model: {model_name_or_path}")
-    base_model_path: Path = get_base_model(model_name_or_path, local_dir=get_dir("data/models/huggingface"))
+    base_model_path: Path = get_base_model(model_name_or_path, local_dir=path_mgr.huggingface_pipeline)
 
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -323,14 +325,14 @@ def generate(
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
-        model_config.controlnet_map, width, height, length, save_dir, device
+        project_dir, model_config.controlnet_map, width, height, length, save_dir, device
     )
-    img2img_map = img2img_preprocess(model_config.img2img_map, width, height, length, save_dir)
+    img2img_map = img2img_preprocess(project_dir, model_config.img2img_map, width, height, length, save_dir)
 
     # beware the pipeline
     global g_pipeline
     global last_model_path
-    if g_pipeline is None or last_model_path != model_config.path.resolve():
+    if g_pipeline is None or last_model_path != model_config.checkpoint.resolve():
         g_pipeline = create_pipeline(
             base_model=base_model_path,
             model_config=model_config,
@@ -338,14 +340,14 @@ def generate(
             use_xformers=use_xformers,
             video_length=length,
         )
-        last_model_path = model_config.path.resolve()
+        last_model_path = model_config.checkpoint.resolve()
     else:
         logger.info("Pipeline already loaded, skipping initialization")
         # reload TIs; create_pipeline does this for us, but they may have changed
         # since load time if we're being called from another package
         load_text_embeddings(g_pipeline)
 
-    load_controlnet_models(pipe=g_pipeline, model_config=model_config)
+    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config)
 
     if g_pipeline.device == device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
@@ -368,7 +370,7 @@ def generate(
 
     is_init_img_exist = img2img_map != None
     region_condi_list, region_list, ip_adapter_config_map = region_preprocess(
-        model_config, width, height, length, save_dir, is_init_img_exist
+        project_dir, model_config, width, height, length, save_dir, is_init_img_exist
     )
 
     # save config to output directory
@@ -554,10 +556,11 @@ def tile_upscale(
         if tmp.is_file():
             config_path = tmp
 
+    project_dir = frames_dir.parent
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
-    infer_config: InferenceConfig = get_infer_config(is_v2_motion_module(data_dir.joinpath(model_config.motion_module)))
+    infer_config: InferenceConfig = get_infer_config(is_v2_motion_module(path_mgr.motions.joinpath(model_config)))
     frames_dir = frames_dir.absolute()
 
     set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
@@ -1157,4 +1160,5 @@ def refine(
 @cli.command()
 def start():
     from animatediff.webui.t2v import t2v_app
+
     t2v_app.launch(server_name="0.0.0.0")

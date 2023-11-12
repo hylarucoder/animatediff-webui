@@ -1,3 +1,7 @@
+import os
+from pathlib import PurePosixPath
+
+from huggingface_hub import hf_hub_download
 import logging
 from os import PathLike
 from pathlib import Path
@@ -9,6 +13,8 @@ from PIL import Image
 from torch import Tensor
 from torchvision.utils import save_image
 from tqdm.rich import tqdm
+
+from animatediff.consts import MOTIONS_DIR, MODELS_DIR, path_mgr
 
 logger = logging.getLogger(__name__)
 
@@ -181,140 +187,85 @@ def stopwatch_stop(comment):
             logger.info(rec)
 
 
-def prepare_ip_adapter():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/ip_adapter/models/image_encoder", exist_ok=True)
-    for hub_file in [
-        "models/image_encoder/config.json",
-        "models/image_encoder/pytorch_model.bin",
-        "models/ip-adapter-plus_sd15.bin",
-        "models/ip-adapter_sd15.bin",
-        "models/ip-adapter_sd15_light.bin",
-        "models/ip-adapter-plus-face_sd15.bin",
-    ]:
+def prepare_hf_model(model_path: Path, repo_id: str, hub_files: List[str]):
+    os.makedirs(model_path, exist_ok=True)
+    for hub_file in hub_files:
         path = Path(hub_file)
 
-        saved_path = "data/models/ip_adapter" / path
+        saved_path = model_path / path
 
         if os.path.exists(saved_path):
             continue
 
         hf_hub_download(
-            repo_id="h94/IP-Adapter",
+            repo_id=repo_id,
             subfolder=PurePosixPath(path.parent),
             filename=PurePosixPath(path.name),
-            local_dir="data/models/ip_adapter",
+            local_dir=model_path,
         )
+
+
+def prepare_ip_adapter():
+    os.makedirs(path_mgr.ip_adapter / "image_encoder", exist_ok=True)
+    prepare_hf_model(
+        path_mgr.ip_adapter,
+        "h94/IP-Adapter",
+        [
+            "models/image_encoder/config.json",
+            "models/image_encoder/pytorch_model.bin",
+            "models/ip-adapter-plus_sd15.bin",
+            "models/ip-adapter_sd15.bin",
+            "models/ip-adapter_sd15_light.bin",
+            "models/ip-adapter-plus-face_sd15.bin",
+        ]
+    )
 
 
 def prepare_motion_module():
-    import os
-    from pathlib import PurePosixPath
+    prepare_hf_model(
+        path_mgr.motions,
+        "guoyww/animatediff",
+        [
+            "mm_sd_v15_v2.ckpt",
+        ]
 
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/motion-module", exist_ok=True)
-    for hub_file in [
-        "mm_sd_v15_v2.ckpt",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/motion-module" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="guoyww/animatediff",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/motion-module",
-        )
+    )
 
 
 def prepare_wd14tagger():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/WD14tagger", exist_ok=True)
-    for hub_file in [
-        "model.onnx",
-        "selected_tags.csv",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/WD14tagger" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="SmilingWolf/wd-v1-4-moat-tagger-v2",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/WD14tagger",
-        )
+    prepare_hf_model(
+        path_mgr.wd14_tagger,
+        "SmilingWolf/wd-v1-4-moat-tagger-v2",
+        [
+            "model.onnx",
+            "selected_tags.csv",
+        ]
+    )
 
 
 def prepare_dwpose():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/DWPose", exist_ok=True)
-    for hub_file in [
-        "dw-ll_ucoco_384.onnx",
-        "yolox_l.onnx",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/DWPose" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="yzd-v/DWPose",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/DWPose",
-        )
+    prepare_hf_model(
+        path_mgr.dwpose,
+        "yzd-v/DWPose",
+        [
+            "dw-ll_ucoco_384.onnx",
+            "yolox_l.onnx",
+        ]
+    )
 
 
 def prepare_softsplat():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/softsplat", exist_ok=True)
-    for hub_file in [
-        "softsplat-lf",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/softsplat" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="s9roll74/softsplat_mirror",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/softsplat",
-        )
+    prepare_hf_model(
+        path_mgr.softsplat,
+        "s9roll74/softsplat_mirror",
+        [
+            "softsplat-lf",
+        ]
+    )
 
 
 def extract_frames(
-    movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
 ):
     import ffmpeg
 
@@ -423,56 +374,26 @@ def slerp(v0: torch.Tensor, v1: torch.Tensor, t: float, DOT_THRESHOLD: float = 0
 
 
 def prepare_sam_hq(low_vram):
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/SAM", exist_ok=True)
-    for hub_file in ["sam_hq_vit_h.pth" if not low_vram else "sam_hq_vit_b.pth"]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/SAM" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="lkeab/hq-sam",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/SAM",
-        )
+    prepare_hf_model(
+        path_mgr.sam,
+        "lkeab/hq-sam",
+        [
+            "sam_hq_vit_h.pth" if not low_vram else "sam_hq_vit_b.pth",
+        ]
+    )
 
 
 def prepare_groundingDINO():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/GroundingDINO", exist_ok=True)
-    for hub_file in [
-        "groundingdino_swinb_cogcoor.pth",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/GroundingDINO" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="ShilongLiu/GroundingDINO",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/GroundingDINO",
-        )
+    prepare_hf_model(
+        path_mgr.grounding_dino,
+        "ShilongLiu/GroundingDINO",
+        [
+            "groundingdino_swinb_cogcoor.pth",
+        ]
+    )
 
 
 def prepare_propainter():
-    import os
-
     import git
 
     if os.path.isdir("src/animatediff/repo/ProPainter"):
@@ -486,25 +407,10 @@ def prepare_propainter():
 
 
 def prepare_anime_seg():
-    import os
-    from pathlib import PurePosixPath
-
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs("data/models/anime_seg", exist_ok=True)
-    for hub_file in [
-        "isnetis.onnx",
-    ]:
-        path = Path(hub_file)
-
-        saved_path = "data/models/anime_seg" / path
-
-        if os.path.exists(saved_path):
-            continue
-
-        hf_hub_download(
-            repo_id="skytnt/anime-seg",
-            subfolder=PurePosixPath(path.parent),
-            filename=PurePosixPath(path.name),
-            local_dir="data/models/anime_seg",
-        )
+    prepare_hf_model(
+        path_mgr.anime_seg,
+        "skytnt/anime-seg",
+        [
+            "isnetis.onnx",
+        ]
+    )

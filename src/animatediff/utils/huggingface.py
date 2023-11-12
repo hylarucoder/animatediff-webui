@@ -8,13 +8,13 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from tqdm.rich import tqdm
 
 from animatediff import HF_HUB_CACHE, HF_LIB_NAME, HF_LIB_VER, get_dir
+from animatediff.consts import CHECKPOINTS_DIR, CACHE_DIR
 from animatediff.utils.util import path_from_cwd
 
 logger = logging.getLogger(__name__)
 
-data_dir = get_dir("data")
-checkpoint_dir = data_dir.joinpath("models/sd")
-pipeline_dir = data_dir.joinpath("models/huggingface")
+checkpoint_dir = CHECKPOINTS_DIR
+pipeline_dir = CACHE_DIR / "models/huggingface"
 
 IGNORE_TF = ["*.git*", "*.h5", "tf_*"]
 IGNORE_FLAX = ["*.git*", "flax_*", "*.msgpack"]
@@ -34,12 +34,12 @@ class DownloadTqdm(tqdm):
 
 
 def get_hf_file(
-    repo_id: Path,
-    filename: str,
-    target_dir: Path,
-    subfolder: Optional[PathLike] = None,
-    revision: Optional[str] = None,
-    force: bool = False,
+        repo_id: Path,
+        filename: str,
+        target_dir: Path,
+        subfolder: Optional[PathLike] = None,
+        revision: Optional[str] = None,
+        force: bool = False,
 ) -> Path:
     target_path = target_dir.joinpath(filename)
     if target_path.exists() and force is not True:
@@ -60,11 +60,11 @@ def get_hf_file(
 
 
 def get_hf_repo(
-    repo_id: Path,
-    target_dir: Path,
-    subfolder: Optional[PathLike] = None,
-    revision: Optional[str] = None,
-    force: bool = False,
+        repo_id: Path,
+        target_dir: Path,
+        subfolder: Optional[PathLike] = None,
+        revision: Optional[str] = None,
+        force: bool = False,
 ) -> Path:
     if target_dir.exists() and force is not True:
         raise FileExistsError(f"Target dir {path_from_cwd(target_dir)} already exists! Pass force=True to overwrite")
@@ -88,10 +88,10 @@ def get_hf_repo(
 
 
 def get_hf_pipeline(
-    repo_id: Path,
-    target_dir: Path,
-    save: bool = True,
-    force_download: bool = False,
+        repo_id: Path,
+        target_dir: Path,
+        save: bool = True,
+        force_download: bool = False,
 ) -> StableDiffusionPipeline:
     pipeline_exists = target_dir.joinpath("model_index.json").exists()
     if pipeline_exists and force_download is not True:

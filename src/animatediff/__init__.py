@@ -1,12 +1,3 @@
-try:
-    from ._version import (
-        version as __version__,
-        version_tuple,
-    )
-except ImportError:
-    __version__ = "unknown (no version information available)"
-    version_tuple = (0, 0, "unknown", "noinfo")
-
 from functools import lru_cache
 from os import getenv
 from pathlib import Path
@@ -15,6 +6,8 @@ from warnings import filterwarnings
 from rich.console import Console
 from tqdm import TqdmExperimentalWarning
 
+__version__ = "unknown (no version information available)"
+version_tuple = (0, 0, "unknown", "noinfo")
 PACKAGE = __package__.replace("_", "-")
 PACKAGE_ROOT = Path(__file__).parent.parent
 

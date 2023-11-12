@@ -34,6 +34,7 @@ from transformers import (
 )
 
 from animatediff import get_dir
+from animatediff.consts import MOTIONS_DIR, CHECKPOINTS_DIR, VAES_DIR, MODELS_DIR, CACHE_DIR, LORAS_DIR
 from animatediff.dwpose import DWposeDetector
 from animatediff.models.clip import CLIPSkipTextModel
 from animatediff.models.unet import UNet3DConditionModel
@@ -69,8 +70,7 @@ except:
 
 logger = logging.getLogger(__name__)
 
-data_dir = get_dir("data")
-default_base_path = data_dir.joinpath("models/huggingface/stable-diffusion-v1-5")
+default_base_path = MODELS_DIR / "huggingface/stable-diffusion-v1-5"
 
 re_clean_prompt = re.compile(r"[^\w\-, ]")
 
@@ -369,7 +369,7 @@ def create_pipeline(
 
     # make sure motion_module is a Path and exists
     logger.info("Checking motion module...")
-    motion_module = data_dir.joinpath(model_config.motion_module)
+    motion_module = MOTIONS_DIR.joinpath(model_config.motion)
     if not (motion_module.exists() and motion_module.is_file()):
         prepare_motion_module()
         if not (motion_module.exists() and motion_module.is_file()):
@@ -403,8 +403,8 @@ def create_pipeline(
     logger.info(f'Using scheduler "{model_config.scheduler}" ({scheduler.__class__.__name__})')
 
     # Load the checkpoint weights into the pipeline
-    if model_config.path is not None:
-        model_path = data_dir.joinpath(model_config.path)
+    if model_config.checkpoint is not None:
+        model_path = CHECKPOINTS_DIR.joinpath(model_config.checkpoint)
         logger.info(f"Loading weights from {model_path}")
         if model_path.is_file():
             logger.debug("Loading from single checkpoint file")
@@ -436,7 +436,7 @@ def create_pipeline(
         logger.info("Using base model weights (no checkpoint/LoRA)")
 
     if model_config.vae_path:
-        vae_path = data_dir.joinpath(model_config.vae_path)
+        vae_path = VAES_DIR.joinpath(model_config.vae_path)
         logger.info(f"Loading vae from {vae_path}")
 
         if vae_path.is_dir():
@@ -454,7 +454,7 @@ def create_pipeline(
     if False:
         # lora
         for l in model_config.lora_map:
-            lora_path = data_dir.joinpath(l)
+            lora_path = LORAS_DIR.joinpath(l)
             if lora_path.is_file():
                 logger.info(f"Loading lora {lora_path}")
                 logger.info(f"alpha = {model_config.lora_map[l]}")
@@ -462,7 +462,7 @@ def create_pipeline(
 
     # motion lora
     for l in model_config.motion_lora_map:
-        lora_path = data_dir.joinpath(l)
+        lora_path = LORAS_DIR.joinpath(l)
         if lora_path.is_file():
             logger.info(f"Loading motion lora {lora_path}")
             logger.info(f"alpha = {model_config.motion_lora_map[l]}")
@@ -488,13 +488,14 @@ def create_pipeline(
 
 
 def load_controlnet_models(
+        project_dir: Path,
         pipe: AnimationPipeline,
         model_config: ModelConfig = ...,
 ):
     # controlnet
     controlnet_map = {}
     if model_config.controlnet_map:
-        c_image_dir = data_dir.joinpath(model_config.controlnet_map["input_image_dir"])
+        c_image_dir = project_dir.joinpath(model_config.controlnet_map["input_image_dir"])
 
         for c in model_config.controlnet_map:
             item = model_config.controlnet_map[c]
@@ -551,8 +552,8 @@ def create_us_pipeline(
     # Load the checkpoint weights into the pipeline
     pipeline: DiffusionPipeline
 
-    if model_config.path is not None:
-        model_path = data_dir.joinpath(model_config.path)
+    if model_config.checkpoint is not None:
+        model_path = MODELS_DIR / model_config.checkpoint
         logger.info(f"Loading weights from {model_path}")
         if model_path.is_file():
 
@@ -561,9 +562,7 @@ def create_us_pipeline(
 
                 return len(os.listdir(path)) == 0
 
-            save_path = data_dir.joinpath(
-                "models/huggingface/" + model_path.stem + "_" + str(model_path.stat().st_size)
-            )
+            save_path = CACHE_DIR.joinpath("huggingface/" + model_path.stem + "_" + str(model_path.stat().st_size))
             save_path.mkdir(exist_ok=True)
             if save_path.is_dir() and is_empty_dir(save_path):
                 # StableDiffusionControlNetImg2ImgPipeline.from_single_file does not exist in version 18.2
@@ -623,7 +622,7 @@ def create_us_pipeline(
 
     # lora
     for l in model_config.lora_map:
-        lora_path = data_dir.joinpath(l)
+        lora_path = LORAS_DIR.joinpath(l)
         if lora_path.is_file():
             alpha = model_config.lora_map[l]
             if isinstance(alpha, dict):
@@ -651,6 +650,7 @@ def seed_everything(seed):
 
 
 def controlnet_preprocess(
+        project_dir: Path,
         controlnet_map: Dict[str, Any] = None,
         width: int = 512,
         height: int = 512,
@@ -668,7 +668,7 @@ def controlnet_preprocess(
 
     controlnet_type_map = {}
 
-    c_image_dir = data_dir.joinpath(controlnet_map["input_image_dir"])
+    c_image_dir = project_dir.joinpath(controlnet_map["input_image_dir"])
     save_detectmap = controlnet_map["save_detectmap"] if "save_detectmap" in controlnet_map else True
 
     preprocess_on_gpu = controlnet_map["preprocess_on_gpu"] if "preprocess_on_gpu" in controlnet_map else True
@@ -725,10 +725,10 @@ def controlnet_preprocess(
 
     if "controlnet_ref" in controlnet_map:
         r = controlnet_map["controlnet_ref"]
-        if r["enable"] == True:
-            org_name = data_dir.joinpath(r["ref_image"]).stem
+        if r["enable"]:
+            org_name = project_dir.joinpath(r["ref_image"]).stem
             #            ref_image = get_resized_image( data_dir.joinpath( r["ref_image"] ) , width, height)
-            ref_image = get_resized_image2(data_dir.joinpath(r["ref_image"]), 512)
+            ref_image = get_resized_image2(str(project_dir.joinpath(r["ref_image"])), 512)
 
             if ref_image is not None:
                 controlnet_ref_map = {
@@ -751,6 +751,7 @@ def controlnet_preprocess(
 
 
 def ip_adapter_preprocess(
+        project_dir: Path,
         ip_adapter_config_map: Dict[str, Any] = None,
         width: int = 512,
         height: int = 512,
@@ -762,11 +763,11 @@ def ip_adapter_preprocess(
     processed = False
 
     if ip_adapter_config_map:
-        if ip_adapter_config_map["enable"] == True:
+        if ip_adapter_config_map["enable"]:
             resized_to_square = (
                 ip_adapter_config_map["resized_to_square"] if "resized_to_square" in ip_adapter_config_map else False
             )
-            image_dir = data_dir.joinpath(ip_adapter_config_map["input_image_dir"])
+            image_dir = project_dir.joinpath(ip_adapter_config_map["input_image_dir"])
             imgs = sorted(
                 chain.from_iterable([glob.glob(os.path.join(image_dir, f"[0-9]*{ext}")) for ext in IMG_EXTENSIONS])
             )
@@ -840,6 +841,7 @@ def prompt_preprocess(
 
 
 def region_preprocess(
+        project_dir: Path,
         model_config: ModelConfig = ...,
         width: int = 512,
         height: int = 512,
@@ -860,7 +862,7 @@ def region_preprocess(
     prev_ip_map = None
 
     if not is_bg_init_img:
-        ip_map = ip_adapter_preprocess(model_config.ip_adapter_map, width, height, duration, out_dir)
+        ip_map = ip_adapter_preprocess(project_dir, model_config.ip_adapter_map, width, height, duration, out_dir)
 
         if ip_map:
             prev_ip_map = ip_map
@@ -894,13 +896,14 @@ def region_preprocess(
             region_dir = out_dir.joinpath(f"region_{int(r):05d}/")
             region_dir.mkdir(parents=True, exist_ok=True)
 
-            mask_map = mask_preprocess(model_config.region_map[r], width, height, duration, region_dir)
+            mask_map = mask_preprocess(project_dir, model_config.region_map[r], width, height, duration, region_dir)
 
             if not mask_map:
                 continue
 
             if model_config.region_map[r]["is_init_img"] == False:
                 ip_map = ip_adapter_preprocess(
+                    project_dir,
                     model_config.region_map[r]["condition"]["ip_adapter_map"], width, height, duration, region_dir
                 )
 
@@ -964,6 +967,7 @@ def region_preprocess(
 
 
 def img2img_preprocess(
+        project_dir: Path,
         img2img_config_map: Dict[str, Any] = None,
         width: int = 512,
         height: int = 512,
@@ -976,7 +980,7 @@ def img2img_preprocess(
 
     if img2img_config_map:
         if img2img_config_map["enable"] == True:
-            image_dir = data_dir.joinpath(img2img_config_map["init_img_dir"])
+            image_dir = project_dir.joinpath(img2img_config_map["init_img_dir"])
             imgs = sorted(glob.glob(os.path.join(image_dir, "[0-9]*.png"), recursive=False))
             if len(imgs) > 0:
                 img2img_map["images"] = {}
@@ -998,6 +1002,7 @@ def img2img_preprocess(
 
 
 def mask_preprocess(
+        project_dir: Path,
         region_config_map: Dict[str, Any] = None,
         width: int = 512,
         height: int = 512,
@@ -1011,7 +1016,7 @@ def mask_preprocess(
     mode = None
 
     if region_config_map:
-        image_dir = data_dir.joinpath(region_config_map["mask_dir"])
+        image_dir = project_dir.joinpath(region_config_map["mask_dir"])
         imgs = sorted(glob.glob(os.path.join(image_dir, "[0-9]*.png"), recursive=False))
         if len(imgs) > 0:
             for img_path in tqdm(imgs, desc=f"Preprocessing images (mask)"):
@@ -1240,6 +1245,7 @@ def run_inference(
 
 
 def run_upscale(
+        project_dir: Path,
         org_imgs: List[str],
         pipeline: DiffusionPipeline,
         prompt_map: Dict[int, str] = None,
@@ -1307,7 +1313,7 @@ def run_upscale(
                 and not upscale_config["controlnet_ref"]["use_1st_frame_as_ref_image"]
         ):
             ref_image = get_resized_images(
-                [data_dir.joinpath(upscale_config["controlnet_ref"]["ref_image"])], us_width, us_height
+                [project_dir.joinpath(upscale_config["controlnet_ref"]["ref_image"])], us_width, us_height
             )[0]
 
     generator = torch.manual_seed(seed)

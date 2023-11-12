@@ -1,16 +1,20 @@
 import json
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
 import gradio as gr
 from pydantic import BaseModel
 
-from animatediff.utils.path_helper import get_repo_path
-
-BASE_DIR = get_repo_path()
-PROJECTS_DIR = Path(__file__).parent
+from animatediff.consts import (
+    REPO_DIR,
+    CHECKPOINTS_DIR,
+    LORAS_DIR,
+    MOTIONS_DIR,
+    MOTION_LORAS_DIR,
+    PROJECTS_DIR,
+    TEMPLATES_DIR,
+)
 
 
 class WorkflowState(BaseModel):
@@ -23,29 +27,17 @@ class GeneralSetting(BaseModel):
 
 
 class ProjectSetting(BaseModel):
-    base_dir: Path
-    projects_dir: Path
     project_name: str
     project_dir: Path
-    checkpoint_dir: Path
-    lora_dir: Path
-    motion_lora_dir: Path
-    motion_dir: Path
     template_dir: Path
     template_prompts_dir: Path
 
 
 project_setting = ProjectSetting(
-    base_dir=BASE_DIR,
-    projects_dir=BASE_DIR / "data/projects",
-    project_dir=BASE_DIR,  # placeholder
+    project_dir=REPO_DIR,  # placeholder
     project_name="demo_001",
-    checkpoint_dir=BASE_DIR / "data/models/sd",
-    lora_dir=BASE_DIR / "data/models/lora",
-    motion_dir=BASE_DIR / "data/models/motion-module",
-    motion_lora_dir=BASE_DIR / "data/models/motion-lora",
-    template_dir=PROJECTS_DIR / "proj_000_template_t2v",
-    template_prompts_dir=PROJECTS_DIR / "proj_000_template_t2v/prompts.json",
+    template_dir=TEMPLATES_DIR / "001_t2v",
+    template_prompts_dir=TEMPLATES_DIR / "proj_000_template_t2v/prompts.json",
 )
 
 project_state = WorkflowState(
@@ -71,12 +63,13 @@ controlnets = [
     "qr_code_monster_v2",
     "controlnet_mediapipe_face",
     # "controlnet_ref",
+    "ip_adapter",
 ]
 
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i: i + n]
+        yield l[i : i + n]
 
 
 class TInput(BaseModel):
@@ -92,15 +85,15 @@ class TInput(BaseModel):
 
 
 def p(
-        project_name,
-        checkpoint,
-        loras,
-        motion_loras,
-        motion_module,
-        head_prompt,
-        tail_prompt,
-        negative_prompt,
-        *image_prompts,
+    project_name,
+    checkpoint,
+    loras,
+    motion_loras,
+    motion_module,
+    head_prompt,
+    tail_prompt,
+    negative_prompt,
+    *image_prompts,
 ):
     project_dir = PROJECTS_DIR / project_name
     project_setting.project_dir = project_dir
@@ -110,21 +103,19 @@ def p(
     prompt_tmpl = json.loads(open(project_setting.template_prompts_dir).read())
     prompt_tmpl["ip_adapter_map"]["input_image_dir"] = str(project_setting.project_dir / "00_ip_adapter")
     prompt_tmpl["controlnet_map"]["input_image_dir"] = str(project_setting.project_dir / "00_controlnet_image")
-    prompt_tmpl["path"] = f"models/sd/{checkpoint}"
-    prompt_tmpl["motion_module"] = f"models/motion-module/{motion_module}"
+    prompt_tmpl["checkpoint"] = checkpoint
+    prompt_tmpl["motion"] = motion_module
     prompt_tmpl["head_prompt"] = head_prompt
     prompt_tmpl["tail_prompt"] = tail_prompt
     prompt_tmpl["n_prompt"] = [negative_prompt]
-    prompt_tmpl["lora_map"] = {f"models/LoRA/{lora}": 0.7 for lora in loras}
-    prompt_tmpl["motion_lora_map"] = {f"models/motion-lora/{lora}": 0.7 for lora in motion_loras}
+    prompt_tmpl["lora_map"] = {f"{lora}": 0.7 for lora in loras}
+    prompt_tmpl["motion_lora_map"] = {f"{lora}": 0.7 for lora in motion_loras}
     for i, (img, prompt) in enumerate(group_by_n(image_prompts, 2)):
         frame = i * project_state.interval
         if img:
             img.save(project_setting.project_dir / "00_ip_adapter" / f"{str(frame).zfill(4)}.png")
             img.save(
-                project_setting.project_dir
-                / "00_controlnet_image/controlnet_lineart_anime"
-                / f"{str(frame).zfill(4)}.png"
+                project_setting.project_dir / "00_controlnet_image/controlnet_softedge" / f"{str(frame).zfill(8)}.png"
             )
         if prompt:
             prompt_tmpl["prompt_map"][f"{frame}"] = prompt
@@ -139,10 +130,10 @@ def get_models_endswith(d, endswith="safetensors"):
 
 def build_setup():
     with gr.Blocks(
-            theme=gr.themes.Default(
-                spacing_size="sm",
-                text_size="sm",
-            ),
+        theme=gr.themes.Default(
+            spacing_size="sm",
+            text_size="sm",
+        ),
     ) as demo:
         with gr.Row():
             input_project = gr.Textbox("demo_001", label="Project Name")
@@ -156,24 +147,22 @@ def build_setup():
                     value="mistoonAnime_v20.safetensors",
                     label="CheckPoints",
                     choices=get_models_endswith(
-                        project_setting.checkpoint_dir,
+                        CHECKPOINTS_DIR,
                     ),
                 )
                 input_lora = gr.Dropdown(
                     label="LoRA",
                     choices=get_models_endswith(
-                        project_setting.lora_dir,
+                        LORAS_DIR,
                     ),
                     multiselect=True,
                 )
             with gr.Column():
-                input_motion = gr.Dropdown(
-                    label="Motion", choices=get_models_endswith(project_setting.motion_dir, endswith="ckpt")
-                )
+                input_motion = gr.Dropdown(label="Motion", choices=get_models_endswith(MOTIONS_DIR, endswith="ckpt"))
                 input_motion_lora = gr.Dropdown(
                     multiselect=True,
                     label="Motion LoRA",
-                    choices=get_models_endswith(project_setting.motion_lora_dir, endswith="ckpt"),
+                    choices=get_models_endswith(MOTION_LORAS_DIR, endswith="ckpt"),
                 )
 
         gr.Markdown("## Controlnet && IP Adapter")
@@ -184,7 +173,6 @@ def build_setup():
                     label="Controlnet",
                     info="Controlnet && IP Adapter",
                     value=[
-                        "controlnet_canny",
                         "controlnet_softedge",
                     ],
                 ),
