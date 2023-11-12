@@ -7,13 +7,12 @@ from diffusers import StableDiffusionPipeline
 from huggingface_hub import hf_hub_download, snapshot_download
 from tqdm.rich import tqdm
 
-from animatediff import HF_HUB_CACHE, HF_LIB_NAME, HF_LIB_VER, get_dir
-from animatediff.consts import CHECKPOINTS_DIR, CACHE_DIR
+from animatediff import HF_HUB_CACHE, HF_LIB_NAME, HF_LIB_VER
+from animatediff.consts import CACHE_DIR
 from animatediff.utils.util import path_from_cwd
 
 logger = logging.getLogger(__name__)
 
-checkpoint_dir = CHECKPOINTS_DIR
 pipeline_dir = CACHE_DIR / "models/huggingface"
 
 IGNORE_TF = ["*.git*", "*.h5", "tf_*"]

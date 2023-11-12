@@ -1,20 +1,19 @@
-import os
-from pathlib import PurePosixPath
-
-from huggingface_hub import hf_hub_download
+import json
 import logging
+import os
 from os import PathLike
-from pathlib import Path
+from pathlib import PurePosixPath, Path
 from typing import List
 
 import torch
-from einops import rearrange
 from PIL import Image
+from einops import rearrange
+from huggingface_hub import hf_hub_download
 from torch import Tensor
 from torchvision.utils import save_image
 from tqdm.rich import tqdm
 
-from animatediff.consts import MOTIONS_DIR, MODELS_DIR, path_mgr
+from animatediff.consts import path_mgr
 
 logger = logging.getLogger(__name__)
 
@@ -414,3 +413,8 @@ def prepare_anime_seg():
             "isnetis.onnx",
         ]
     )
+
+
+def read_json(f):
+    t = open(f, "rt", encoding="utf-8").read()
+    return json.loads(t)

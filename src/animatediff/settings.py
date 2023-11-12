@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings, EnvSettingsSource, InitSettingsSourc
 
 from animatediff import get_dir
 from animatediff.schedulers import DiffusionScheduler
+from animatediff.utils.util import read_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,8 +22,8 @@ class JsonSettingsSource:
     __slots__ = ["json_config_path"]
 
     def __init__(
-        self,
-        json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
+            self,
+            json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
     ) -> None:
         if isinstance(json_config_path, list):
             self.json_config_path = [Path(path) for path in json_config_path]
@@ -51,46 +52,18 @@ class JsonSettingsSource:
         return f"JsonSettingsSource(json_config_path={repr(self.json_config_path)})"
 
 
-class JsonConfig(BaseConfig):
-    json_config_path: Optional[Union[Path, list[Path]]] = None
-    env_file_encoding: str = "utf-8"
-
-    @classmethod
-    def customise_sources(
-        cls,
-        init_settings: InitSettingsSource,
-        env_settings: EnvSettingsSource,
-        file_secret_settings: SecretsSettingsSource,
-    ) -> Tuple[SettingsSourceCallable, ...]:
-        # pull json_config_path from init_settings if passed, otherwise use the class var
-        json_config_path = init_settings.init_kwargs.pop("json_config_path", cls.json_config_path)
-
-        logger.debug(f"Using JsonSettingsSource for {cls.__name__}")
-        json_settings = JsonSettingsSource(json_config_path=json_config_path)
-
-        # return the new settings sources
-        return (
-            init_settings,
-            json_settings,
-        )
-
-
 class InferenceConfig(BaseSettings):
     unet_additional_kwargs: dict[str, Any]
     noise_scheduler_kwargs: dict[str, Any]
 
-    class Config(JsonConfig):
-        json_config_path: Path
-
 
 def get_infer_config(
-    is_v2: bool,
+        is_v2: bool,
 ) -> InferenceConfig:
     config_path: Path = get_dir("config").joinpath(
         "inference/default.json" if not is_v2 else "inference/motion_v2.json"
     )
-    t = open(config_path, "rt").read()
-    d = json.loads(t)
+    d = read_json(config_path)
     settings = InferenceConfig(**d)
     return settings
 
@@ -126,16 +99,12 @@ class ModelConfig(BaseSettings):
     output: Dict[str, Any] = Field({})
     result: Dict[str, Any] = Field({})
 
-    class Config(JsonConfig):
-        json_config_path: Path
-
     @property
     def save_name(self):
         return f"{self.name.lower()}-{self.checkpoint.stem.lower()}"
 
 
 def get_model_config(config_path: Path) -> ModelConfig:
-    t = open(config_path, "rt").read()
-    d = json.loads(t)
+    d = read_json(config_path)
     settings = ModelConfig(**d)
     return settings

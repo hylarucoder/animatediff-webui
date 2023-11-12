@@ -10,11 +10,10 @@ from typing import Any, Callable, Dict, List, Union
 
 import numpy as np
 import torch
+from PIL import Image
 from controlnet_aux import LineartAnimeDetector
-from controlnet_aux.processor import MODELS
-from controlnet_aux.processor import Processor as ControlnetPreProcessor
-from controlnet_aux.util import HWC3, ade_palette
-from controlnet_aux.util import resize_image as aux_resize_image
+from controlnet_aux.processor import MODELS, Processor as ControlnetPreProcessor
+from controlnet_aux.util import HWC3, ade_palette, resize_image as aux_resize_image
 from diffusers import (
     AutoencoderKL,
     ControlNetModel,
@@ -22,19 +21,17 @@ from diffusers import (
     StableDiffusionControlNetImg2ImgPipeline,
     StableDiffusionPipeline,
 )
-from PIL import Image
 from torchvision.datasets.folder import IMG_EXTENSIONS
 from tqdm.rich import tqdm
 from transformers import (
     AutoImageProcessor,
     CLIPImageProcessor,
-    CLIPTextModel,
     CLIPTokenizer,
     UperNetForSemanticSegmentation,
 )
 
 from animatediff import get_dir
-from animatediff.consts import MOTIONS_DIR, CHECKPOINTS_DIR, VAES_DIR, MODELS_DIR, CACHE_DIR, LORAS_DIR
+from animatediff.consts import MODELS_DIR, CACHE_DIR, path_mgr
 from animatediff.dwpose import DWposeDetector
 from animatediff.models.clip import CLIPSkipTextModel
 from animatediff.models.unet import UNet3DConditionModel
@@ -46,7 +43,6 @@ from animatediff.pipelines.pipeline_controlnet_img2img_reference import (
 from animatediff.schedulers import get_scheduler
 from animatediff.settings import InferenceConfig, ModelConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
-from animatediff.utils.convert_lora_safetensor_to_diffusers import convert_lora
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights
 from animatediff.utils.util import (
     get_resized_image,
@@ -369,7 +365,7 @@ def create_pipeline(
 
     # make sure motion_module is a Path and exists
     logger.info("Checking motion module...")
-    motion_module = MOTIONS_DIR.joinpath(model_config.motion)
+    motion_module = path_mgr.motions / model_config.motion
     if not (motion_module.exists() and motion_module.is_file()):
         prepare_motion_module()
         if not (motion_module.exists() and motion_module.is_file()):
@@ -404,7 +400,7 @@ def create_pipeline(
 
     # Load the checkpoint weights into the pipeline
     if model_config.checkpoint is not None:
-        model_path = CHECKPOINTS_DIR.joinpath(model_config.checkpoint)
+        model_path = path_mgr.checkpoints.joinpath(model_config.checkpoint)
         logger.info(f"Loading weights from {model_path}")
         if model_path.is_file():
             logger.debug("Loading from single checkpoint file")
@@ -436,7 +432,7 @@ def create_pipeline(
         logger.info("Using base model weights (no checkpoint/LoRA)")
 
     if model_config.vae_path:
-        vae_path = VAES_DIR.joinpath(model_config.vae_path)
+        vae_path = path_mgr.vaes / model_config.vae_path
         logger.info(f"Loading vae from {vae_path}")
 
         if vae_path.is_dir():
@@ -454,7 +450,7 @@ def create_pipeline(
     if False:
         # lora
         for l in model_config.lora_map:
-            lora_path = LORAS_DIR.joinpath(l)
+            lora_path = path_mgr.loras / l
             if lora_path.is_file():
                 logger.info(f"Loading lora {lora_path}")
                 logger.info(f"alpha = {model_config.lora_map[l]}")
@@ -462,7 +458,7 @@ def create_pipeline(
 
     # motion lora
     for l in model_config.motion_lora_map:
-        lora_path = LORAS_DIR.joinpath(l)
+        lora_path = path_mgr.loras / l
         if lora_path.is_file():
             logger.info(f"Loading motion lora {lora_path}")
             logger.info(f"alpha = {model_config.motion_lora_map[l]}")
@@ -553,7 +549,7 @@ def create_us_pipeline(
     pipeline: DiffusionPipeline
 
     if model_config.checkpoint is not None:
-        model_path = MODELS_DIR / model_config.checkpoint
+        model_path = path_mgr.checkpoints / model_config.checkpoint
         logger.info(f"Loading weights from {model_path}")
         if model_path.is_file():
 
@@ -622,7 +618,7 @@ def create_us_pipeline(
 
     # lora
     for l in model_config.lora_map:
-        lora_path = LORAS_DIR.joinpath(l)
+        lora_path = path_mgr.loras / l
         if lora_path.is_file():
             alpha = model_config.lora_map[l]
             if isinstance(alpha, dict):
@@ -1125,7 +1121,7 @@ def save_output(
         if save_frames:
             save_frames(pipeline_output, frame_dir)
 
-        from animatediff.rife.ffmpeg import FfmpegEncoder, VideoCodec, codec_extn
+        from animatediff.rife.ffmpeg import FfmpegEncoder, codec_extn
 
         out_file = out_file.with_suffix(f".{codec_extn(output_format)}")
 

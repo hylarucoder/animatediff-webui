@@ -560,7 +560,9 @@ def tile_upscale(
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
-    infer_config: InferenceConfig = get_infer_config(is_v2_motion_module(path_mgr.motions.joinpath(model_config)))
+    infer_config: InferenceConfig = get_infer_config(
+        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion))
+    )
     frames_dir = frames_dir.absolute()
 
     set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)

@@ -1,5 +1,4 @@
 import logging
-from functools import wraps
 from pathlib import Path
 from typing import Optional, TypeVar
 
@@ -8,8 +7,7 @@ from huggingface_hub import hf_hub_download
 from torch import nn
 
 from animatediff import HF_HUB_CACHE, HF_MODULE_REPO, get_dir
-from animatediff.consts import MOTIONS_DIR
-from animatediff.settings import CKPT_EXTENSIONS
+from animatediff.consts import path_mgr
 from animatediff.utils.huggingface import get_hf_pipeline
 from animatediff.utils.util import path_from_cwd
 
@@ -114,9 +112,9 @@ def fix_checkpoint_if_needed(checkpoint: Path, debug: bool):
 
 
 def checkpoint_to_pipeline(
-    checkpoint: Path,
-    target_dir: Optional[Path] = None,
-    save: bool = True,
+        checkpoint: Path,
+        target_dir: Optional[Path] = None,
+        save: bool = True,
 ) -> StableDiffusionPipeline:
     logger.debug(f"Converting checkpoint {path_from_cwd(checkpoint)}")
     if target_dir is None:
@@ -145,13 +143,13 @@ def get_checkpoint_weights(checkpoint: Path):
 
 
 def ensure_motion_modules(
-    repo_id: str = HF_MODULE_REPO,
-    fp16: bool = False,
-    force: bool = False,
+        repo_id: str = HF_MODULE_REPO,
+        fp16: bool = False,
+        force: bool = False,
 ):
     """Retrieve the motion modules from HuggingFace Hub."""
     module_files = ["mm_sd_v14.safetensors", "mm_sd_v15.safetensors"]
-    module_dir = MOTIONS_DIR
+    module_dir = path_mgr.motions
     for file in module_files:
         target_path = module_dir.joinpath(file)
         if fp16:

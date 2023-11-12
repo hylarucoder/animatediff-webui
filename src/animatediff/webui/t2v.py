@@ -8,12 +8,9 @@ from pydantic import BaseModel
 
 from animatediff.consts import (
     REPO_DIR,
-    CHECKPOINTS_DIR,
-    LORAS_DIR,
     MOTIONS_DIR,
-    MOTION_LORAS_DIR,
     PROJECTS_DIR,
-    TEMPLATES_DIR,
+    TEMPLATES_DIR, path_mgr,
 )
 
 
@@ -69,7 +66,7 @@ controlnets = [
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 class TInput(BaseModel):
@@ -85,15 +82,15 @@ class TInput(BaseModel):
 
 
 def p(
-    project_name,
-    checkpoint,
-    loras,
-    motion_loras,
-    motion_module,
-    head_prompt,
-    tail_prompt,
-    negative_prompt,
-    *image_prompts,
+        project_name,
+        checkpoint,
+        loras,
+        motion_loras,
+        motion_module,
+        head_prompt,
+        tail_prompt,
+        negative_prompt,
+        *image_prompts,
 ):
     project_dir = PROJECTS_DIR / project_name
     project_setting.project_dir = project_dir
@@ -130,10 +127,10 @@ def get_models_endswith(d, endswith="safetensors"):
 
 def build_setup():
     with gr.Blocks(
-        theme=gr.themes.Default(
-            spacing_size="sm",
-            text_size="sm",
-        ),
+            theme=gr.themes.Default(
+                spacing_size="sm",
+                text_size="sm",
+            ),
     ) as demo:
         with gr.Row():
             input_project = gr.Textbox("demo_001", label="Project Name")
@@ -147,22 +144,22 @@ def build_setup():
                     value="mistoonAnime_v20.safetensors",
                     label="CheckPoints",
                     choices=get_models_endswith(
-                        CHECKPOINTS_DIR,
+                        path_mgr.checkpoints_dir,
                     ),
                 )
                 input_lora = gr.Dropdown(
                     label="LoRA",
                     choices=get_models_endswith(
-                        LORAS_DIR,
+                        path_mgr.loras,
                     ),
                     multiselect=True,
                 )
             with gr.Column():
-                input_motion = gr.Dropdown(label="Motion", choices=get_models_endswith(MOTIONS_DIR, endswith="ckpt"))
+                input_motion = gr.Dropdown(label="Motion", choices=get_models_endswith(path_mgr.motions, endswith="ckpt"))
                 input_motion_lora = gr.Dropdown(
                     multiselect=True,
                     label="Motion LoRA",
-                    choices=get_models_endswith(MOTION_LORAS_DIR, endswith="ckpt"),
+                    choices=get_models_endswith(path_mgr.motion_loras, endswith="ckpt"),
                 )
 
         gr.Markdown("## Controlnet && IP Adapter")
