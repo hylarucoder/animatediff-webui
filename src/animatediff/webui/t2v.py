@@ -7,7 +7,9 @@ from pathlib import Path
 import gradio as gr
 from pydantic import BaseModel
 
-BASE_DIR = Path(__file__).parent.parent
+from animatediff.utils.path_helper import get_repo_path
+
+BASE_DIR = get_repo_path()
 PROJECTS_DIR = Path(__file__).parent
 
 
@@ -39,7 +41,7 @@ project_setting = ProjectSetting(
     project_dir=BASE_DIR,  # placeholder
     project_name="demo_001",
     checkpoint_dir=BASE_DIR / "data/models/sd",
-    lora_dir=BASE_DIR / "data/models/LoRA",
+    lora_dir=BASE_DIR / "data/models/lora",
     motion_dir=BASE_DIR / "data/models/motion-module",
     motion_lora_dir=BASE_DIR / "data/models/motion-lora",
     template_dir=PROJECTS_DIR / "proj_000_template_t2v",
@@ -49,14 +51,6 @@ project_setting = ProjectSetting(
 project_state = WorkflowState(
     interval=16,
 )
-
-# is macos
-if os.name == "posix":
-    prefix = Path("/Workspace/01-Code/projects-aigc/Fooocus/models")
-    project_setting.checkpoint_dir = prefix / "checkpoints/"
-    project_setting.lora_dir = prefix / "checkpoints/"
-    project_setting.motion_dir = prefix / "checkpoints/"
-    project_setting.motion_lora_dir = prefix / "checkpoints/"
 
 controlnets = [
     "controlnet_canny",
@@ -263,7 +257,3 @@ with gr.Blocks() as demo3:
 t2v_app = gr.TabbedInterface(
     [demo, demo2, demo3], tab_names=["I. Setup Basic Image And Prompts", "2. Generate Basic Videos", "3. Refine Videos"]
 )
-
-
-
-

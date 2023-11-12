@@ -22,10 +22,13 @@ pip install pdm
 pdm install
 # linux/windows
 python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-python -m pip install onnxruntime-gpu
+python -m pip install onnxruntime-gpu xformers
 # macos
 python -m pip install torch torchvision torchaudio 
 python -m pip install onnxruntime-silicon
+
+# window
+pip install segment-anything-hq groundingdino-py gitpython "rembg[gpu]"
 ```
 
 ## Credit

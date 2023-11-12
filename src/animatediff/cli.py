@@ -1154,7 +1154,7 @@ def refine(
     logger.info(f"Refined results are output to {generated_dir}")
 
 
-@cli.command(no_args_is_help=True)
+@cli.command()
 def start():
     from animatediff.webui.t2v import t2v_app
     t2v_app.launch(server_name="0.0.0.0")
