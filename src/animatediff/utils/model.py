@@ -1,5 +1,4 @@
 import logging
-from functools import wraps
 from pathlib import Path
 from typing import Optional, TypeVar
 
@@ -49,13 +48,14 @@ def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False
     return Path(model_name_or_path)
 
 
-def fix_checkpoint_if_needed(checkpoint: Path, debug:bool):
+def fix_checkpoint_if_needed(checkpoint: Path, debug: bool):
     def dump(loaded):
         for a in loaded:
             logger.info(f"{a} {loaded[a].shape}")
 
     if debug:
         from safetensors.torch import load_file, save_file
+
         loaded = load_file(checkpoint, "cpu")
 
         dump(loaded)
@@ -75,26 +75,26 @@ def fix_checkpoint_if_needed(checkpoint: Path, debug:bool):
 
         loaded = load_file(checkpoint, "cpu")
 
-        convert_table_bias={
-            "first_stage_model.decoder.mid.attn_1.to_k.bias":"first_stage_model.decoder.mid.attn_1.k.bias",
-            "first_stage_model.decoder.mid.attn_1.to_out.0.bias":"first_stage_model.decoder.mid.attn_1.proj_out.bias",
-            "first_stage_model.decoder.mid.attn_1.to_q.bias":"first_stage_model.decoder.mid.attn_1.q.bias",
-            "first_stage_model.decoder.mid.attn_1.to_v.bias":"first_stage_model.decoder.mid.attn_1.v.bias",
-            "first_stage_model.encoder.mid.attn_1.to_k.bias":"first_stage_model.encoder.mid.attn_1.k.bias",
-            "first_stage_model.encoder.mid.attn_1.to_out.0.bias":"first_stage_model.encoder.mid.attn_1.proj_out.bias",
-            "first_stage_model.encoder.mid.attn_1.to_q.bias":"first_stage_model.encoder.mid.attn_1.q.bias",
-            "first_stage_model.encoder.mid.attn_1.to_v.bias":"first_stage_model.encoder.mid.attn_1.v.bias",
+        convert_table_bias = {
+            "first_stage_model.decoder.mid.attn_1.to_k.bias": "first_stage_model.decoder.mid.attn_1.k.bias",
+            "first_stage_model.decoder.mid.attn_1.to_out.0.bias": "first_stage_model.decoder.mid.attn_1.proj_out.bias",
+            "first_stage_model.decoder.mid.attn_1.to_q.bias": "first_stage_model.decoder.mid.attn_1.q.bias",
+            "first_stage_model.decoder.mid.attn_1.to_v.bias": "first_stage_model.decoder.mid.attn_1.v.bias",
+            "first_stage_model.encoder.mid.attn_1.to_k.bias": "first_stage_model.encoder.mid.attn_1.k.bias",
+            "first_stage_model.encoder.mid.attn_1.to_out.0.bias": "first_stage_model.encoder.mid.attn_1.proj_out.bias",
+            "first_stage_model.encoder.mid.attn_1.to_q.bias": "first_stage_model.encoder.mid.attn_1.q.bias",
+            "first_stage_model.encoder.mid.attn_1.to_v.bias": "first_stage_model.encoder.mid.attn_1.v.bias",
         }
 
-        convert_table_weight={
-            "first_stage_model.decoder.mid.attn_1.to_k.weight":"first_stage_model.decoder.mid.attn_1.k.weight",
-            "first_stage_model.decoder.mid.attn_1.to_out.0.weight":"first_stage_model.decoder.mid.attn_1.proj_out.weight",
-            "first_stage_model.decoder.mid.attn_1.to_q.weight":"first_stage_model.decoder.mid.attn_1.q.weight",
-            "first_stage_model.decoder.mid.attn_1.to_v.weight":"first_stage_model.decoder.mid.attn_1.v.weight",
-            "first_stage_model.encoder.mid.attn_1.to_k.weight":"first_stage_model.encoder.mid.attn_1.k.weight",
-            "first_stage_model.encoder.mid.attn_1.to_out.0.weight":"first_stage_model.encoder.mid.attn_1.proj_out.weight",
-            "first_stage_model.encoder.mid.attn_1.to_q.weight":"first_stage_model.encoder.mid.attn_1.q.weight",
-            "first_stage_model.encoder.mid.attn_1.to_v.weight":"first_stage_model.encoder.mid.attn_1.v.weight",
+        convert_table_weight = {
+            "first_stage_model.decoder.mid.attn_1.to_k.weight": "first_stage_model.decoder.mid.attn_1.k.weight",
+            "first_stage_model.decoder.mid.attn_1.to_out.0.weight": "first_stage_model.decoder.mid.attn_1.proj_out.weight",
+            "first_stage_model.decoder.mid.attn_1.to_q.weight": "first_stage_model.decoder.mid.attn_1.q.weight",
+            "first_stage_model.decoder.mid.attn_1.to_v.weight": "first_stage_model.decoder.mid.attn_1.v.weight",
+            "first_stage_model.encoder.mid.attn_1.to_k.weight": "first_stage_model.encoder.mid.attn_1.k.weight",
+            "first_stage_model.encoder.mid.attn_1.to_out.0.weight": "first_stage_model.encoder.mid.attn_1.proj_out.weight",
+            "first_stage_model.encoder.mid.attn_1.to_q.weight": "first_stage_model.encoder.mid.attn_1.q.weight",
+            "first_stage_model.encoder.mid.attn_1.to_v.weight": "first_stage_model.encoder.mid.attn_1.v.weight",
         }
 
         for a in list(loaded.keys()):
@@ -108,11 +108,10 @@ def fix_checkpoint_if_needed(checkpoint: Path, debug:bool):
                     item = item.unsqueeze(dim=-1).unsqueeze(dim=-1)
                 loaded[new_key] = item
 
-        new_path = str(checkpoint.parent / checkpoint.stem) + "_fixed"+checkpoint.suffix
+        new_path = str(checkpoint.parent / checkpoint.stem) + "_fixed" + checkpoint.suffix
 
         logger.info(f"Saving file to {new_path}")
         save_file(loaded, Path(new_path))
-
 
 
 def checkpoint_to_pipeline(
@@ -182,7 +181,7 @@ def ensure_motion_modules(
 ):
     """Retrieve the motion modules from HuggingFace Hub."""
     module_files = ["mm_sd_v14.safetensors", "mm_sd_v15.safetensors"]
-    module_dir = get_dir("data/models/motion-module")
+    module_dir = path_mgr.motions
     for file in module_files:
         target_path = module_dir.joinpath(file)
         if fp16:

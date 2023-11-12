@@ -13,16 +13,21 @@ from PIL import Image
 from tqdm.rich import tqdm
 
 from animatediff import __version__, get_dir
+from animatediff.consts import path_mgr
 from animatediff.settings import ModelConfig, get_model_config
 from animatediff.utils.tagger import get_labels
-from animatediff.utils.util import (extract_frames, get_resized_image,
-                                    path_from_cwd, prepare_anime_seg,
-                                    prepare_groundingDINO, prepare_propainter,
-                                    prepare_sam_hq, prepare_softsplat)
+from animatediff.utils.util import (
+    extract_frames,
+    get_resized_image,
+    path_from_cwd,
+    prepare_anime_seg,
+    prepare_groundingDINO,
+    prepare_propainter,
+    prepare_sam_hq,
+    prepare_softsplat,
+)
 
 logger = logging.getLogger(__name__)
-
-
 
 stylize: typer.Typer = typer.Typer(
     name="stylize",
@@ -225,7 +230,22 @@ def create_config(
 
     controlnet_img_dir = save_dir.joinpath("00_controlnet_image")
 
-    for c in ["controlnet_canny","controlnet_depth","controlnet_inpaint","controlnet_ip2p","controlnet_lineart","controlnet_lineart_anime","controlnet_mlsd","controlnet_normalbae","controlnet_openpose","controlnet_scribble","controlnet_seg","controlnet_shuffle","controlnet_softedge","controlnet_tile"]:
+    for c in [
+        "controlnet_canny",
+        "controlnet_depth",
+        "controlnet_inpaint",
+        "controlnet_ip2p",
+        "controlnet_lineart",
+        "controlnet_lineart_anime",
+        "controlnet_mlsd",
+        "controlnet_normalbae",
+        "controlnet_openpose",
+        "controlnet_scribble",
+        "controlnet_seg",
+        "controlnet_shuffle",
+        "controlnet_softedge",
+        "controlnet_tile",
+    ]:
         c_dir = controlnet_img_dir.joinpath(c)
         c_dir.mkdir(parents=True, exist_ok=True)
 
@@ -235,7 +255,6 @@ def create_config(
         shutil.copytree(img2img_dir, controlnet_img_dir.joinpath("controlnet_openpose"), dirs_exist_ok=True)
 
     shutil.copytree(img2img_dir, controlnet_img_dir.joinpath("controlnet_ip2p"), dirs_exist_ok=True)
-
 
     black_list = []
     if ignore_list.is_file():
@@ -250,59 +269,56 @@ def create_config(
         ignore_tokens=black_list,
         with_confidence=with_confidence,
         is_danbooru_format=is_danbooru_format,
-        is_cpu = False,
+        is_cpu=False,
     )
-
 
     model_config.head_prompt = ""
     model_config.tail_prompt = ""
     model_config.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
     model_config.controlnet_map["is_loop"] = False
 
-    model_config.lora_map={}
-    model_config.motion_lora_map={}
+    model_config.lora_map = {}
+    model_config.motion_lora_map = {}
 
     if low_vram:
         model_config.controlnet_map["max_samples_on_vram"] = 0
         model_config.controlnet_map["max_models_on_vram"] = 0
 
-
     if not is_img2img:
         model_config.controlnet_map["controlnet_tile"] = {
-        "enable": True,
-        "use_preprocessor":True,
-        "guess_mode":False,
-        "controlnet_conditioning_scale": 1.0,
-        "control_guidance_start": 0.0,
-        "control_guidance_end": 1.0,
-        "control_scale_list":[]
+            "enable": True,
+            "use_preprocessor": True,
+            "guess_mode": False,
+            "controlnet_conditioning_scale": 1.0,
+            "control_guidance_start": 0.0,
+            "control_guidance_end": 1.0,
+            "control_scale_list": [],
         }
     else:
         model_config.controlnet_map["controlnet_openpose"] = {
-        "enable": True,
-        "use_preprocessor":True,
-        "guess_mode":False,
-        "controlnet_conditioning_scale": 1.0,
-        "control_guidance_start": 0.0,
-        "control_guidance_end": 1.0,
-        "control_scale_list":[]
+            "enable": True,
+            "use_preprocessor": True,
+            "guess_mode": False,
+            "controlnet_conditioning_scale": 1.0,
+            "control_guidance_start": 0.0,
+            "control_guidance_end": 1.0,
+            "control_scale_list": [],
         }
 
-
     model_config.controlnet_map["controlnet_ip2p"] = {
-      "enable": True,
-      "use_preprocessor":True,
-      "guess_mode":False,
-      "controlnet_conditioning_scale": 0.5,
-      "control_guidance_start": 0.0,
-      "control_guidance_end": 1.0,
-      "control_scale_list":[]
+        "enable": True,
+        "use_preprocessor": True,
+        "guess_mode": False,
+        "controlnet_conditioning_scale": 0.5,
+        "control_guidance_start": 0.0,
+        "control_guidance_end": 1.0,
+        "control_scale_list": [],
     }
 
     for m in model_config.controlnet_map:
-        if isinstance(model_config.controlnet_map[m] ,dict):
+        if isinstance(model_config.controlnet_map[m], dict):
             if "control_scale_list" in model_config.controlnet_map[m]:
-                model_config.controlnet_map[m]["control_scale_list"]=[]
+                model_config.controlnet_map[m]["control_scale_list"] = []
 
     ip_adapter_dir = save_dir.joinpath("00_ipadapter")
     ip_adapter_dir.mkdir(parents=True, exist_ok=True)
@@ -317,126 +333,124 @@ def create_config(
         "is_full_face": False,
         "is_plus_face": False,
         "is_plus": True,
-        "is_light": False
+        "is_light": False,
     }
 
     model_config.img2img_map = {
         "enable": is_img2img,
-        "init_img_dir" : os.path.relpath(img2img_dir.absolute(), data_dir),
+        "init_img_dir": os.path.relpath(img2img_dir.absolute(), data_dir),
         "save_init_image": True,
-        "denoising_strength" : 0.7
+        "denoising_strength": 0.7,
     }
 
-    model_config.region_map = {
+    model_config.region_map = {}
 
-    }
+    model_config.output = {"format": "mp4", "fps": fps, "encode_param": {"crf": 10}}
 
-    model_config.output = {
-        "format" : "mp4",
-        "fps" : fps,
-        "encode_param":{
-            "crf": 10
-        }
-    }
-
-    img = Image.open( img2img_dir.joinpath("00000000.png") )
+    img = Image.open(img2img_dir.joinpath("00000000.png"))
     W, H = img.size
 
     if W < H:
         width = 512
-        height = int(512 * H/W)
+        height = int(512 * H / W)
     else:
-        width = int(512 * W/H)
+        width = int(512 * W / H)
         height = 512
 
-    width = int(width//8*8)
-    height = int(height//8*8)
+    width = int(width // 8 * 8)
+    height = int(height // 8 * 8)
 
-    length = len(glob.glob( os.path.join(img2img_dir, "[0-9]*.png"), recursive=False))
+    length = len(glob.glob(os.path.join(img2img_dir, "[0-9]*.png"), recursive=False))
 
-    model_config.stylize_config={
-        "original_video":{
-            "path":org_movie,
-            "aspect_ratio":aspect_ratio,
-            "offset":offset,
+    model_config.stylize_config = {
+        "original_video": {
+            "path": org_movie,
+            "aspect_ratio": aspect_ratio,
+            "offset": offset,
         },
-        "create_mask": [
-            "person"
-        ],
+        "create_mask": ["person"],
         "composite": {
             "fg_list": [
                 {
-                    "path" : " absolute path to frame dir ",
-                    "mask_path" : " absolute path to mask dir (this is optional) ",
-                    "mask_prompt" : "person"
+                    "path": " absolute path to frame dir ",
+                    "mask_path": " absolute path to mask dir (this is optional) ",
+                    "mask_prompt": "person",
                 },
                 {
-                    "path" : " absolute path to frame dir ",
-                    "mask_path" : " absolute path to mask dir (this is optional) ",
-                    "mask_prompt" : "cat"
+                    "path": " absolute path to frame dir ",
+                    "mask_path": " absolute path to mask dir (this is optional) ",
+                    "mask_prompt": "cat",
                 },
             ],
             "bg_frame_dir": "Absolute path to the BG frame directory",
-            "hint": ""
+            "hint": "",
         },
-        "0":{
+        "0": {
             "width": width,
             "height": height,
             "length": length,
             "context": 16,
-            "overlap": 16//4,
+            "overlap": 16 // 4,
             "stride": 0,
         },
-        "1":{
+        "1": {
             "steps": model_config.steps,
             "guidance_scale": model_config.guidance_scale,
-            "width": int(width * 1.5 //8*8),
-            "height": int(height * 1.5 //8*8),
+            "width": int(width * 1.5 // 8 * 8),
+            "height": int(height * 1.5 // 8 * 8),
             "length": length,
             "context": 8,
-            "overlap": 8//4,
+            "overlap": 8 // 4,
             "stride": 0,
-            "controlnet_tile":{
+            "controlnet_tile": {
                 "enable": True,
-                "use_preprocessor":True,
-                "guess_mode":False,
+                "use_preprocessor": True,
+                "guess_mode": False,
                 "controlnet_conditioning_scale": 1.0,
                 "control_guidance_start": 0.0,
                 "control_guidance_end": 1.0,
-                "control_scale_list":[]
+                "control_scale_list": [],
             },
             "controlnet_ip2p": {
                 "enable": False,
-                "use_preprocessor":True,
-                "guess_mode":False,
+                "use_preprocessor": True,
+                "guess_mode": False,
                 "controlnet_conditioning_scale": 0.5,
                 "control_guidance_start": 0.0,
                 "control_guidance_end": 1.0,
-                "control_scale_list":[]
+                "control_scale_list": [],
             },
             "ip_adapter": False,
             "reference": False,
             "img2img": False,
-            "interpolation_multiplier": 1
-        }
+            "interpolation_multiplier": 1,
+        },
     }
 
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
-    logger.info(f"config = { save_config_path }")
-    logger.info(f"stylize_dir = { save_dir }")
+    logger.info(f"config = {save_config_path}")
+    logger.info(f"stylize_dir = {save_dir}")
 
     logger.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     logger.info(f"Hint. Edit the config file before starting the generation")
     logger.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     logger.info(f"1. Change 'path' and 'motion_module' as needed")
-    logger.info(f"2. Enter the 'head_prompt' or 'tail_prompt' with your preferred prompt, quality prompt, lora trigger word, or any other prompt you wish to add.")
+    logger.info(
+        f"2. Enter the 'head_prompt' or 'tail_prompt' with your preferred prompt, quality prompt, lora trigger word, or any other prompt you wish to add."
+    )
     logger.info(f"3. Change 'n_prompt' as needed")
     logger.info(f"4. Add the lora you need to 'lora_map'")
-    logger.info(f"5. If you do not like the default settings, edit 'ip_adapter_map' or 'controlnet_map'. \nIf you want to change the controlnet type, you need to replace the input image.")
-    logger.info(f"6. Change 'stylize_config' as needed. By default, it is generated twice: once for normal generation and once for upscaling.\nIf you don't need upscaling, delete the whole '1'.")
-    logger.info(f"7. Change 'output' as needed. Changing the 'fps' at this timing is not recommended as it will change the playback speed.\nIf you want to change the fps, specify it with the create-config option")
+    logger.info(
+        f"5. If you do not like the default settings, edit 'ip_adapter_map' or 'controlnet_map'. \nIf you want to change the controlnet type, you need to replace the input image."
+    )
+    logger.info(
+        f"6. Change 'stylize_config' as needed. By default, it is generated twice: once for normal generation and once for upscaling.\nIf you don't need upscaling, delete the whole '1'."
+    )
+    logger.info(
+        f"7. Change 'output' as needed. Changing the 'fps' at this timing is not recommended as it will change the playback speed.\nIf you want to change the fps, specify it with the create-config option"
+    )
 
 
 @stylize.command(no_args_is_help=True)
@@ -473,7 +487,6 @@ def generate(
 
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
-
     config_org = stylize_dir.joinpath("prompt.json")
 
     model_config: ModelConfig = get_model_config(config_org)
@@ -483,17 +496,34 @@ def generate(
 
     model_config.stylize_config["0"]["length"] = min(model_config.stylize_config["0"]["length"] - frame_offset, length)
     if "1" in model_config.stylize_config:
-        model_config.stylize_config["1"]["length"] = min(model_config.stylize_config["1"]["length"] - frame_offset, length)
+        model_config.stylize_config["1"]["length"] = min(
+            model_config.stylize_config["1"]["length"] - frame_offset, length
+        )
 
     if frame_offset > 0:
-        #controlnet
-        org_controlnet_img_dir = data_dir.joinpath( model_config.controlnet_map["input_image_dir"] )
+        # controlnet
+        org_controlnet_img_dir = data_dir.joinpath(model_config.controlnet_map["input_image_dir"])
         new_controlnet_img_dir = org_controlnet_img_dir.parent / "00_tmp_controlnet_image"
         if new_controlnet_img_dir.is_dir():
             shutil.rmtree(new_controlnet_img_dir)
         new_controlnet_img_dir.mkdir(parents=True, exist_ok=True)
 
-        for c in ["controlnet_canny","controlnet_depth","controlnet_inpaint","controlnet_ip2p","controlnet_lineart","controlnet_lineart_anime","controlnet_mlsd","controlnet_normalbae","controlnet_openpose","controlnet_scribble","controlnet_seg","controlnet_shuffle","controlnet_softedge","controlnet_tile"]:
+        for c in [
+            "controlnet_canny",
+            "controlnet_depth",
+            "controlnet_inpaint",
+            "controlnet_ip2p",
+            "controlnet_lineart",
+            "controlnet_lineart_anime",
+            "controlnet_mlsd",
+            "controlnet_normalbae",
+            "controlnet_openpose",
+            "controlnet_scribble",
+            "controlnet_seg",
+            "controlnet_shuffle",
+            "controlnet_softedge",
+            "controlnet_tile",
+        ]:
             src_dir = org_controlnet_img_dir.joinpath(c)
             dst_dir = new_controlnet_img_dir.joinpath(c)
             if src_dir.is_dir():
@@ -501,14 +531,14 @@ def generate(
 
                 frame_length = model_config.stylize_config["0"]["length"]
 
-                src_imgs = sorted(glob.glob( os.path.join(src_dir, "[0-9]*.png"), recursive=False))
+                src_imgs = sorted(glob.glob(os.path.join(src_dir, "[0-9]*.png"), recursive=False))
                 for img in src_imgs:
                     n = int(Path(img).stem)
                     if n in range(frame_offset, frame_offset + frame_length):
-                        dst_img_path = dst_dir.joinpath( f"{n-frame_offset:08d}.png" )
+                        dst_img_path = dst_dir.joinpath(f"{n - frame_offset:08d}.png")
                         shutil.copy(img, dst_img_path)
-        #img2img
-        org_img2img_img_dir = data_dir.joinpath( model_config.img2img_map["init_img_dir"] )
+        # img2img
+        org_img2img_img_dir = data_dir.joinpath(model_config.img2img_map["init_img_dir"])
         new_img2img_img_dir = org_img2img_img_dir.parent / "00_tmp_init_img_dir"
         if new_img2img_img_dir.is_dir():
             shutil.rmtree(new_img2img_img_dir)
@@ -521,18 +551,18 @@ def generate(
 
             frame_length = model_config.stylize_config["0"]["length"]
 
-            src_imgs = sorted(glob.glob( os.path.join(src_dir, "[0-9]*.png"), recursive=False))
+            src_imgs = sorted(glob.glob(os.path.join(src_dir, "[0-9]*.png"), recursive=False))
             for img in src_imgs:
                 n = int(Path(img).stem)
                 if n in range(frame_offset, frame_offset + frame_length):
-                    dst_img_path = dst_dir.joinpath( f"{n-frame_offset:08d}.png" )
+                    dst_img_path = dst_dir.joinpath(f"{n - frame_offset:08d}.png")
                     shutil.copy(img, dst_img_path)
 
         new_prompt_map = {}
         for p in model_config.prompt_map:
             n = int(p)
             if n in range(frame_offset, frame_offset + frame_length):
-                new_prompt_map[str(n-frame_offset)]=model_config.prompt_map[p]
+                new_prompt_map[str(n - frame_offset)] = model_config.prompt_map[p]
 
         model_config.prompt_map = new_prompt_map
 
@@ -540,9 +570,8 @@ def generate(
         model_config.img2img_map["init_img_dir"] = os.path.relpath(new_img2img_img_dir.absolute(), data_dir)
 
         tmp_config_path = stylize_dir.joinpath("prompt_tmp.json")
-        tmp_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+        tmp_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
         config_org = tmp_config_path
-
 
     output_0_dir = generate(
         config_path=config_org,
@@ -552,13 +581,12 @@ def generate(
         context=model_config.stylize_config["0"]["context"],
         overlap=model_config.stylize_config["0"]["overlap"],
         stride=model_config.stylize_config["0"]["stride"],
-        out_dir=stylize_dir
+        out_dir=stylize_dir,
     )
 
     torch.cuda.empty_cache()
 
     output_0_dir = output_0_dir.rename(output_0_dir.parent / f"{time_str}_{0:02d}")
-
 
     if "1" not in model_config.stylize_config:
         logger.info(f"Stylized results are output to {output_0_dir}")
@@ -566,7 +594,7 @@ def generate(
 
     logger.info(f"Intermediate files have been output to {output_0_dir}")
 
-    output_0_img_dir = glob.glob( os.path.join(output_0_dir, "00-[0-9]*"), recursive=False)[0]
+    output_0_img_dir = glob.glob(os.path.join(output_0_dir, "00-[0-9]*"), recursive=False)[0]
 
     interpolation_multiplier = 1
     if "interpolation_multiplier" in model_config.stylize_config["1"]:
@@ -586,19 +614,34 @@ def generate(
         if model_config.output:
             model_config.output["fps"] *= interpolation_multiplier
         if model_config.prompt_map:
-            model_config.prompt_map = { str(int(i)*interpolation_multiplier): model_config.prompt_map[i] for i in model_config.prompt_map }
+            model_config.prompt_map = {
+                str(int(i) * interpolation_multiplier): model_config.prompt_map[i] for i in model_config.prompt_map
+            }
 
         output_0_img_dir = rife_img_dir
-
 
     controlnet_img_dir = stylize_dir.joinpath("01_controlnet_image")
     img2img_dir = stylize_dir.joinpath("01_img2img")
     img2img_dir.mkdir(parents=True, exist_ok=True)
 
-    for c in ["controlnet_canny","controlnet_depth","controlnet_inpaint","controlnet_ip2p","controlnet_lineart","controlnet_lineart_anime","controlnet_mlsd","controlnet_normalbae","controlnet_openpose","controlnet_scribble","controlnet_seg","controlnet_shuffle","controlnet_softedge","controlnet_tile"]:
+    for c in [
+        "controlnet_canny",
+        "controlnet_depth",
+        "controlnet_inpaint",
+        "controlnet_ip2p",
+        "controlnet_lineart",
+        "controlnet_lineart_anime",
+        "controlnet_mlsd",
+        "controlnet_normalbae",
+        "controlnet_openpose",
+        "controlnet_scribble",
+        "controlnet_seg",
+        "controlnet_shuffle",
+        "controlnet_softedge",
+        "controlnet_tile",
+    ]:
         c_dir = controlnet_img_dir.joinpath(c)
         c_dir.mkdir(parents=True, exist_ok=True)
-
 
     ip2p_for_upscale = model_config.stylize_config["1"]["controlnet_ip2p"]["enable"]
     ip_adapter_for_upscale = model_config.stylize_config["1"]["ip_adapter"]
@@ -606,7 +649,11 @@ def generate(
 
     shutil.copytree(output_0_img_dir, controlnet_img_dir.joinpath("controlnet_tile"), dirs_exist_ok=True)
     if ip2p_for_upscale:
-        shutil.copytree(controlnet_img_dir.joinpath("controlnet_tile"), controlnet_img_dir.joinpath("controlnet_ip2p"), dirs_exist_ok=True)
+        shutil.copytree(
+            controlnet_img_dir.joinpath("controlnet_tile"),
+            controlnet_img_dir.joinpath("controlnet_ip2p"),
+            dirs_exist_ok=True,
+        )
 
     shutil.copytree(controlnet_img_dir.joinpath("controlnet_tile"), img2img_dir, dirs_exist_ok=True)
 
@@ -625,8 +672,14 @@ def generate(
             if "ip_adapter_map" in reg["condition"]:
                 reg["condition"]["ip_adapter_map"]["enable"] = ip_adapter_for_upscale
 
-    model_config.steps = model_config.stylize_config["1"]["steps"] if "steps" in model_config.stylize_config["1"] else model_config.steps
-    model_config.guidance_scale = model_config.stylize_config["1"]["guidance_scale"] if "guidance_scale" in model_config.stylize_config["1"] else model_config.guidance_scale
+    model_config.steps = (
+        model_config.stylize_config["1"]["steps"] if "steps" in model_config.stylize_config["1"] else model_config.steps
+    )
+    model_config.guidance_scale = (
+        model_config.stylize_config["1"]["guidance_scale"]
+        if "guidance_scale" in model_config.stylize_config["1"]
+        else model_config.guidance_scale
+    )
 
     model_config.img2img_map["enable"] = model_config.stylize_config["1"]["img2img"]
 
@@ -634,7 +687,7 @@ def generate(
         model_config.img2img_map["init_img_dir"] = os.path.relpath(Path(output_0_img_dir).absolute(), data_dir)
 
     save_config_path = stylize_dir.joinpath("prompt_01.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
     output_1_dir = generate(
         config_path=save_config_path,
@@ -644,14 +697,12 @@ def generate(
         context=model_config.stylize_config["1"]["context"],
         overlap=model_config.stylize_config["1"]["overlap"],
         stride=model_config.stylize_config["1"]["stride"],
-        out_dir=stylize_dir
+        out_dir=stylize_dir,
     )
 
     output_1_dir = output_1_dir.rename(output_1_dir.parent / f"{time_str}_{1:02d}")
 
     logger.info(f"Stylized results are output to {output_1_dir}")
-
-
 
 
 @stylize.command(no_args_is_help=True)
@@ -697,31 +748,32 @@ def interpolate(
         offset = model_config.stylize_config["original_video"]["offset"]
         aspect_ratio = model_config.stylize_config["original_video"]["aspect_ratio"]
     else:
-        logger.warn('!!! The following parameters are required !!!')
+        logger.warn("!!! The following parameters are required !!!")
         logger.warn('"stylize_config": {')
         logger.warn('    "original_video": {')
         logger.warn('        "path": "C:\\my_movie\\test.mp4",')
         logger.warn('        "aspect_ratio": 0.6666,')
         logger.warn('        "offset": 0')
-        logger.warn('    },')
+        logger.warn("    },")
         raise ValueError('model_config.stylize_config["original_video"] not found')
-
 
     save_dir = frame_dir.parent.joinpath(f"optflow_{time_str}")
 
     org_frame_dir = save_dir.joinpath("org_frame")
     org_frame_dir.mkdir(parents=True, exist_ok=True)
 
-    stylize_frame = sorted(glob.glob( os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
+    stylize_frame = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
     stylize_frame_num = len(stylize_frame)
 
     duration = int(stylize_frame_num / model_config.output["fps"]) + 1
 
-    extract_frames(org_video, model_config.output["fps"] * interpolation_multiplier, org_frame_dir,aspect_ratio,duration,offset)
+    extract_frames(
+        org_video, model_config.output["fps"] * interpolation_multiplier, org_frame_dir, aspect_ratio, duration, offset
+    )
 
     W, H = Image.open(stylize_frame[0]).size
 
-    org_frame = sorted(glob.glob( os.path.join(org_frame_dir, "[0-9]*.png"), recursive=False))
+    org_frame = sorted(glob.glob(os.path.join(org_frame_dir, "[0-9]*.png"), recursive=False))
 
     for org in tqdm(org_frame):
         img = get_resized_image(org, W, H)
@@ -732,7 +784,7 @@ def interpolate(
 
     from animatediff.softmax_splatting.run import estimate2
 
-    for sty1,sty2 in tqdm(zip(stylize_frame,stylize_frame[1:]), total=len(stylize_frame[1:])):
+    for sty1, sty2 in tqdm(zip(stylize_frame, stylize_frame[1:]), total=len(stylize_frame[1:])):
         sty1 = Path(sty1)
         sty2 = Path(sty2)
 
@@ -741,23 +793,26 @@ def interpolate(
         sty1_img = Image.open(sty1)
         sty2_img = Image.open(sty2)
 
-        guide_frames=[org_frame_dir.joinpath(f"{g:08d}.png") for g in range(head*interpolation_multiplier, (head+1)*interpolation_multiplier)]
+        guide_frames = [
+            org_frame_dir.joinpath(f"{g:08d}.png")
+            for g in range(head * interpolation_multiplier, (head + 1) * interpolation_multiplier)
+        ]
 
-        guide_frames=[Image.open(g) for g in guide_frames]
+        guide_frames = [Image.open(g) for g in guide_frames]
 
-        result = estimate2(sty1_img, sty2_img, guide_frames, "data/models/softsplat/softsplat-lf")
+        result = estimate2(sty1_img, sty2_img, guide_frames, path_mgr.softsplat / "softsplat-lf")
 
-        shutil.copy( frame_dir.joinpath(f"{head:08d}.png"), output_dir.joinpath(f"{head*interpolation_multiplier:08d}.png"))
+        shutil.copy(
+            frame_dir.joinpath(f"{head:08d}.png"), output_dir.joinpath(f"{head * interpolation_multiplier:08d}.png")
+        )
 
-        offset = head*interpolation_multiplier + 1
+        offset = head * interpolation_multiplier + 1
         for i, r in enumerate(result):
-            r.save( output_dir.joinpath(f"{offset+i:08d}.png") )
-
+            r.save(output_dir.joinpath(f"{offset + i:08d}.png"))
 
     from animatediff.generate import save_output
 
-
-    frames = sorted(glob.glob( os.path.join(output_dir, "[0-9]*.png"), recursive=False))
+    frames = sorted(glob.glob(os.path.join(output_dir, "[0-9]*.png"), recursive=False))
     out_images = []
     for f in frames:
         out_images.append(Image.open(f))
@@ -765,10 +820,10 @@ def interpolate(
     model_config.output["fps"] *= interpolation_multiplier
 
     out_file = save_dir.joinpath(f"01_{model_config.output['fps']}fps")
-    save_output(out_images,output_dir,out_file,model_config.output,True,save_frames=None,save_video=None)
+    save_output(out_images, output_dir, out_file, model_config.output, True, save_frames=None, save_video=None)
 
     out_file = save_dir.joinpath(f"00_original")
-    save_output(out_images,org_frame_dir,out_file,model_config.output,True,save_frames=None,save_video=None)
+    save_output(out_images, org_frame_dir, out_file, model_config.output, True, save_frames=None, save_video=None)
 
 
 @stylize.command(no_args_is_help=True)
@@ -937,8 +992,7 @@ def create_mask(
     ] = False,
 ):
     """Create mask from prompt"""
-    from animatediff.utils.mask import (create_bg, create_fg, crop_frames,
-                                        crop_mask_list, save_crop_info)
+    from animatediff.utils.mask import create_bg, create_fg, crop_frames, crop_mask_list, save_crop_info
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg
 
@@ -965,10 +1019,9 @@ def create_mask(
         frame_dir = stylize_dir / "00_img2img"
 
     if not frame_dir.is_dir():
-        raise ValueError(f'{frame_dir=} does not exist.')
+        raise ValueError(f"{frame_dir=} does not exist.")
 
     is_img2img = model_config.img2img_map["enable"] if "enable" in model_config.img2img_map else False
-
 
     create_mask_list = []
     if "create_mask" in model_config.stylize_config:
@@ -978,17 +1031,31 @@ def create_mask(
 
     output_list = []
 
-    stylize_frame = sorted(glob.glob( os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
+    stylize_frame = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
     frame_len = len(stylize_frame)
 
     W, H = Image.open(stylize_frame[0]).size
-    org_frame_size = (H,W)
+    org_frame_size = (H, W)
 
     masked_area = [None for f in range(frame_len)]
 
-
     def create_controlnet_dir(controlnet_root):
-        for c in ["controlnet_canny","controlnet_depth","controlnet_inpaint","controlnet_ip2p","controlnet_lineart","controlnet_lineart_anime","controlnet_mlsd","controlnet_normalbae","controlnet_openpose","controlnet_scribble","controlnet_seg","controlnet_shuffle","controlnet_softedge","controlnet_tile"]:
+        for c in [
+            "controlnet_canny",
+            "controlnet_depth",
+            "controlnet_inpaint",
+            "controlnet_ip2p",
+            "controlnet_lineart",
+            "controlnet_lineart_anime",
+            "controlnet_mlsd",
+            "controlnet_normalbae",
+            "controlnet_openpose",
+            "controlnet_scribble",
+            "controlnet_seg",
+            "controlnet_shuffle",
+            "controlnet_softedge",
+            "controlnet_tile",
+        ]:
             c_dir = controlnet_root.joinpath(c)
             c_dir.mkdir(parents=True, exist_ok=True)
 
@@ -997,12 +1064,11 @@ def create_mask(
     elif use_animeseg:
         create_mask_list = ["anime-segmentation"]
 
-
-    for i,mask_token in enumerate(create_mask_list):
+    for i, mask_token in enumerate(create_mask_list):
         fg_dir = stylize_dir.joinpath(f"fg_{i:02d}_{time_str}")
         fg_dir.mkdir(parents=True, exist_ok=True)
 
-        create_controlnet_dir( fg_dir / "00_controlnet_image" )
+        create_controlnet_dir(fg_dir / "00_controlnet_image")
 
         fg_masked_dir = fg_dir / "00_img2img"
         fg_masked_dir.mkdir(parents=True, exist_ok=True)
@@ -1017,7 +1083,7 @@ def create_mask(
                 output_mask_dir=fg_mask_dir,
                 masked_area_list=masked_area,
                 mask_padding=mask_padding,
-                bg_color=None if no_gb else (0,255,0),
+                bg_color=None if no_gb else (0, 255, 0),
             )
         elif use_rembg:
             masked_area = rembg_create_fg(
@@ -1026,7 +1092,7 @@ def create_mask(
                 output_mask_dir=fg_mask_dir,
                 masked_area_list=masked_area,
                 mask_padding=mask_padding,
-                bg_color=None if no_gb else (0,255,0),
+                bg_color=None if no_gb else (0, 255, 0),
             )
         else:
             masked_area = create_fg(
@@ -1038,12 +1104,12 @@ def create_mask(
                 box_threshold=box_threshold,
                 text_threshold=text_threshold,
                 mask_padding=mask_padding,
-                sam_checkpoint= "data/models/SAM/sam_hq_vit_h.pth" if not low_vram else "data/models/SAM/sam_hq_vit_b.pth",
-                bg_color=None if no_gb else (0,255,0),
+                sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
+                bg_color=None if no_gb else (0, 255, 0),
             )
 
         if not no_crop:
-            frame_size_hw = (masked_area[0].shape[1],masked_area[0].shape[2])
+            frame_size_hw = (masked_area[0].shape[1], masked_area[0].shape[2])
             cropped_mask_list, mask_pos_list, crop_size_hw = crop_mask_list(masked_area)
 
             logger.info(f"crop fg_masked_dir")
@@ -1073,19 +1139,21 @@ def create_mask(
 
     bg_dir = stylize_dir.joinpath(f"bg_{time_str}")
     bg_dir.mkdir(parents=True, exist_ok=True)
-    create_controlnet_dir( bg_dir / "00_controlnet_image" )
+    create_controlnet_dir(bg_dir / "00_controlnet_image")
     bg_inpaint_dir = bg_dir / "00_img2img"
     bg_inpaint_dir.mkdir(parents=True, exist_ok=True)
 
-
-    create_bg(frame_dir, bg_inpaint_dir, masked_area,
-              use_half = True,
-              raft_iter = 20,
-              subvideo_length=80 if not low_vram else 50,
-              neighbor_length=10 if not low_vram else 8,
-              ref_stride=10 if not low_vram else 8,
-              low_vram = low_vram,
-              )
+    create_bg(
+        frame_dir,
+        bg_inpaint_dir,
+        masked_area,
+        use_half=True,
+        raft_iter=20,
+        subvideo_length=80 if not low_vram else 50,
+        neighbor_length=10 if not low_vram else 8,
+        ref_stride=10 if not low_vram else 8,
+        low_vram=low_vram,
+    )
 
     logger.info(f"background are output to {bg_dir}")
 
@@ -1096,7 +1164,7 @@ def create_mask(
 
     shutil.copytree(bg_inpaint_dir, bg_dir / "00_controlnet_image/controlnet_ip2p", dirs_exist_ok=True)
 
-    output_list.append((bg_dir,None))
+    output_list.append((bg_dir, None))
 
     torch.cuda.empty_cache()
 
@@ -1106,47 +1174,44 @@ def create_mask(
             black_list = [s.strip() for s in f.readlines()]
 
     for output, size in output_list:
-
         model_config.prompt_map = get_labels(
-            frame_dir= output / "00_img2img",
+            frame_dir=output / "00_img2img",
             interval=predicte_interval,
             general_threshold=general_threshold,
             character_threshold=character_threshold,
             ignore_tokens=black_list,
             with_confidence=with_confidence,
             is_danbooru_format=is_danbooru_format,
-            is_cpu = False,
+            is_cpu=False,
         )
 
-        model_config.controlnet_map["input_image_dir"] = os.path.relpath((output / "00_controlnet_image" ).absolute(), data_dir)
-        model_config.img2img_map["init_img_dir"] = os.path.relpath((output / "00_img2img" ).absolute(), data_dir)
+        model_config.controlnet_map["input_image_dir"] = os.path.relpath(
+            (output / "00_controlnet_image").absolute(), data_dir
+        )
+        model_config.img2img_map["init_img_dir"] = os.path.relpath((output / "00_img2img").absolute(), data_dir)
 
         if size is not None:
             h, w = size
-            height = 1024 * (h/(h+w))
-            width = 1024 * (w/(h+w))
-            height = int(height//8 * 8)
-            width = int(width//8 * 8)
+            height = 1024 * (h / (h + w))
+            width = 1024 * (w / (h + w))
+            height = int(height // 8 * 8)
+            width = int(width // 8 * 8)
 
-            model_config.stylize_config["0"]["width"]=width
-            model_config.stylize_config["0"]["height"]=height
+            model_config.stylize_config["0"]["width"] = width
+            model_config.stylize_config["0"]["height"] = height
             if "1" in model_config.stylize_config:
-                model_config.stylize_config["1"]["width"]=int(width * 1.25 //8*8)
-                model_config.stylize_config["1"]["height"]=int(height * 1.25 //8*8)
+                model_config.stylize_config["1"]["width"] = int(width * 1.25 // 8 * 8)
+                model_config.stylize_config["1"]["height"] = int(height * 1.25 // 8 * 8)
         else:
             height, width = org_frame_size
-            model_config.stylize_config["0"]["width"]=width
-            model_config.stylize_config["0"]["height"]=height
+            model_config.stylize_config["0"]["width"] = width
+            model_config.stylize_config["0"]["height"] = height
             if "1" in model_config.stylize_config:
-                model_config.stylize_config["1"]["width"]=int(width * 1.25 //8*8)
-                model_config.stylize_config["1"]["height"]=int(height * 1.25 //8*8)
-
-
+                model_config.stylize_config["1"]["width"] = int(width * 1.25 // 8 * 8)
+                model_config.stylize_config["1"]["height"] = int(height * 1.25 // 8 * 8)
 
         save_config_path = output.joinpath("prompt.json")
-        save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
-
-
+        save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
 
 @stylize.command(no_args_is_help=True)
@@ -1232,8 +1297,7 @@ def composite(
     """composite FG and BG"""
 
     from animatediff.utils.composite import composite, simple_composite
-    from animatediff.utils.mask import (create_fg, load_frame_list,
-                                        load_mask_list, restore_position)
+    from animatediff.utils.mask import create_fg, load_frame_list, load_mask_list, restore_position
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg
 
@@ -1250,7 +1314,6 @@ def composite(
 
     model_config: ModelConfig = get_model_config(config_org)
 
-
     composite_config = {}
     if "composite" in model_config.stylize_config:
         composite_config = model_config.stylize_config["composite"]
@@ -1261,15 +1324,14 @@ def composite(
     save_dir.mkdir(parents=True, exist_ok=True)
 
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
-
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
     bg_dir = composite_config["bg_frame_dir"]
     bg_dir = Path(bg_dir)
     if not bg_dir.is_dir():
         raise ValueError('model_config.stylize_config["composite"]["bg_frame_dir"] not valid')
 
-    frame_len = len(sorted(glob.glob( os.path.join(bg_dir, "[0-9]*.png"), recursive=False)))
+    frame_len = len(sorted(glob.glob(os.path.join(bg_dir, "[0-9]*.png"), recursive=False)))
 
     fg_list = composite_config["fg_list"]
 
@@ -1315,7 +1377,7 @@ def composite(
                     box_threshold=box_threshold,
                     text_threshold=text_threshold,
                     mask_padding=mask_padding,
-                    sam_checkpoint= "data/models/SAM/sam_hq_vit_h.pth" if not low_vram else "data/models/SAM/sam_hq_vit_b.pth",
+                    sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
                 )
 
         else:
@@ -1325,15 +1387,14 @@ def composite(
 
             mask_list = load_mask_list(mask_dir, masked_area_list, mask_padding)
 
-        mask_list = [ m.transpose([1,2,0]) if m is not None else m for m in mask_list]
+        mask_list = [m.transpose([1, 2, 0]) if m is not None else m for m in mask_list]
 
         crop_info_path = frame_dir.parent.parent / "crop_info.json"
-        crop_info={}
+        crop_info = {}
         if crop_info_path.is_file():
             with open(crop_info_path, mode="rt", encoding="utf-8") as f:
                 crop_info = json.load(f)
             mask_list = restore_position(mask_list, crop_info)
-
 
         fg_list = [None for f in range(frame_len)]
         fg_list = load_frame_list(frame_dir, fg_list, crop_info)
@@ -1348,20 +1409,17 @@ def composite(
 
         bg_dir = output_dir
 
-
     from animatediff.generate import save_output
 
-    frames = sorted(glob.glob( os.path.join(bg_dir, "[0-9]*.png"), recursive=False))
+    frames = sorted(glob.glob(os.path.join(bg_dir, "[0-9]*.png"), recursive=False))
     out_images = []
     for f in frames:
         out_images.append(Image.open(f))
 
     out_file = save_dir.joinpath(f"composite")
-    save_output(out_images,bg_dir,out_file,model_config.output,True,save_frames=None,save_video=None)
+    save_output(out_images, bg_dir, out_file, model_config.output, True, save_frames=None, save_video=None)
 
     logger.info(f"output to {out_file}")
-
-
 
 
 @stylize.command(no_args_is_help=True)
@@ -1537,8 +1595,7 @@ def create_region(
         frame_dir = stylize_dir / "00_img2img"
 
     if not frame_dir.is_dir():
-        raise ValueError(f'{frame_dir=} does not exist.')
-
+        raise ValueError(f"{frame_dir=} does not exist.")
 
     create_mask_list = []
     if "create_mask" in model_config.stylize_config:
@@ -1548,7 +1605,7 @@ def create_region(
 
     output_list = []
 
-    stylize_frame = sorted(glob.glob( os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
+    stylize_frame = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
     frame_len = len(stylize_frame)
 
     masked_area = [None for f in range(frame_len)]
@@ -1558,8 +1615,7 @@ def create_region(
     elif use_animeseg:
         create_mask_list = ["anime-segmentation"]
 
-
-    for i,mask_token in enumerate(create_mask_list):
+    for i, mask_token in enumerate(create_mask_list):
         fg_dir = stylize_dir.joinpath(f"r_fg_{i:02d}_{time_str}")
         fg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1576,7 +1632,7 @@ def create_region(
                 output_mask_dir=fg_mask_dir,
                 masked_area_list=masked_area,
                 mask_padding=mask_padding,
-                bg_color=(0,255,0),
+                bg_color=(0, 255, 0),
             )
         elif use_rembg:
             masked_area = rembg_create_fg(
@@ -1585,7 +1641,7 @@ def create_region(
                 output_mask_dir=fg_mask_dir,
                 masked_area_list=masked_area,
                 mask_padding=mask_padding,
-                bg_color=(0,255,0),
+                bg_color=(0, 255, 0),
             )
         else:
             masked_area = create_fg(
@@ -1597,8 +1653,8 @@ def create_region(
                 box_threshold=box_threshold,
                 text_threshold=text_threshold,
                 mask_padding=mask_padding,
-                sam_checkpoint= "data/models/SAM/sam_hq_vit_h.pth" if not low_vram else "data/models/SAM/sam_hq_vit_b.pth",
-                bg_color=(0,255,0),
+                sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
+                bg_color=(0, 255, 0),
             )
 
         logger.info(f"mask from [{mask_token}] are output to {fg_dir}")
@@ -1613,20 +1669,21 @@ def create_region(
     bg_inpaint_dir = bg_dir / "00_tmp_inpainted"
     bg_inpaint_dir.mkdir(parents=True, exist_ok=True)
 
-
-    create_bg(frame_dir, bg_inpaint_dir, masked_area,
-              use_half = True,
-              raft_iter = 20,
-              subvideo_length=80 if not low_vram else 50,
-              neighbor_length=10 if not low_vram else 8,
-              ref_stride=10 if not low_vram else 8,
-              low_vram = low_vram,
-              )
+    create_bg(
+        frame_dir,
+        bg_inpaint_dir,
+        masked_area,
+        use_half=True,
+        raft_iter=20,
+        subvideo_length=80 if not low_vram else 50,
+        neighbor_length=10 if not low_vram else 8,
+        ref_stride=10 if not low_vram else 8,
+        low_vram=low_vram,
+    )
 
     logger.info(f"background are output to {bg_dir}")
 
-
-    output_list.append((bg_dir,bg_inpaint_dir,None))
+    output_list.append((bg_dir, bg_inpaint_dir, None))
 
     torch.cuda.empty_cache()
 
@@ -1641,30 +1698,28 @@ def create_region(
     region_map = {}
 
     for i, (output_root, masked_dir, mask_dir) in enumerate(output_list):
-
         prompt_map = get_labels(
-            frame_dir= masked_dir,
+            frame_dir=masked_dir,
             interval=predicte_interval,
             general_threshold=general_threshold,
             character_threshold=character_threshold,
             ignore_tokens=black_list,
             with_confidence=with_confidence,
             is_danbooru_format=is_danbooru_format,
-            is_cpu = False,
+            is_cpu=False,
         )
 
         if mask_dir:
-
             ipadapter_dir = output_root / "00_ipadapter"
             ipadapter_dir.mkdir(parents=True, exist_ok=True)
 
-            region_map[str(i)]={
+            region_map[str(i)] = {
                 "enable": True,
                 "crop_generation_rate": 0.0,
-                "mask_dir" : os.path.relpath(mask_dir.absolute(), data_dir),
+                "mask_dir": os.path.relpath(mask_dir.absolute(), data_dir),
                 "save_mask": True,
-                "is_init_img" : False,
-                "condition" : {
+                "is_init_img": False,
+                "condition": {
                     "prompt_fixed_ratio": 0.5,
                     "head_prompt": "",
                     "prompt_map": prompt_map,
@@ -1674,22 +1729,18 @@ def create_region(
                         "input_image_dir": os.path.relpath(ipadapter_dir.absolute(), data_dir),
                         "prompt_fixed_ratio": 0.5,
                         "save_input_image": True,
-                        "resized_to_square": False
-                    }
-                }
+                        "resized_to_square": False,
+                    },
+                },
             }
         else:
-            region_map["background"]={
-                "is_init_img" : False,
-                "hint" : "background's condition refers to the one in root"
+            region_map["background"] = {
+                "is_init_img": False,
+                "hint": "background's condition refers to the one in root",
             }
 
             model_config.prompt_map = prompt_map
 
+        model_config.region_map = region_map
 
-        model_config.region_map =region_map
-
-
-        config_org.write_text(model_config.json(indent=4), encoding="utf-8")
-
-
+        config_org.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
