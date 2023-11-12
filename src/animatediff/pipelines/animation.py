@@ -28,6 +28,7 @@ from packaging import version
 from tqdm.rich import tqdm
 from transformers import CLIPImageProcessor, CLIPTokenizer
 
+from animatediff.consts import path_mgr
 from animatediff.ip_adapter import IPAdapter, IPAdapterPlus
 from animatediff.models.attention import BasicTransformerBlock
 from animatediff.models.clip import CLIPSkipTextModel
@@ -47,7 +48,6 @@ from animatediff.utils.util import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 C_REF_MODE = "write"
 
@@ -2328,22 +2328,22 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
         if ip_adapter_config_map:
             if self.ip_adapter is None:
-                img_enc_path = "data/models/ip_adapter/models/image_encoder/"
+                img_enc_path = path_mgr.ip_adapter / "image_encoder/"
                 if ip_adapter_config_map["is_light"]:
                     self.ip_adapter = IPAdapter(
-                        self, img_enc_path, "data/models/ip_adapter/models/ip-adapter_sd15_light.bin", device, 4
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter_sd15_light.bin", device, 4
                     )
                 elif ip_adapter_config_map["is_plus_face"]:
                     self.ip_adapter = IPAdapterPlus(
-                        self, img_enc_path, "data/models/ip_adapter/models/ip-adapter-plus-face_sd15.bin", device, 16
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter-plus-face_sd15.bin", device, 16
                     )
                 elif ip_adapter_config_map["is_plus"]:
                     self.ip_adapter = IPAdapterPlus(
-                        self, img_enc_path, "data/models/ip_adapter/models/ip-adapter-plus_sd15.bin", device, 16
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter-plus_sd15.bin", device, 16
                     )
                 else:
                     self.ip_adapter = IPAdapter(
-                        self, img_enc_path, "data/models/ip_adapter/models/ip-adapter_sd15.bin", device, 4
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter_sd15.bin", device, 4
                     )
                 self.ip_adapter.set_scale(ip_adapter_config_map["scale"])
 

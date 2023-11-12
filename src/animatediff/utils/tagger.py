@@ -11,6 +11,7 @@ import pandas as pd
 from PIL import Image
 from tqdm.rich import tqdm
 
+from animatediff.consts import path_mgr
 from animatediff.utils.util import prepare_wd14tagger
 
 logger = logging.getLogger(__name__)
@@ -48,13 +49,13 @@ class Tagger:
         #        self.model = onnxruntime.InferenceSession("data/models/WD14tagger/model.onnx", providers=['CUDAExecutionProvider','CPUExecutionProvider'])
         if is_cpu:
             self.model = onnxruntime.InferenceSession(
-                "data/models/WD14tagger/model.onnx", providers=["CPUExecutionProvider"]
+                path_mgr.wd14_tagger / "model.onnx", providers=["CPUExecutionProvider"]
             )
         else:
             self.model = onnxruntime.InferenceSession(
-                "data/models/WD14tagger/model.onnx", providers=["CUDAExecutionProvider"]
+                path_mgr.wd14_tagger / "/model.onnx", providers=["CUDAExecutionProvider"]
             )
-        df = pd.read_csv("data/models/WD14tagger/selected_tags.csv")
+        df = pd.read_csv(path_mgr.wd14_tagger / "/selected_tags.csv")
         self.tag_names = df["name"].tolist()
         self.rating_indexes = list(np.where(df["category"] == 9)[0])
         self.general_indexes = list(np.where(df["category"] == 0)[0])

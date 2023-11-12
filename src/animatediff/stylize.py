@@ -13,6 +13,7 @@ from PIL import Image
 from tqdm.rich import tqdm
 
 from animatediff import __version__, get_dir
+from animatediff.consts import path_mgr
 from animatediff.settings import ModelConfig, get_model_config
 from animatediff.utils.tagger import get_labels
 from animatediff.utils.util import (
@@ -27,7 +28,6 @@ from animatediff.utils.util import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 stylize: typer.Typer = typer.Typer(
     name="stylize",
@@ -429,8 +429,8 @@ def create_config(
     save_config_path = save_dir.joinpath("prompt.json")
     save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
-    logger.info(f"config = { save_config_path }")
-    logger.info(f"stylize_dir = { save_dir }")
+    logger.info(f"config = {save_config_path}")
+    logger.info(f"stylize_dir = {save_dir}")
 
     logger.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     logger.info(f"Hint. Edit the config file before starting the generation")
@@ -534,7 +534,7 @@ def generate(
                 for img in src_imgs:
                     n = int(Path(img).stem)
                     if n in range(frame_offset, frame_offset + frame_length):
-                        dst_img_path = dst_dir.joinpath(f"{n-frame_offset:08d}.png")
+                        dst_img_path = dst_dir.joinpath(f"{n - frame_offset:08d}.png")
                         shutil.copy(img, dst_img_path)
         # img2img
         org_img2img_img_dir = data_dir.joinpath(model_config.img2img_map["init_img_dir"])
@@ -554,7 +554,7 @@ def generate(
             for img in src_imgs:
                 n = int(Path(img).stem)
                 if n in range(frame_offset, frame_offset + frame_length):
-                    dst_img_path = dst_dir.joinpath(f"{n-frame_offset:08d}.png")
+                    dst_img_path = dst_dir.joinpath(f"{n - frame_offset:08d}.png")
                     shutil.copy(img, dst_img_path)
 
         new_prompt_map = {}
@@ -799,15 +799,15 @@ def interpolate(
 
         guide_frames = [Image.open(g) for g in guide_frames]
 
-        result = estimate2(sty1_img, sty2_img, guide_frames, "data/models/softsplat/softsplat-lf")
+        result = estimate2(sty1_img, sty2_img, guide_frames, path_mgr.softsplat / "softsplat-lf")
 
         shutil.copy(
-            frame_dir.joinpath(f"{head:08d}.png"), output_dir.joinpath(f"{head*interpolation_multiplier:08d}.png")
+            frame_dir.joinpath(f"{head:08d}.png"), output_dir.joinpath(f"{head * interpolation_multiplier:08d}.png")
         )
 
         offset = head * interpolation_multiplier + 1
         for i, r in enumerate(result):
-            r.save(output_dir.joinpath(f"{offset+i:08d}.png"))
+            r.save(output_dir.joinpath(f"{offset + i:08d}.png"))
 
     from animatediff.generate import save_output
 
@@ -1103,9 +1103,7 @@ def create_mask(
                 box_threshold=box_threshold,
                 text_threshold=text_threshold,
                 mask_padding=mask_padding,
-                sam_checkpoint="data/models/SAM/sam_hq_vit_h.pth"
-                if not low_vram
-                else "data/models/SAM/sam_hq_vit_b.pth",
+                sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
                 bg_color=None if no_gb else (0, 255, 0),
             )
 
@@ -1378,9 +1376,7 @@ def composite(
                     box_threshold=box_threshold,
                     text_threshold=text_threshold,
                     mask_padding=mask_padding,
-                    sam_checkpoint="data/models/SAM/sam_hq_vit_h.pth"
-                    if not low_vram
-                    else "data/models/SAM/sam_hq_vit_b.pth",
+                    sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
                 )
 
         else:
@@ -1656,9 +1652,7 @@ def create_region(
                 box_threshold=box_threshold,
                 text_threshold=text_threshold,
                 mask_padding=mask_padding,
-                sam_checkpoint="data/models/SAM/sam_hq_vit_h.pth"
-                if not low_vram
-                else "data/models/SAM/sam_hq_vit_b.pth",
+                sam_checkpoint="models/sam/sam_hq_vit_h.pth" if not low_vram else "models/sam/sam_hq_vit_b.pth",
                 bg_color=(0, 255, 0),
             )
 

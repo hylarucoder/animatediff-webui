@@ -35,10 +35,10 @@ def load_lora_map(pipe, lora_map_config, video_length):
 
 class LoraMap:
     def __init__(
-            self,
-            pipe,
-            lora_map,
-            video_length,
+        self,
+        pipe,
+        lora_map,
+        video_length,
     ):
         self.networks = []
 
@@ -104,18 +104,18 @@ class LoraMap:
             self.is_valid = False
 
     def to(
-            self,
-            device,
-            dtype,
+        self,
+        device,
+        dtype,
     ):
         for net in self.networks:
             net["network"].to(device=device, dtype=dtype)
 
     def apply(
-            self,
-            cond_index,
-            cond_nums,
-            frame_no,
+        self,
+        cond_index,
+        cond_nums,
+        frame_no,
     ):
         """
         neg 0 (bg)
@@ -147,7 +147,7 @@ class LoraMap:
     #               logger.info(f"{i=} DEactive")
 
     def unapply(
-            self,
+        self,
     ):
         for net in self.networks:
             net["network"].deactive()

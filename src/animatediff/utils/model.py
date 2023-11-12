@@ -112,9 +112,9 @@ def fix_checkpoint_if_needed(checkpoint: Path, debug: bool):
 
 
 def checkpoint_to_pipeline(
-        checkpoint: Path,
-        target_dir: Optional[Path] = None,
-        save: bool = True,
+    checkpoint: Path,
+    target_dir: Optional[Path] = None,
+    save: bool = True,
 ) -> StableDiffusionPipeline:
     logger.debug(f"Converting checkpoint {path_from_cwd(checkpoint)}")
     if target_dir is None:
@@ -143,9 +143,9 @@ def get_checkpoint_weights(checkpoint: Path):
 
 
 def ensure_motion_modules(
-        repo_id: str = HF_MODULE_REPO,
-        fp16: bool = False,
-        force: bool = False,
+    repo_id: str = HF_MODULE_REPO,
+    fp16: bool = False,
+    force: bool = False,
 ):
     """Retrieve the motion modules from HuggingFace Hub."""
     module_files = ["mm_sd_v14.safetensors", "mm_sd_v15.safetensors"]

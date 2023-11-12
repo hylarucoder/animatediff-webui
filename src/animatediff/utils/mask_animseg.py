@@ -11,6 +11,8 @@ from PIL import Image
 from rembg import new_session, remove
 from tqdm.rich import tqdm
 
+from animatediff.consts import path_mgr
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ def animseg_create_fg(
     kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
     providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
-    rmbg_model = rt.InferenceSession("data/models/anime_seg/isnetis.onnx", providers=providers)
+    rmbg_model = rt.InferenceSession(path_mgr.anime_seg / "isnetis.onnx", providers=providers)
 
     def get_mask(img, s=1024):
         img = (img / 255).astype(np.float32)

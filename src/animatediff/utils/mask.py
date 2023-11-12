@@ -353,8 +353,8 @@ def create_fg(
     bg_color=(0, 255, 0),
     mask_padding=0,
     groundingdino_config="config/GroundingDINO/GroundingDINO_SwinB_cfg.py",
-    groundingdino_checkpoint="data/models/GroundingDINO/groundingdino_swinb_cogcoor.pth",
-    sam_checkpoint="data/models/SAM/sam_hq_vit_l.pth",
+    groundingdino_checkpoint="models/grounding_dino/groundingdino_swinb_cogcoor.pth",
+    sam_checkpoint="models/sam/sam_hq_vit_l.pth",
     device="cuda",
 ):
     frame_list = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
@@ -487,7 +487,7 @@ def create_bg(
     from animatediff.repo.ProPainter.utils.download_util import load_file_from_url
 
     pretrain_model_url = "https://github.com/sczhou/ProPainter/releases/download/v0.1.0/"
-    model_dir = Path("data/models/ProPainter")
+    model_dir = Path("models/ProPainter")
     model_dir.mkdir(parents=True, exist_ok=True)
 
     frame_list = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))

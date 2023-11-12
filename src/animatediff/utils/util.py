@@ -216,7 +216,7 @@ def prepare_ip_adapter():
             "models/ip-adapter_sd15.bin",
             "models/ip-adapter_sd15_light.bin",
             "models/ip-adapter-plus-face_sd15.bin",
-        ]
+        ],
     )
 
 
@@ -226,8 +226,7 @@ def prepare_motion_module():
         "guoyww/animatediff",
         [
             "mm_sd_v15_v2.ckpt",
-        ]
-
+        ],
     )
 
 
@@ -238,7 +237,7 @@ def prepare_wd14tagger():
         [
             "model.onnx",
             "selected_tags.csv",
-        ]
+        ],
     )
 
 
@@ -249,7 +248,7 @@ def prepare_dwpose():
         [
             "dw-ll_ucoco_384.onnx",
             "yolox_l.onnx",
-        ]
+        ],
     )
 
 
@@ -259,12 +258,12 @@ def prepare_softsplat():
         "s9roll74/softsplat_mirror",
         [
             "softsplat-lf",
-        ]
+        ],
     )
 
 
 def extract_frames(
-        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+    movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
 ):
     import ffmpeg
 
@@ -378,7 +377,7 @@ def prepare_sam_hq(low_vram):
         "lkeab/hq-sam",
         [
             "sam_hq_vit_h.pth" if not low_vram else "sam_hq_vit_b.pth",
-        ]
+        ],
     )
 
 
@@ -388,7 +387,7 @@ def prepare_groundingDINO():
         "ShilongLiu/GroundingDINO",
         [
             "groundingdino_swinb_cogcoor.pth",
-        ]
+        ],
     )
 
 
@@ -411,7 +410,7 @@ def prepare_anime_seg():
         "skytnt/anime-seg",
         [
             "isnetis.onnx",
-        ]
+        ],
     )
 
 

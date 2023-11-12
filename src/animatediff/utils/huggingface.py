@@ -33,12 +33,12 @@ class DownloadTqdm(tqdm):
 
 
 def get_hf_file(
-        repo_id: Path,
-        filename: str,
-        target_dir: Path,
-        subfolder: Optional[PathLike] = None,
-        revision: Optional[str] = None,
-        force: bool = False,
+    repo_id: Path,
+    filename: str,
+    target_dir: Path,
+    subfolder: Optional[PathLike] = None,
+    revision: Optional[str] = None,
+    force: bool = False,
 ) -> Path:
     target_path = target_dir.joinpath(filename)
     if target_path.exists() and force is not True:
@@ -59,11 +59,11 @@ def get_hf_file(
 
 
 def get_hf_repo(
-        repo_id: Path,
-        target_dir: Path,
-        subfolder: Optional[PathLike] = None,
-        revision: Optional[str] = None,
-        force: bool = False,
+    repo_id: Path,
+    target_dir: Path,
+    subfolder: Optional[PathLike] = None,
+    revision: Optional[str] = None,
+    force: bool = False,
 ) -> Path:
     if target_dir.exists() and force is not True:
         raise FileExistsError(f"Target dir {path_from_cwd(target_dir)} already exists! Pass force=True to overwrite")
@@ -87,10 +87,10 @@ def get_hf_repo(
 
 
 def get_hf_pipeline(
-        repo_id: Path,
-        target_dir: Path,
-        save: bool = True,
-        force_download: bool = False,
+    repo_id: Path,
+    target_dir: Path,
+    save: bool = True,
+    force_download: bool = False,
 ) -> StableDiffusionPipeline:
     pipeline_exists = target_dir.joinpath("model_index.json").exists()
     if pipeline_exists and force_download is not True:
