@@ -236,7 +236,11 @@ class LoRAModule(torch.nn.Module):
 
 # Create network from weights for inference, weights are not loaded here
 def create_network_from_weights(
-    text_encoder: Union[CLIPTextModel, List[CLIPTextModel]], unet: UNet2DConditionModel, weights_sd: Dict, multiplier: float = 1.0, is_animatediff = True,
+    text_encoder: Union[CLIPTextModel, List[CLIPTextModel]],
+    unet: UNet2DConditionModel,
+    weights_sd: Dict,
+    multiplier: float = 1.0,
+    is_animatediff=True,
 ):
     # get dim/alpha mapping
     modules_dim = {}
@@ -244,25 +248,32 @@ def create_network_from_weights(
 
     for key, value in weights_sd.items():
         if "." not in key:
-            #print(f"skip {key}")
+            # print(f"skip {key}")
             continue
 
         lora_name = key.split(".")[0]
         if "alpha" in key:
-            #print(f"{key} have alpha -> modules_alpha")
+            # print(f"{key} have alpha -> modules_alpha")
             modules_alpha[lora_name] = value
         elif "lora_down" in key:
-            #print(f"{key} have lora_down -> modules_dim")
+            # print(f"{key} have lora_down -> modules_dim")
             dim = value.size()[0]
             modules_dim[lora_name] = dim
-            #print(lora_name, value.size(), dim)
+            # print(lora_name, value.size(), dim)
 
     # support old LoRA without alpha
     for key in modules_dim.keys():
         if key not in modules_alpha:
             modules_alpha[key] = modules_dim[key]
 
-    return LoRANetwork(text_encoder, unet, multiplier=multiplier, modules_dim=modules_dim, modules_alpha=modules_alpha, is_animatediff=is_animatediff)
+    return LoRANetwork(
+        text_encoder,
+        unet,
+        multiplier=multiplier,
+        modules_dim=modules_dim,
+        modules_alpha=modules_alpha,
+        is_animatediff=is_animatediff,
+    )
 
 
 def merge_lora_weights(pipe, weights_sd: Dict, multiplier: float = 1.0):
@@ -330,10 +341,12 @@ class LoRANetwork(torch.nn.Module):
                 if module.__class__.__name__ in target_replace_modules:
                     for child_name, child_module in module.named_modules():
                         is_linear = (
-                            child_module.__class__.__name__ == "Linear" or child_module.__class__.__name__ == "LoRACompatibleLinear"
+                            child_module.__class__.__name__ == "Linear"
+                            or child_module.__class__.__name__ == "LoRACompatibleLinear"
                         )
                         is_conv2d = (
-                            child_module.__class__.__name__ == "Conv2d" or child_module.__class__.__name__ == "LoRACompatibleConv"
+                            child_module.__class__.__name__ == "Conv2d"
+                            or child_module.__class__.__name__ == "LoRACompatibleConv"
                         )
 
                         if is_linear or is_conv2d:
@@ -369,7 +382,9 @@ class LoRANetwork(torch.nn.Module):
             else:
                 index = None
 
-            text_encoder_loras, skipped = create_modules(False, index, text_encoder, LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE)
+            text_encoder_loras, skipped = create_modules(
+                False, index, text_encoder, LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE
+            )
             self.text_encoder_loras.extend(text_encoder_loras)
             skipped_te += skipped
         print(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
@@ -378,9 +393,13 @@ class LoRANetwork(torch.nn.Module):
 
         # extend U-Net target modules to include Conv2d 3x3
         if is_animatediff:
-            target_modules = LoRANetwork.UNET_TARGET_REPLACE_MODULE_TYPE1 + LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3_TYPE1
+            target_modules = (
+                LoRANetwork.UNET_TARGET_REPLACE_MODULE_TYPE1 + LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3_TYPE1
+            )
         else:
-            target_modules = LoRANetwork.UNET_TARGET_REPLACE_MODULE_TYPE2 + LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3_TYPE2
+            target_modules = (
+                LoRANetwork.UNET_TARGET_REPLACE_MODULE_TYPE2 + LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3_TYPE2
+            )
 
         self.unet_loras: List[LoRAModule]
         self.unet_loras, skipped_un = create_modules(True, None, unet, target_modules)

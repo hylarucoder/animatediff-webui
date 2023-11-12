@@ -25,21 +25,21 @@ import torch
 import torch.nn.functional as F
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.loaders import LoraLoaderMixin, TextualInversionLoaderMixin
-from diffusers.models import (AutoencoderKL, ControlNetModel,
-                              UNet2DConditionModel)
+from diffusers.models import AutoencoderKL, ControlNetModel, UNet2DConditionModel
 from diffusers.models.attention import BasicTransformerBlock
-from diffusers.models.unet_2d_blocks import (CrossAttnDownBlock2D,
-                                             CrossAttnUpBlock2D, DownBlock2D,
-                                             UpBlock2D)
+from diffusers.models.unet_2d_blocks import CrossAttnDownBlock2D, CrossAttnUpBlock2D, DownBlock2D, UpBlock2D
 from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
-from diffusers.pipelines.stable_diffusion.safety_checker import \
-    StableDiffusionSafetyChecker
+from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 from diffusers.schedulers import KarrasDiffusionSchedulers
-from diffusers.utils import (deprecate, is_accelerate_available,
-                             is_accelerate_version, logging,
-                             replace_example_docstring)
+from diffusers.utils import (
+    deprecate,
+    is_accelerate_available,
+    is_accelerate_version,
+    logging,
+    replace_example_docstring,
+)
 from diffusers.utils.torch_utils import is_compiled_module, randn_tensor
 from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 
@@ -122,13 +122,17 @@ def prepare_image(image):
 
     return image
 
+
 def torch_dfs(model: torch.nn.Module):
     result = [model]
     for child in model.children():
         result += torch_dfs(child)
     return result
 
-class StableDiffusionControlNetImg2ImgReferencePipeline(DiffusionPipeline, TextualInversionLoaderMixin, LoraLoaderMixin):
+
+class StableDiffusionControlNetImg2ImgReferencePipeline(
+    DiffusionPipeline, TextualInversionLoaderMixin, LoraLoaderMixin
+):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion with ControlNet guidance.
 
@@ -162,6 +166,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(DiffusionPipeline, Textu
         feature_extractor ([`CLIPImageProcessor`]):
             Model that extracts features from generated images to be used as inputs for the `safety_checker`.
     """
+
     _optional_components = ["safety_checker", "feature_extractor"]
 
     def __init__(
@@ -416,9 +421,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(DiffusionPipeline, Textu
             if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
                 text_input_ids, untruncated_ids
             ):
-                removed_text = self.tokenizer.batch_decode(
-                    untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1]
-                )
+                removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1])
                 logger.warning(
                     "The following part of your input was truncated because CLIP can only handle sequences up to"
                     f" {self.tokenizer.model_max_length} tokens: {removed_text}"
@@ -1088,7 +1091,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(DiffusionPipeline, Textu
             batch_size=batch_size * num_images_per_prompt,
             num_images_per_prompt=num_images_per_prompt,
             device=device,
-            dtype=prompt_embeds.dtype
+            dtype=prompt_embeds.dtype,
         )
 
         # 6. Prepare timesteps
@@ -1487,7 +1490,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(DiffusionPipeline, Textu
 
                 if self.controlnet == None:
                     down_block_res_samples = None
-                    mid_block_res_sample=None
+                    mid_block_res_sample = None
                 else:
                     # controlnet(s) inference
                     if guess_mode and do_classifier_free_guidance:

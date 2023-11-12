@@ -20,9 +20,7 @@ import argparse
 import torch
 
 
-def convert_lora(
-    pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX_TEXT_ENCODER="lora_te", alpha=0.6
-):
+def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX_TEXT_ENCODER="lora_te", alpha=0.6):
     # load base model
     # pipeline = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
 
@@ -80,9 +78,7 @@ def convert_lora(
         else:
             weight_up = state_dict[pair_keys[0]].to(torch.float32)
             weight_down = state_dict[pair_keys[1]].to(torch.float32)
-            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).to(
-                curr_layer.weight.data.device
-            )
+            curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).to(curr_layer.weight.data.device)
 
         # update visited list
         for item in pair_keys:
@@ -104,9 +100,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoint_path", default=None, type=str, required=True, help="Path to the checkpoint to convert."
     )
-    parser.add_argument(
-        "--dump_path", default=None, type=str, required=True, help="Path to the output model."
-    )
+    parser.add_argument("--dump_path", default=None, type=str, required=True, help="Path to the output model.")
     parser.add_argument(
         "--lora_prefix_unet", default="lora_unet", type=str, help="The prefix of UNet weight in safetensors"
     )
@@ -116,9 +110,7 @@ if __name__ == "__main__":
         type=str,
         help="The prefix of text encoder weight in safetensors",
     )
-    parser.add_argument(
-        "--alpha", default=0.75, type=float, help="The merging ratio in W = W0 + alpha * deltaW"
-    )
+    parser.add_argument("--alpha", default=0.75, type=float, help="The merging ratio in W = W0 + alpha * deltaW")
     parser.add_argument(
         "--to_safetensors",
         action="store_true",

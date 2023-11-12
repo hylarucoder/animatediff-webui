@@ -93,9 +93,7 @@ def load_embed_weights(path: Path, key: Optional[str] = None) -> Optional[Tensor
     return embedding
 
 
-def load_text_embeddings(
-    pipeline: DiffusionPipeline, text_embeds: Optional[tuple[str, torch.Tensor]] = None
-) -> None:
+def load_text_embeddings(pipeline: DiffusionPipeline, text_embeds: Optional[tuple[str, torch.Tensor]] = None) -> None:
     if text_embeds is None:
         text_embeds = get_text_embeddings()
     if len(text_embeds) < 1:

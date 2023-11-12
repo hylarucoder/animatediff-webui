@@ -1,18 +1,76 @@
-[build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools>=46.4.0", "wheel", "setuptools_scm[toml]>=6.2"]
+[project]
+name = "animatediff-webui"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "twocucao", email = "twocucao@gmail.com" },
+]
+dependencies = [
+    "colorama>=0.4.6",
+    "accelerate>=0.24.1",
+    "cmake>=3.27.7",
+    "diffusers>=0.21.2",
+    "einops>=0.7.0",
+    "gdown>=4.7.1",
+    "ninja>=1.11.1.1",
+    "numpy>=1.26.1",
+    "omegaconf>=2.3.0",
+    "pillow>=10.0.0",
+    "pydantic>=2.4.2",
+    "rich>=13.6.0",
+    "safetensors>=0.4.0",
+    "sentencepiece>=0.1.99",
+    "shellingham>=1.5.4",
+    "transformers==4.34.1",
+    "typer>=0.9.0",
+    "controlnet-aux>=0.0.7",
+    "matplotlib>=3.8.1",
+    "ffmpeg-python>=0.2.0",
+    "mediapipe>=0.10.7",
+    "pydantic-settings>=2.0.3",
+    "pandas>=2.1.2",
+    #    "onnxruntime-gpu; sys_platform=='win32'",
+    #    "torch==2.1.0+cu118; sys_platform=='win32'",
+    #    "torchvision==0.16.0+cu118; sys_platform=='win32'",
+    #    "torchaudio==2.1.0; sys_platform=='win32'",
+    "onnxruntime-silicon>=1.16.0",
+    "torch==2.1.0",
+    "torchvision==0.16.0",
+    "torchaudio==2.1.0",
+    "fastapi>=0.104.1",
+    "gradio>=4.1.2",
+]
+requires-python = ">=3.10,<3.13"
+readme = "README.md"
+license = { text = "Apache" }
 
-[tool.setuptools_scm]
-write_to = "src/animatediff/_version.py"
+[project.optional-dependencies]
+
+macos = [
+]
+
+linux = [
+    "onnxruntime>=1.16.0",
+]
+
+tests = [
+    'ddt >= 1.2.2, < 2',
+    'pytest >= 6',
+]
+socks = ['PySocks >= 1.5.6, != 1.5.7, < 2']
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [tool.black]
-line-length = 110
+line-length = 120
 target-version = ['py310']
 ignore = ['F841', 'F401', 'E501']
 preview = true
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = 'py310'
 ignore = ['F841', 'F401', 'E501']
 
@@ -22,6 +80,32 @@ force-wrap-aliases = true
 known-local-folder = ["src"]
 known-first-party = ["animatediff"]
 
-[tool.pyright]
-include = ['src/**']
-exclude = ['/usr/lib/**']
+[tool.pdm]
+[tool.pdm.build]
+includes = [
+    "src/animatediff",
+]
+
+[[tool.pdm.source]]
+name = "tencent"
+url = "https://mirrors.cloud.tencent.com/pypi/simple"
+
+#[[tool.pdm.source]]
+#url = "https://download.pytorch.org/whl/cu118"
+#name = "torch"
+
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pre-commit>=3.5.0",
+    "ruff>=0.1.4",
+    "pytest>=7.4.3",
+]
+
+[project.scripts]
+ad-webui = "animatediff.cli:cli"
+
+[tool.pdm.scripts]
+lint = "flake8"
+test = "pytest"
+all = { composite = ["lint", "test"] }

@@ -1,0 +1,7 @@
+.venv
+__pycache__
+*.pyc
+venv
+.ruff_cache
+./data/models/huggingface
+pdm.lock
