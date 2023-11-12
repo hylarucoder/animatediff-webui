@@ -243,3 +243,4 @@ src/animatediff/_version.py
 .idea/
 .pdm-build
 .ruff_cache
+output/

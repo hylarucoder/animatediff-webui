@@ -427,7 +427,7 @@ def create_config(
     }
 
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
     logger.info(f"config = { save_config_path }")
     logger.info(f"stylize_dir = { save_dir }")
@@ -569,7 +569,7 @@ def generate(
         model_config.img2img_map["init_img_dir"] = os.path.relpath(new_img2img_img_dir.absolute(), data_dir)
 
         tmp_config_path = stylize_dir.joinpath("prompt_tmp.json")
-        tmp_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+        tmp_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
         config_org = tmp_config_path
 
     output_0_dir = generate(
@@ -686,7 +686,7 @@ def generate(
         model_config.img2img_map["init_img_dir"] = os.path.relpath(Path(output_0_img_dir).absolute(), data_dir)
 
     save_config_path = stylize_dir.joinpath("prompt_01.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
     output_1_dir = generate(
         config_path=save_config_path,
@@ -1212,7 +1212,7 @@ def create_mask(
                 model_config.stylize_config["1"]["height"] = int(height * 1.25 // 8 * 8)
 
         save_config_path = output.joinpath("prompt.json")
-        save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+        save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
 
 @stylize.command(no_args_is_help=True)
@@ -1325,7 +1325,7 @@ def composite(
     save_dir.mkdir(parents=True, exist_ok=True)
 
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.json(indent=4), encoding="utf-8")
+    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
 
     bg_dir = composite_config["bg_frame_dir"]
     bg_dir = Path(bg_dir)
@@ -1748,4 +1748,4 @@ def create_region(
 
         model_config.region_map = region_map
 
-        config_org.write_text(model_config.json(indent=4), encoding="utf-8")
+        config_org.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")

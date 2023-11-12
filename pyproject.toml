@@ -24,16 +24,30 @@ dependencies = [
     "torch>=2.1.0",
     "torchaudio>=2.1.0",
     "torchvision>=0.16.0",
-    "transformers>=4.35.0",
+    "transformers<4.35.0",
     "typer>=0.9.0",
     "controlnet-aux>=0.0.7",
     "matplotlib>=3.8.1",
     "ffmpeg-python>=0.2.0",
     "mediapipe>=0.10.7",
+    "pydantic-settings>=2.0.3",
+    "pandas>=2.1.2",
 ]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = { text = "Apache" }
+
+[project.optional-dependencies]
+extra1 = ["flask"]
+windows = ["onnxruntime-gpu"]
+socks = ['PySocks >= 1.5.6, != 1.5.7, < 2']
+tests = [
+    'ddt >= 1.2.2, < 2',
+    'pytest >= 6',
+]
+macos = [
+    "onnxruntime-silicon>=1.16.0",
+]
 
 [build-system]
 requires = ["pdm-backend"]
@@ -74,14 +88,8 @@ dev = [
     "pytest>=7.4.3",
 ]
 
-[project.optional-dependencies]
-socks = ['PySocks >= 1.5.6, != 1.5.7, < 2']
-tests = [
-    'ddt >= 1.2.2, < 2',
-    'pytest >= 6',
-]
 [project.scripts]
-mycli = "animatediff-webui.__main__:main"
+ad-webui = "animatediff.__main__:cli"
 
 [tool.pdm.scripts]
 lint = "flake8"

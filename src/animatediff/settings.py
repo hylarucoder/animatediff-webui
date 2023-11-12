@@ -4,8 +4,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
-from pydantic import BaseConfig, BaseSettings, Field
-from pydantic.env_settings import EnvSettingsSource, InitSettingsSource, SecretsSettingsSource, SettingsSourceCallable
+from pydantic import BaseConfig, Field
+from pydantic.v1.env_settings import SettingsSourceCallable
+from pydantic_settings import BaseSettings, EnvSettingsSource, InitSettingsSource, SecretsSettingsSource
 
 from animatediff import get_dir
 from animatediff.schedulers import DiffusionScheduler
@@ -20,8 +21,8 @@ class JsonSettingsSource:
     __slots__ = ["json_config_path"]
 
     def __init__(
-        self,
-        json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
+            self,
+            json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
     ) -> None:
         if isinstance(json_config_path, list):
             self.json_config_path = [Path(path) for path in json_config_path]
@@ -37,11 +38,11 @@ class JsonSettingsSource:
         merged_config = dict()  # create an empty dict to merge configs into
         for idx, path in enumerate(self.json_config_path):
             if path.exists() and path.is_file():  # check if the path exists and is a file
-                logger.debug(f"{classname}: loading config #{idx+1} from {path}")
+                logger.debug(f"{classname}: loading config #{idx + 1} from {path}")
                 merged_config.update(json.loads(path.read_text(encoding=encoding)))
-                logger.debug(f"{classname}: config state #{idx+1}: {merged_config}")
+                logger.debug(f"{classname}: config state #{idx + 1}: {merged_config}")
             else:
-                raise FileNotFoundError(f"{classname}: config #{idx+1} at {path} not found or not a file")
+                raise FileNotFoundError(f"{classname}: config #{idx + 1} at {path} not found or not a file")
 
         logger.debug(f"{classname}: loaded config: {merged_config}")
         return merged_config  # return the merged config
@@ -56,10 +57,10 @@ class JsonConfig(BaseConfig):
 
     @classmethod
     def customise_sources(
-        cls,
-        init_settings: InitSettingsSource,
-        env_settings: EnvSettingsSource,
-        file_secret_settings: SecretsSettingsSource,
+            cls,
+            init_settings: InitSettingsSource,
+            env_settings: EnvSettingsSource,
+            file_secret_settings: SecretsSettingsSource,
     ) -> Tuple[SettingsSourceCallable, ...]:
         # pull json_config_path from init_settings if passed, otherwise use the class var
         json_config_path = init_settings.init_kwargs.pop("json_config_path", cls.json_config_path)
@@ -83,12 +84,14 @@ class InferenceConfig(BaseSettings):
 
 
 def get_infer_config(
-    is_v2: bool,
+        is_v2: bool,
 ) -> InferenceConfig:
     config_path: Path = get_dir("config").joinpath(
         "inference/default.json" if not is_v2 else "inference/motion_v2.json"
     )
-    settings = InferenceConfig(json_config_path=config_path)
+    t = open(config_path, "rt").read()
+    d = json.loads(t)
+    settings = InferenceConfig(**d)
     return settings
 
 
@@ -131,5 +134,7 @@ class ModelConfig(BaseSettings):
 
 
 def get_model_config(config_path: Path) -> ModelConfig:
-    settings = ModelConfig(json_config_path=config_path)
+    t = open(config_path, "rt").read()
+    d = json.loads(t)
+    settings = ModelConfig(**d)
     return settings

@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import torch
-import torch.nn.functional as F
-import xformers.ops as xops
 from diffusers.models.attention import Attention, FeedForward
 from diffusers.utils import BaseOutput
 from diffusers.utils.torch_utils import maybe_allow_in_graph

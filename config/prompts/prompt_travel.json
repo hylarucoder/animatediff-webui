@@ -1,6 +1,6 @@
 {
   "name": "sample",
-  "path": "share/Stable-diffusion/mistoonAnime_v20.safetensors",
+  "path": "models/sd/majicmixRealistic_v7.safetensors",
   "motion_module": "models/motion-module/mm_sd_v15_v2.ckpt",
   "compile": false,
   "seed": [
@@ -24,8 +24,6 @@
     "(worst quality, low quality:1.4),nudity,simple background,border,mouth closed,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
   ],
   "lora_map": {
-    "share/Lora/muffet_v2.safetensors" : 1.0,
-    "share/Lora/add_detail.safetensors" : 1.0
   },
   "motion_lora_map": {
     "models/motion_lora/v2_lora_PanLeft.ckpt":1.0
