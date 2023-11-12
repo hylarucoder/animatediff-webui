@@ -29,27 +29,12 @@ dependencies = [
     "mediapipe>=0.10.7",
     "pydantic-settings>=2.0.3",
     "pandas>=2.1.2",
-    #    "onnxruntime-gpu; sys_platform=='win32'",
-    #    "torch==2.1.0+cu118; sys_platform=='win32'",
-    #    "torchvision==0.16.0+cu118; sys_platform=='win32'",
-    #    "torchaudio==2.1.0; sys_platform=='win32'",
-    "onnxruntime-silicon>=1.16.0",
-    "torch==2.1.0",
-    "torchvision==0.16.0",
-    "torchaudio==2.1.0",
 ]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = { text = "Apache" }
 
 [project.optional-dependencies]
-
-macos = [
-]
-
-linux = [
-    "onnxruntime>=1.16.0",
-]
 
 tests = [
     'ddt >= 1.2.2, < 2',
