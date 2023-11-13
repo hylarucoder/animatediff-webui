@@ -1,6 +1,6 @@
 {
   "name": "sample",
-  "checkpoint": "MajicmixRealistic_v7.safetensors",
+  "checkpoint": "awpainting_v12.safetensors",
   "motion": "mm_sd_v15_v2.ckpt",
   "compile": false,
   "seed": [
@@ -12,7 +12,7 @@
   "unet_batch_size": 1,
   "clip_skip": 2,
   "prompt_fixed_ratio": 0.5,
-  "head_prompt": "(masterpiece, best quality), 1girl, walk, looking at viewer, ",
+  "head_prompt": "1girl, ",
   "prompt_map": {
     "0": "",
     "30": "",
@@ -21,12 +21,12 @@
     "120": "",
     "135": ""
   },
-  "tail_prompt": "photorealistic,realistic,photography,masterpiece,best quality,ultra-detailed,1girl,full body,water,long dress,looking at viewer,red dress,white hair,,md colorful,",
+  "tail_prompt": "enji, watercolor painting, masterpiece, best quality, 1girl, smile, (wear green hanfu:1), black and green swirling vortexes black cloudy and smoke and black background, (snowing) (( swirling vortexes black and green hair)), ((long Hair)), ((right side)), emotional face, close up>",
   "n_prompt": [
     "nude, worst quality,ow quality,normal quality,lowres,normal quality,monochrome,grayscale,blurry,lowres,ng_deepnegative_v1_75t,badhandv4,(worst quality:2),(low quality:2),(normal quality:2),lowres,bad anatomy,bad hands,normal quality,, (low quality, worst quality:1.4),(bad anatomy),extra digit,cropped,jpeg artifacts,signature,watermark,username,blurry,EasyNegativeV2,(badhandv4:1.2),dedicated_to_artificial_humans,"
   ],
   "lora_map": {
-    "釉彩·麻袋调色盘_v1.0.safetensors": 0.7
+    "EnjiPainting_v1.0.safetensors": 0.8
   },
   "motion_lora_map": {
     "v2_lora_ZoomOut.ckpt": 0.7

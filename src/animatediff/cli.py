@@ -1161,7 +1161,7 @@ def refine(
 
 
 @cli.command()
-def start():
+def webui():
     from animatediff.webui.t2v import t2v_app
 
     t2v_app.launch(server_name="0.0.0.0")
