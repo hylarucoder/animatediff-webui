@@ -21,6 +21,8 @@ class PathMgr:
     loras = MODELS_DIR / "loras"
     motions = MODELS_DIR / "motions"
     motion_loras = MODELS_DIR / "motion_loras"
+    controlnet = MODELS_DIR / "controlnet"
+    projects = REPO_DIR / "projects"
 
 
 path_mgr = PathMgr()

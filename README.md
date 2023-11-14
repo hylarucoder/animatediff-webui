@@ -4,9 +4,9 @@
 
 ## Features
 
-- [ ] project like org
+- [ ] Project like structure, you just copy a project folder and do all workflows in that folder!!
 - [ ] webui && yaml syntax
-- [ ] macOS && windows && Linux
+- [ ] Windows && Linux, mac with limit support (mps is hard)
 
 ## Installation
 
