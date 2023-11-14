@@ -66,7 +66,7 @@ controlnets = [
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 class TInput(BaseModel):
@@ -82,15 +82,15 @@ class TInput(BaseModel):
 
 
 def p(
-    project_name,
-    checkpoint,
-    loras,
-    motion_loras,
-    motion_module,
-    head_prompt,
-    tail_prompt,
-    negative_prompt,
-    *image_prompts,
+        project_name,
+        checkpoint,
+        loras,
+        motion_loras,
+        motion_module,
+        head_prompt,
+        tail_prompt,
+        negative_prompt,
+        *image_prompts,
 ):
     project_dir = path_mgr.projects / project_name
     project_setting.project_dir = project_dir
@@ -127,15 +127,15 @@ def get_models_endswith(d, endswith="safetensors"):
 
 def build_setup():
     with gr.Blocks(
-        theme=gr.themes.Default(
-            spacing_size="sm",
-            text_size="sm",
-        ),
+            theme=gr.themes.Default(
+                spacing_size="sm",
+                text_size="sm",
+            ),
     ) as demo:
         with gr.Row():
             input_project = gr.Textbox("demo_001", label="Project Name")
             input_load = gr.Button("Load")
-            input_interval = gr.Number(label="Interval", value=15, maximum=64)
+            input_interval = gr.Number(label="Interval", value=15, maximum=64, )
             input_refresh = gr.Button("Refresh")  # TODO: 刷心
         gr.Markdown("## CheckPoints && LoRA")
         with gr.Row():
@@ -233,12 +233,14 @@ with gr.Blocks() as demo2:
         input_video = gr.Textbox()
         output_frame = gr.Image()
 
+
     def _extract_frames(
-        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+            movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
     ):
         extract_frames(
             movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
         )
+
 
     image_button = gr.Button(
         "Generate",
@@ -301,9 +303,11 @@ def get_projects():
 with gr.Blocks() as demo3:
     gr.Markdown("# Project Tuning")
 
+
     def fn_refresh_projects():
         # 尽量保留原值
         gr.update(choices=get_projects())
+
 
     def fn_refresh_project_draft(project_name):
         frames_dirs = list(
@@ -311,6 +315,7 @@ with gr.Blocks() as demo3:
         )
         # print("frames dirs", frames_dirs)
         gr.update(choices=frames_dirs, elem_id="input_frames")
+
 
     with gr.Row():
         input_project = gr.Dropdown(
@@ -321,7 +326,9 @@ with gr.Blocks() as demo3:
         btn_refresh.click(fn_refresh_projects, outputs=[input_project])
 
     with gr.Row():
-        frames = gr.Number(label="Frames", value=16)
+        frames = gr.Number(label="Frames", value=16,
+                           precision=0, interactive=True,
+                           )
         btn_preview = gr.Button(
             "Preview",
         )
@@ -337,6 +344,7 @@ with gr.Blocks() as demo3:
         frames = gr.Number(
             label="Frames",
             value=200,
+            precision=0, interactive=True,
         )
         btn_generate = gr.Button(
             "Generate",
@@ -356,6 +364,8 @@ with gr.Blocks() as demo3:
             choices=[],
         )
         btn_refresh_frame = gr.Button("刷新")
+        # why cannot update?
+        # preview video
         btn_refresh_frame.click(fn_refresh_project_draft, inputs=[input_project], outputs=[input_frames])
 
         btn_upscale = gr.Button(
@@ -369,7 +379,7 @@ with gr.Blocks() as demo3:
         )
 
     with gr.Row():
-        input_refine_frames = gr.Number(label="Refine Frames", value=200)
+        input_refine_frames = gr.Number(label="Refine Frames", value=200, precision=0, interactive=True, step=1)
         btn_refine = gr.Button(
             "Refine",
         )
