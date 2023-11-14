@@ -444,8 +444,6 @@ def generate(
         save_video(merged_output, save_dir.joinpath("final.gif"))
 
     logger.info("Done, exiting...")
-    cli.info
-
     return save_dir
 
 
@@ -455,16 +453,6 @@ def tile_upscale(
         Path,
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
     ] = ...,
-    model_name_or_path: Annotated[
-        Path,
-        typer.Option(
-            ...,
-            "--model-path",
-            "-m",
-            path_type=Path,
-            help="Base model to use (path or HF repo ID). You probably don't need to change this.",
-        ),
-    ] = Path("runwayml/stable-diffusion-v1-5"),
     config_path: Annotated[
         Path,
         typer.Option(
@@ -1162,6 +1150,6 @@ def refine(
 
 @cli.command()
 def webui():
-    from animatediff.webui.t2v import t2v_app
+    from animatediff.webui.project import project_app
 
-    t2v_app.launch(server_name="0.0.0.0")
+    project_app.launch(server_name="0.0.0.0")

@@ -31,6 +31,8 @@ dependencies = [
     "pandas>=2.1.2",
     "fastapi>=0.104.1",
     "gradio>=4.1.2",
+    "httpx>=0.25.1",
+    "socksio>=1.0.0",
 ]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"

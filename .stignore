@@ -5,3 +5,4 @@ venv
 .ruff_cache
 ./data/models/huggingface
 pdm.lock
+.idea/

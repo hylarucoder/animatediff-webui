@@ -26,10 +26,9 @@
     "nude, worst quality,ow quality,normal quality,lowres,normal quality,monochrome,grayscale,blurry,lowres,ng_deepnegative_v1_75t,badhandv4,(worst quality:2),(low quality:2),(normal quality:2),lowres,bad anatomy,bad hands,normal quality,, (low quality, worst quality:1.4),(bad anatomy),extra digit,cropped,jpeg artifacts,signature,watermark,username,blurry,EasyNegativeV2,(badhandv4:1.2),dedicated_to_artificial_humans,"
   ],
   "lora_map": {
-    "EnjiPainting_v1.0.safetensors": 0.8
+    "EnjiPainting_v1.0.safetensors": 0.9
   },
   "motion_lora_map": {
-    "v2_lora_ZoomOut.ckpt": 0.7
   },
   "ip_adapter_map": {
     "enable": true,
@@ -107,10 +106,6 @@
     },
     "controlnet_openpose": {
       "enable": true,
-      "preprocessor": {
-        "type": "dwpose",
-        "param": {}
-      },
       "use_preprocessor": true,
       "guess_mode": false,
       "controlnet_conditioning_scale": 0.8,
@@ -326,9 +321,18 @@
   },
   "upscale_config": {
     "scheduler": "k_dpmpp_2m",
-    "steps": 20,
+    "steps": 10,
     "strength": 0.6,
     "guidance_scale": 7,
+    "controlnet_openpose": {
+      "enable": true,
+      "use_preprocessor": true,
+      "guess_mode": false,
+      "controlnet_conditioning_scale": 0.8,
+      "control_guidance_start": 0.0,
+      "control_guidance_end": 1.0,
+      "control_scale_list": []
+    },
     "controlnet_tile": {
       "enable": true,
       "controlnet_conditioning_scale": 0.8,

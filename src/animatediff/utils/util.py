@@ -360,6 +360,44 @@ def linear(v1, v2, t):
     return (1.0 - t) * v1 + t * v2
 
 
+def slerp_exp(v0: torch.Tensor, v1: torch.Tensor, t: float, DOT_THRESHOLD: float = 0.9995) -> torch.Tensor:
+    # Convert tensors to BFloat16 if they are not already
+    if v0.dtype != torch.bfloat16:
+        v0 = v0.bfloat16()
+    if v1.dtype != torch.bfloat16:
+        v1 = v1.bfloat16()
+
+    # Check if input tensors contain NaN or inf values
+    if torch.isnan(v0).any() or torch.isinf(v0).any() or torch.isnan(v1).any() or torch.isinf(v1).any():
+        raise ValueError("Input tensors contain NaN or inf values")
+
+    u0 = v0 / v0.norm()
+    u1 = v1 / v1.norm()
+
+    dot = (u0 * u1).sum()
+
+    # Clip dot to [-1, 1] to avoid NaN in acos
+    dot = torch.clamp(dot, -1.0, 1.0)
+
+    if dot.abs() > DOT_THRESHOLD:
+        # logger.info(f'warning: v0 and v1 close to parallel, using linear interpolation instead.')
+        return (1.0 - t) * v0 + t * v1
+
+    omega = dot.acos()
+
+    # Avoid division by zero
+    if torch.isclose(omega, torch.tensor(0.0, dtype=torch.bfloat16)):
+        return v0
+
+    factor = (((1.0 - t) * omega).sin() * v0 + (t * omega).sin() * v1) / omega.sin()
+
+    # Check if output tensor contains NaN or inf values
+    if torch.isnan(factor).any() or torch.isinf(factor).any():
+        raise ValueError("Output tensor contains NaN or inf values")
+
+    return factor
+
+
 def slerp(v0: torch.Tensor, v1: torch.Tensor, t: float, DOT_THRESHOLD: float = 0.9995) -> torch.Tensor:
     u0 = v0 / v0.norm()
     u1 = v1 / v1.norm()
