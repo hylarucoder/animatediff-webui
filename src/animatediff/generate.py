@@ -1183,7 +1183,7 @@ def run_inference(
     ]
     prompt_str = "_".join((prompt_tags[:6]))[:50]
     frame_dir = out_dir.joinpath(f"{idx:02d}-frames")
-    out_file = out_dir.joinpath(f"{idx:02d}_frames_{prompt_str}")
+    out_file = out_dir.joinpath(f"video")
 
     def preview_callback(i: int, video: torch.Tensor, save_fn: Callable[[torch.Tensor], None], out_file: str) -> None:
         save_fn(video, out_file=Path(f"{out_file}_preview@{i}"))
@@ -1322,7 +1322,6 @@ def run_upscale(
 
     prompt_embeds_map = {}
     prompt_map = dict(sorted(prompt_map.items()))
-    negative = None
 
     do_classifier_free_guidance = guidance_scale > 1.0
 
@@ -1460,10 +1459,9 @@ def run_upscale(
         re_clean_prompt.sub("", tag).strip().replace(" ", "-")
         for tag in prompt_map[list(prompt_map.keys())[0]].split(",")
     ]
-    prompt_str = "_".join((prompt_tags[:6]))[:50]
 
     # generate the output filename and save the video
-    out_file = out_dir.joinpath(f"{idx:02d}_frames_{prompt_str}")
+    out_file = out_dir.joinpath(f"video")
 
     frame_dir = out_dir.joinpath(f"{idx:02d}-frames-upscaled")
 

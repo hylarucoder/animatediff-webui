@@ -63,16 +63,10 @@
         "param": {}
       },
       "guess_mode": false,
-      "controlnet_conditioning_scale": 1.0,
+      "controlnet_conditioning_scale": 0.5,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_ip2p": {
       "enable": true,
@@ -81,13 +75,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_lineart_anime": {
       "enable": true,
@@ -96,13 +84,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_openpose": {
       "enable": true,
@@ -124,13 +106,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_shuffle": {
       "enable": true,
@@ -139,13 +115,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_depth": {
       "enable": true,
@@ -163,13 +133,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_inpaint": {
       "enable": true,
@@ -178,13 +142,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_lineart": {
       "enable": true,
@@ -193,13 +151,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_mlsd": {
       "enable": true,
@@ -208,13 +160,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_normalbae": {
       "enable": true,
@@ -223,13 +169,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_scribble": {
       "enable": true,
@@ -238,13 +178,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_seg": {
       "enable": true,
@@ -253,13 +187,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "qr_code_monster_v1": {
       "enable": true,
@@ -268,13 +196,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "qr_code_monster_v2": {
       "enable": true,
@@ -283,13 +205,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_mediapipe_face": {
       "enable": true,
@@ -298,13 +214,7 @@
       "controlnet_conditioning_scale": 1.0,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0,
-      "control_scale_list": [
-        0.5,
-        0.4,
-        0.3,
-        0.2,
-        0.1
-      ]
+      "control_scale_list": []
     },
     "controlnet_ref": {
       "enable": false,
@@ -335,7 +245,7 @@
     },
     "controlnet_tile": {
       "enable": true,
-      "controlnet_conditioning_scale": 0.8,
+      "controlnet_conditioning_scale": 1,
       "guess_mode": false,
       "control_guidance_start": 0.0,
       "control_guidance_end": 1.0

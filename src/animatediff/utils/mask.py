@@ -14,6 +14,8 @@ from segment_anything_hq import SamPredictor, build_sam_vit_b, build_sam_vit_h, 
 from segment_anything_hq.build_sam import build_sam_vit_t
 from tqdm.rich import tqdm
 
+from animatediff.consts import path_mgr
+
 logger = logging.getLogger(__name__)
 
 build_sam_table = {
@@ -352,9 +354,9 @@ def create_fg(
     text_threshold=0.25,
     bg_color=(0, 255, 0),
     mask_padding=0,
-    groundingdino_config="config/GroundingDINO/GroundingDINO_SwinB_cfg.py",
-    groundingdino_checkpoint="models/grounding_dino/groundingdino_swinb_cogcoor.pth",
-    sam_checkpoint="models/sam/sam_hq_vit_l.pth",
+    groundingdino_config=path_mgr.config / "GroundingDINO/GroundingDINO_SwinB_cfg.py",
+    groundingdino_checkpoint=path_mgr.grounding_dino / "groundingdino_swinb_cogcoor.pth",
+    sam_checkpoint=path_mgr.grounding_dino / "sam_hq_vit_l.pth",
     device="cuda",
 ):
     frame_list = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
@@ -474,23 +476,13 @@ def create_bg(
     device="cuda",
     low_vram=False,
 ):
-    import sys
-
-    repo_path = Path("src/animatediff/repo/ProPainter").absolute()
-    repo_path = str(repo_path)
-    sys.path.append(repo_path)
-
-    from animatediff.repo.ProPainter.core.utils import to_tensors
-    from animatediff.repo.ProPainter.model.modules.flow_comp_raft import RAFT_bi
-    from animatediff.repo.ProPainter.model.propainter import InpaintGenerator
-    from animatediff.repo.ProPainter.model.recurrent_flow_completion import RecurrentFlowCompleteNet
-    from animatediff.repo.ProPainter.utils.download_util import load_file_from_url
-
-    pretrain_model_url = "https://github.com/sczhou/ProPainter/releases/download/v0.1.0/"
-    model_dir = Path("models/ProPainter")
-    model_dir.mkdir(parents=True, exist_ok=True)
+    from ProPainter.core.utils import to_tensors
+    from ProPainter.model.modules.flow_comp_raft import RAFT_bi
+    from ProPainter.model.propainter import InpaintGenerator
+    from ProPainter.model.recurrent_flow_completion import RecurrentFlowCompleteNet
 
     frame_list = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
+    print(frame_list)
 
     frames = [Image.open(f) for f in frame_list]
 
@@ -526,18 +518,18 @@ def create_bg(
     ##############################################
     # set up RAFT and flow competition model
     ##############################################
-    ckpt_path = load_file_from_url(
-        url=os.path.join(pretrain_model_url, "raft-things.pth"), model_dir=model_dir, progress=True, file_name=None
-    )
-    fix_raft = RAFT_bi(ckpt_path, device)
+    # ckpt_path = load_file_from_url(
+    #     url=os.path.join(pretrain_model_url, "raft-things.pth"), model_dir=model_dir, progress=True, file_name=None
+    # )
+    fix_raft = RAFT_bi(path_mgr.pro_painter / "raft-things.pth", device)
 
-    ckpt_path = load_file_from_url(
-        url=os.path.join(pretrain_model_url, "recurrent_flow_completion.pth"),
-        model_dir=model_dir,
-        progress=True,
-        file_name=None,
-    )
-    fix_flow_complete = RecurrentFlowCompleteNet(ckpt_path)
+    # ckpt_path = load_file_from_url(
+    #     url=os.path.join(pretrain_model_url, "recurrent_flow_completion.pth"),
+    #     model_dir=model_dir,
+    #     progress=True,
+    #     file_name=None,
+    # )
+    fix_flow_complete = RecurrentFlowCompleteNet(path_mgr.pro_painter / "recurrent_flow_completion.pth")
     for p in fix_flow_complete.parameters():
         p.requires_grad = False
     fix_flow_complete.to(device)
@@ -546,10 +538,10 @@ def create_bg(
     ##############################################
     # set up ProPainter model
     ##############################################
-    ckpt_path = load_file_from_url(
-        url=os.path.join(pretrain_model_url, "ProPainter.pth"), model_dir=model_dir, progress=True, file_name=None
-    )
-    model = InpaintGenerator(model_path=ckpt_path).to(device)
+    # ckpt_path = load_file_from_url(
+    #     url=os.path.join(pretrain_model_url, "ProPainter.pth"), model_dir=model_dir, progress=True, file_name=None
+    # )
+    model = InpaintGenerator(model_path=path_mgr.pro_painter / "ProPainter.pth").to(device)
     model.eval()
 
     ##############################################
@@ -714,7 +706,10 @@ def create_bg(
         f = comp_frames[idx]
         f = cv2.resize(f, out_size, interpolation=cv2.INTER_CUBIC)
         f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
-        dst_img_path = output_dir.joinpath(f"{idx:08d}.png")
-        cv2.imwrite(str(dst_img_path), f)
+        dst_img_path: Path = output_dir.joinpath(f"{idx:08d}.png")
+        cv2.imwrite(
+            str(dst_img_path.resolve()),
+            f,
+        )
 
-    sys.path.remove(repo_path)
+    # sys.path.remove(repo_path)

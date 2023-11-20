@@ -1039,11 +1039,7 @@ def refine(
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
 
-    # get a timestamp for the output directory
-    time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-    # make the output directory
-    save_dir = out_dir.joinpath(f"{time_str}-{model_config.save_name}")
-    save_dir.mkdir(parents=True, exist_ok=True)
+    save_dir = out_dir
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
     seeds = [get_random() for i in range(repeats)]
@@ -1089,6 +1085,9 @@ def refine(
             c_dir.mkdir(parents=True, exist_ok=True)
 
         shutil.copytree(frames_dir, controlnet_img_dir.joinpath("controlnet_tile"), dirs_exist_ok=True)
+        # TODO: fix
+        shutil.copytree(frames_dir, controlnet_img_dir.joinpath("controlnet_openpose"), dirs_exist_ok=True)
+        shutil.copytree(frames_dir, controlnet_img_dir.joinpath("controlnet_canny"), dirs_exist_ok=True)
 
         model_config.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
         model_config.controlnet_map["is_loop"] = False
@@ -1097,6 +1096,18 @@ def refine(
             model_config.controlnet_map["controlnet_tile"]["enable"] = True
             model_config.controlnet_map["controlnet_tile"]["control_scale_list"] = []
             model_config.controlnet_map["controlnet_tile"]["controlnet_conditioning_scale"] = tile_conditioning_scale
+
+        if "controlnet_openpose" in model_config.controlnet_map:
+            model_config.controlnet_map["controlnet_openpose"]["enable"] = True
+            model_config.controlnet_map["controlnet_openpose"]["control_scale_list"] = []
+            model_config.controlnet_map["controlnet_openpose"][
+                "controlnet_conditioning_scale"
+            ] = tile_conditioning_scale
+
+        if "controlnet_canny" in model_config.controlnet_map:
+            model_config.controlnet_map["controlnet_canny"]["enable"] = True
+            model_config.controlnet_map["controlnet_canny"]["control_scale_list"] = []
+            model_config.controlnet_map["controlnet_canny"]["controlnet_conditioning_scale"] = tile_conditioning_scale
 
         else:
             model_config.controlnet_map["controlnet_tile"] = {
@@ -1132,9 +1143,7 @@ def refine(
 
         torch.cuda.empty_cache()
 
-        generated_dir = generated_dir.rename(generated_dir.parent / f"{time_str}_{repeat_count:02d}")
-
-        frames_dir = glob.glob(os.path.join(generated_dir, "00-[0-9]*"), recursive=False)[0]
+        frames_dir = glob.glob(os.path.join(generated_dir, "00-frames"), recursive=False)[0]
 
     if rife_img_dir:
         frames = sorted(glob.glob(os.path.join(rife_img_dir, "[0-9]*.png"), recursive=False))

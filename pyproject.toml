@@ -33,6 +33,7 @@ dependencies = [
     "gradio>=4.1.2",
     "httpx>=0.25.1",
     "socksio>=1.0.0",
+    "segment-anything-hq>=0.3",
 ]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
@@ -78,6 +79,7 @@ known-first-party = ["animatediff"]
 [tool.pdm.build]
 includes = [
     "src/animatediff",
+    "src/ProPainter",
 ]
 
 [[tool.pdm.source]]
