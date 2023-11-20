@@ -8,6 +8,7 @@ CACHE_DIR = REPO_DIR / ".cache"
 
 
 class PathMgr:
+    config = REPO_DIR / "config"
     checkpoints = MODELS_DIR / "checkpoints"
     vaes = MODELS_DIR / "vaes"
     ip_adapter = MODELS_DIR / "ip_adapter"
@@ -23,6 +24,7 @@ class PathMgr:
     motion_loras = MODELS_DIR / "motion_loras"
     controlnet = MODELS_DIR / "controlnet"
     projects = REPO_DIR / "projects"
+    pro_painter = MODELS_DIR / "pro_painter"
 
 
 path_mgr = PathMgr()

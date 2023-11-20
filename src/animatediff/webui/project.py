@@ -135,7 +135,11 @@ def build_setup():
         with gr.Row():
             input_project = gr.Textbox("demo_001", label="Project Name")
             input_load = gr.Button("Load")
-            input_interval = gr.Number(label="Interval", value=15, maximum=64)
+            input_interval = gr.Number(
+                label="Interval",
+                value=15,
+                maximum=64,
+            )
             input_refresh = gr.Button("Refresh")  # TODO: 刷心
         gr.Markdown("## CheckPoints && LoRA")
         with gr.Row():
@@ -226,19 +230,21 @@ def build_setup():
     return demo
 
 
-demo = build_setup()
-with gr.Blocks() as demo2:
+tab_02 = build_setup()
+with gr.Blocks() as tab_03:
     gr.Markdown("# Extract Frames")
     with gr.Row():
         input_video = gr.Textbox()
         output_frame = gr.Image()
 
     def _extract_frames(
-        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+        movie_file_path,
+        # fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
     ):
-        extract_frames(
-            movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
-        )
+        ...
+        # extract_frames(
+        #     movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+        # )
 
     image_button = gr.Button(
         "Generate",
@@ -260,8 +266,10 @@ def fn_generate(project, frames):
     generate(
         model_name_or_path=Path("runwayml/stable-diffusion-v1-5"),
         config_path=path_mgr.projects / project / "prompts.json",
-        width=504,
-        height=896,
+        # width=504,
+        # height=896,
+        height=504,
+        width=896,
         length=frames,
         context=16,
         overlap=16 // 4,
@@ -277,7 +285,23 @@ def fn_generate(project, frames):
 
 
 def fn_generate_1(project, frames):
-    fn_generate(project, frames)
+    generate(
+        model_name_or_path=Path("runwayml/stable-diffusion-v1-5"),
+        config_path=path_mgr.projects / project / "prompts.json",
+        width=896,
+        height=504,
+        length=frames,
+        context=8,
+        overlap=8 // 4,
+        stride=0,
+        repeats=1,
+        device="cuda",
+        use_xformers=False,
+        force_half_vae=False,
+        out_dir=path_mgr.projects / project / "draft",
+        no_frames=False,
+        save_merged=False,
+    )
 
 
 def fn_upscale(project):
@@ -295,40 +319,57 @@ def fn_upscale(project):
 
 
 def get_projects():
-    return list(sorted([_.name for _ in path_mgr.projects.iterdir() if _.is_dir()]))
+    return [BLANK_SEL] + list(sorted([_.name for _ in path_mgr.projects.iterdir() if _.is_dir()]))
 
 
-with gr.Blocks() as demo3:
-    gr.Markdown("# Project Tuning")
+BLANK_SEL = "---"
 
-    def fn_refresh_projects():
-        # 尽量保留原值
-        gr.update(choices=get_projects())
 
-    def fn_refresh_project_draft(project_name):
-        frames_dirs = list(
-            sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
-        )
-        # print("frames dirs", frames_dirs)
-        gr.update(choices=frames_dirs, elem_id="input_frames")
+class TState(BaseModel):
+    project: str = BLANK_SEL
+    project_choices: list[str] = [BLANK_SEL]
+    frames_dirs: list[str] = [BLANK_SEL]
+
+
+g_state = TState()
+
+with gr.Blocks() as tab_01:
+    gr.Markdown("# 执行跑视频任务")
+    state = gr.State(g_state)
+
+    def fn_refresh_projects(
+        project_name,
+    ):
+        # TODO? get value
+        state.project = project_name
+        state.project_choices = get_projects()
+        gr.update(choices=state.project_choices, value=state.project)
+        return project_name
 
     with gr.Row():
-        input_project = gr.Dropdown(
+        ip_project = gr.Dropdown(
             label="Project",
             choices=get_projects(),
+            value=BLANK_SEL,
+            interactive=True,
         )
-        btn_refresh = gr.Button("刷新")
-        btn_refresh.click(fn_refresh_projects, outputs=[input_project])
+        btn_refresh = gr.Button("🔁")
+        btn_refresh.click(fn_refresh_projects, inputs=[ip_project], outputs=[ip_project])
 
     with gr.Row():
-        frames = gr.Number(label="Frames", value=16)
+        frames = gr.Number(
+            label="Frames",
+            value=16,
+            precision=0,
+            interactive=True,
+        )
         btn_preview = gr.Button(
             "Preview",
         )
         btn_preview.click(
             fn=fn_generate_1,
             inputs=[
-                input_project,
+                ip_project,
                 frames,
             ],
         )
@@ -337,6 +378,8 @@ with gr.Blocks() as demo3:
         frames = gr.Number(
             label="Frames",
             value=200,
+            precision=0,
+            interactive=True,
         )
         btn_generate = gr.Button(
             "Generate",
@@ -344,19 +387,35 @@ with gr.Blocks() as demo3:
         btn_generate.click(
             fn=fn_generate,
             inputs=[
-                input_project,
+                ip_project,
                 frames,
             ],
         )
 
     with gr.Row():
-        ## 更新完 draft 之后需要更新这里
-        input_frames = gr.Dropdown(
-            label="Generated",
-            choices=[],
+        ip_frame_dir = gr.Dropdown(
+            label="Draft",
+            choices=[BLANK_SEL, "aaa"],
+            value=BLANK_SEL,
+            interactive=True,
         )
-        btn_refresh_frame = gr.Button("刷新")
-        btn_refresh_frame.click(fn_refresh_project_draft, inputs=[input_project], outputs=[input_frames])
+        btn_refresh_frame = gr.Button("🔁")
+
+        @btn_refresh_frame.click(inputs=ip_project, outputs=ip_frame_dir)
+        def fn_refresh_project_draft(project_name):
+            state.frames_dirs = frames_dirs = list(
+                sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
+            )
+            # TODO: 这里还是没更新上...
+            gr.update(choices=frames_dirs)
+
+        @ip_project.change(inputs=ip_project, outputs=ip_frame_dir)
+        def fn_refresh_project_draft(project_name):
+            state.frames_dirs = frames_dirs = list(
+                sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
+            )
+            # TODO: 这里还是没更新上...
+            gr.update(choices=frames_dirs)
 
         btn_upscale = gr.Button(
             "Upscale",
@@ -364,21 +423,47 @@ with gr.Blocks() as demo3:
         btn_upscale.click(
             fn=fn_upscale,
             inputs=[
-                input_project,
+                ip_project,
             ],
         )
 
     with gr.Row():
-        input_refine_frames = gr.Number(label="Refine Frames", value=200)
+        input_refine_frames = gr.Number(label="Refine Frames", value=200, precision=0, interactive=True, step=1)
         btn_refine = gr.Button(
             "Refine",
         )
 
+    # with gr.Row():
+    #     ip_videos = gr.Dropdown(
+    #         label="预览视频",
+    #         choices=get_projects(),
+    #         value="---"
+    #     )
+    #     # btn_refresh_videos = gr.Button("加载")
+    #     # btn_refresh_videos.click(fn_refresh_projects, outputs=[ip_project])
+
+    def calculator(num1, operation, num2):
+        if operation == "add":
+            return num1 + num2
+        elif operation == "subtract":
+            return num1 - num2
+        elif operation == "multiply":
+            return num1 * num2
+        elif operation == "divide":
+            return num1 / num2
+
+    gr.Interface(
+        calculator,
+        ["number", gr.Dropdown(choices=["add", "subtract", "multiply", "divide"]), "number"],
+        "number",
+        live=True,
+    )
+
 project_app = gr.TabbedInterface(
     [
-        demo3,
-        demo,
-        demo2,
+        tab_01,
+        tab_02,
+        tab_03,
     ],
-    tab_names=["I. Setup Basic Image And Prompts", "2. Generate Basic Videos", "3. Refine Videos"],
+    tab_names=["I. 跑任务", "2. 拆帧", "3. 微调"],
 )
