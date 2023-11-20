@@ -727,10 +727,10 @@ with gr.Blocks(
 
 
     def track_tqdm(data, progress=gr.Progress(track_tqdm=True)):
-        for i in tqdm.tqdm(range(5), desc="outer"):
-            for j in tqdm.tqdm(range(4), desc="inner"):
+        for i in tqdm.tqdm(range(2), desc="outer"):
+            for j in tqdm.tqdm(range(2), desc="inner"):
                 time.sleep(1)
-        return "done"
+        return path_mgr.projects / "100_v2v/input.mp4"
 
 
     generate_button.click(
