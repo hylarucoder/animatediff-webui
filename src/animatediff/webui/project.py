@@ -265,10 +265,10 @@ from animatediff.cli import generate, tile_upscale
 def fn_generate(project, frames):
     generate(
         config_path=path_mgr.projects / project / "prompts.json",
-        # width=504,
-        # height=896,
-        height=504,
-        width=896,
+        width=504,
+        height=896,
+        # height=504,
+        # width=896,
         length=frames,
         context=16,
         overlap=16 // 4,
@@ -286,8 +286,10 @@ def fn_generate(project, frames):
 def fn_generate_1(project, frames):
     generate(
         config_path=path_mgr.projects / project / "prompts.json",
-        width=896,
-        height=504,
+        # width=896,
+        # height=504,
+        width=504,
+        height=896,
         length=frames,
         context=8,
         overlap=8 // 4,
