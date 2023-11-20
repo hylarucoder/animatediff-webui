@@ -1,4 +1,4 @@
 @echo off
-SET "cmd=.\venv\Scripts\python -m animatediff webui"
+SET "cmd=.\venv\Scripts\python webui.py"
 CALL %cmd%
 PAUSE
