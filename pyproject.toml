@@ -58,16 +58,17 @@ socks = ['PySocks >= 1.5.6, != 1.5.7, < 2']
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-[tool.black]
-line-length = 120
-target-version = ['py310']
-ignore = ['F841', 'F401', 'E501']
-preview = true
-
 [tool.ruff]
 line-length = 120
 target-version = 'py310'
-ignore = ['F841', 'F401', 'E501']
+ignore = ['F841', 'F401', 'E501', 'D211', 'D213']
+select = [
+    "F", # pyflakes
+    "E", # pycodestyle
+    "W", # pycodestyle warnings
+    "I", # isort
+    "D", # pydocstyle
+]
 
 [tool.ruff.isort]
 combine-as-imports = true
