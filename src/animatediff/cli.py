@@ -51,8 +51,7 @@ cli: typer.Typer = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 data_dir = get_dir("data")
-checkpoint_dir = data_dir.joinpath("models/sd")
-pipeline_dir = data_dir.joinpath("models/huggingface")
+pipeline_dir = path_mgr.huggingface_pipeline
 
 try:
     import google.colab

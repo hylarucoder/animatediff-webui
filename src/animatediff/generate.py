@@ -889,11 +889,15 @@ def controlnet_preprocess(
         item = controlnet_map[c]
 
         processed = False
+        cache_dir = path_mgr.projects / project_dir / "cache"
+        cache_dir.mkdir(exist_ok=True)
 
         if type(item) is dict:
-            if item["enable"] == True:
+            if item["enable"]:
+                # 定义缓存文件的路径
+
                 if is_valid_controlnet_type(c, is_sdxl):
-                    preprocessor_map = item["preprocessor"] if "preprocessor" in item else {}
+                    preprocessor_map = item.get("preprocessor", {})
 
                     img_dir = c_image_dir.joinpath(c)
                     cond_imgs = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
@@ -903,30 +907,59 @@ def controlnet_preprocess(
                             "control_guidance_start": item["control_guidance_start"],
                             "control_guidance_end": item["control_guidance_end"],
                             "control_scale_list": item["control_scale_list"],
-                            "guess_mode": item["guess_mode"] if "guess_mode" in item else False,
+                            "guess_mode": item.get("guess_mode", False),
                         }
 
-                        use_preprocessor = item["use_preprocessor"] if "use_preprocessor" in item else True
+                        use_preprocessor = item.get("use_preprocessor", True)
 
                         for img_path in tqdm(cond_imgs, desc=f"Preprocessing images ({c})"):
                             frame_no = int(Path(img_path).stem)
                             if frame_no < duration:
                                 if frame_no not in controlnet_image_map:
                                     controlnet_image_map[frame_no] = {}
-                                controlnet_image_map[frame_no][c] = get_preprocessed_img(
-                                    c, get_resized_image2(img_path, 512), use_preprocessor, device_str, preprocessor_map
-                                )
-                                processed = True
+
+                                # 检查缓存文件是否存在
+                                cache_path = os.path.join(cache_dir, f"{frame_no:08d}_{c}.png")
+                                if os.path.exists(cache_path):
+                                    # 检查原始图片和预处理图片的修改时间
+                                    original_img_mtime = os.path.getmtime(img_path)
+                                    preprocessed_img_mtime = os.path.getmtime(cache_path)
+                                    if original_img_mtime <= preprocessed_img_mtime:
+                                        # 如果原始图片不比预处理图片新，直接用预处理图片
+                                        controlnet_image_map[frame_no][c] = Image.open(cache_path)
+                                    else:
+                                        preprocessed_img = get_preprocessed_img(
+                                            c,
+                                            get_resized_image2(img_path, 512),
+                                            use_preprocessor,
+                                            device_str,
+                                            preprocessor_map,
+                                        )
+                                        controlnet_image_map[frame_no][c] = preprocessed_img
+                                        preprocessed_img.save(cache_path)
+                                else:
+                                    preprocessed_img = get_preprocessed_img(
+                                        c,
+                                        get_resized_image2(img_path, 512),
+                                        use_preprocessor,
+                                        device_str,
+                                        preprocessor_map,
+                                    )
+                                    controlnet_image_map[frame_no][c] = preprocessed_img
+                                    preprocessed_img.save(cache_path)
                 else:
                     logger.info(f"invalid controlnet type for {'sdxl' if is_sdxl else 'sd15'} : {c}")
 
         if save_detectmap and processed:
             det_dir = out_dir.joinpath(f"{0:02d}_detectmap/{c}")
             det_dir.mkdir(parents=True, exist_ok=True)
+
             for frame_no in tqdm(controlnet_image_map, desc=f"Saving Preprocessed images ({c})"):
+                cache_path = os.path.join(cache_dir, f"{frame_no:08d}_{c}.png")
                 save_path = det_dir.joinpath(f"{frame_no:08d}.png")
                 if c in controlnet_image_map[frame_no]:
                     controlnet_image_map[frame_no][c].save(save_path)
+                    print(cache_path)
 
         clear_controlnet_preprocessor(c)
 

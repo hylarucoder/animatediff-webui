@@ -101,3 +101,9 @@ animatediff = "animatediff.cli:cli"
 lint = "flake8"
 test = "pytest"
 all = { composite = ["lint", "test"] }
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = false

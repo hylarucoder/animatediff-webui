@@ -399,7 +399,7 @@ with gr.Blocks(
 
                 @btn_refresh.click(inputs=dp_project, outputs=dp_upscale)
                 def fn_refresh_project_draft(project_name):
-                    state.frames_dirs = frames_dirs = list(
+                    frames_dirs = list(
                         sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
                     )
                     return gr.update(
@@ -451,15 +451,6 @@ with gr.Blocks(
                         interactive=True,
                     )
 
-                    @cbg_performance.change(inputs=cbg_performance)
-                    def change(value):
-                        if value == "Extreme Speed":
-                            global_config.lcm_lora_scale = 1
-                            global_config.apply_lcm_lora = True
-                        else:
-                            global_config.lcm_lora_scale = 1
-                            global_config.apply_lcm_lora = False
-
                 with gr.Row():
                     cbg_ar = (
                         gr.Radio(
@@ -480,10 +471,6 @@ with gr.Blocks(
                         cb_random_seed = gr.Checkbox(label="random", interactive=True, value=True)
                         num_seed = gr.Number(label="Seed", value=-1, precision=0)
 
-                        @num_seed.change(inputs=num_seed)
-                        def change(value):
-                            global_config.seed = [value]
-
             with gr.Tab(label="Model"):
                 with gr.Row():
                     dp_checkpoint = gr.Dropdown(
@@ -492,10 +479,6 @@ with gr.Blocks(
                         choices=checkpoint_list,
                         interactive=True,
                     )
-
-                    @dp_checkpoint.change(inputs=dp_checkpoint)
-                    def change(value):
-                        global_config.checkpoint = value
 
                 with gr.Row():
                     dp_motion = gr.Dropdown(
@@ -507,10 +490,6 @@ with gr.Blocks(
                         value="mm_sd_v15_v2.ckpt",
                         interactive=True,
                     )
-
-                    @dp_motion.change(inputs=dp_motion)
-                    def change(value):
-                        global_config.motion = value
 
                     input_motion_lora = gr.Dropdown(
                         multiselect=True,
@@ -540,12 +519,6 @@ with gr.Blocks(
                                     value=0.7,
                                 )
 
-                                @lora_model.change(inputs=[lora_model])
-                                def change(v, idx=i):
-                                    global_config.lora_map = {
-                                        lora[0]: lora[1] for lora in lora_arr if lora[0] != BLANK_PLACEHOLDER
-                                    }
-
                                 lora_ctrls += [lora_model, lora_weight]
 
                 with gr.Row():
@@ -557,10 +530,34 @@ with gr.Blocks(
             with gr.Tab(label="Setting"):
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
-    def track_tqdm(project, data, progress=gr.Progress(track_tqdm=True)):
-        for i in tqdm.tqdm(range(2), desc="outer"):
-            for j in tqdm.tqdm(range(2), desc="inner"):
-                time.sleep(1)
+    def track_tqdm(
+        project, performance, seed, checkpoint, motion, *loras, data=None, progress=gr.Progress(track_tqdm=True)
+    ):
+        # loras 10
+        tqdm.tqdm.write(f"project: {project}")
+        tqdm.tqdm.write(f"config: {project}")
+        if performance == "Speed":
+            global_config.lcm_lora_scale = 1
+            global_config.apply_lcm_lora = False
+            global_config.steps = 20
+            global_config.guidance_scale = 8
+        elif performance == "Quality":
+            global_config.lcm_lora_scale = 1
+            global_config.apply_lcm_lora = False
+            global_config.steps = 40
+            global_config.guidance_scale = 8
+        elif performance == "Extreme Speed":
+            global_config.lcm_lora_scale = 1
+            global_config.apply_lcm_lora = True
+            global_config.steps = 8
+            global_config.guidance_scale = 1.8
+
+        global_config.lora_map = {lora[0]: lora[1] for lora in group_by_n(loras, 2) if lora[0] != BLANK_PLACEHOLDER}
+
+        global_config.seed = seed
+        global_config.checkpoint = checkpoint
+        global_config.motion = motion
+        tqdm.tqdm.write(f"apply generate: {project}")
 
         from animatediff.cli import generate
 
@@ -568,10 +565,8 @@ with gr.Blocks(
             config_path=path_mgr.projects / project / "prompts.json",
             width=432,
             height=768,
-            # height=504,
-            # width=896,
-            # length=frames,
-            length=64,
+            # TODO: length
+            length=32,
             context=16,
             overlap=16 // 4,
             stride=0,
@@ -583,9 +578,6 @@ with gr.Blocks(
             no_frames=False,
             save_merged=False,
         )
-        # TODO: 缩减 name
-        # TODO: 如果搞定,则选中 video 最新的 video
-
         return save_dir / "video.mp4"
 
     generate_button.click(
@@ -599,6 +591,11 @@ with gr.Blocks(
         track_tqdm,
         inputs=[
             dp_project,
+            cbg_performance,
+            num_seed,
+            dp_checkpoint,
+            dp_motion,
+            *lora_ctrls,
         ],
         outputs=[preview_video],
     ).then(
