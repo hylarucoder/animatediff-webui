@@ -46,7 +46,7 @@ class Tagger:
         self, general_threshold, character_threshold, ignore_tokens, with_confidence, is_danbooru_format, is_cpu
     ):
         prepare_wd14tagger()
-        #        self.model = onnxruntime.InferenceSession("data/models/WD14tagger/model.onnx", providers=['CUDAExecutionProvider','CPUExecutionProvider'])
+        #        self.model = onnxruntime.InferenceSession("WD14tagger/model.onnx", providers=['CUDAExecutionProvider','CPUExecutionProvider'])
         if is_cpu:
             self.model = onnxruntime.InferenceSession(
                 path_mgr.wd14_tagger / "model.onnx", providers=["CPUExecutionProvider"]

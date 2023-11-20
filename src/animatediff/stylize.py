@@ -282,7 +282,7 @@ def create_config(
 
     if low_vram:
         model_config.controlnet_map["max_samples_on_vram"] = 0
-        model_config.controlnet_map["max_models_on_vram"] = 1
+        model_config.controlnet_map["max_models_on_vram"] = 0
 
     if not is_img2img:
         model_config.controlnet_map["controlnet_tile"] = {
@@ -330,6 +330,7 @@ def create_config(
         "save_input_image": True,
         "resized_to_square": False,
         "scale": 0.5,
+        "is_full_face": False,
         "is_plus_face": False,
         "is_plus": True,
         "is_light": False,

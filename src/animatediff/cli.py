@@ -5,9 +5,26 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
+if False:
+    if 'PYTORCH_CUDA_ALLOC_CONF' in os.environ:
+        os.environ['PYTORCH_CUDA_ALLOC_CONF'] = ",backend:cudaMallocAsync"
+    else:
+        os.environ['PYTORCH_CUDA_ALLOC_CONF'] = "backend:cudaMallocAsync"
+
+    # "garbage_collection_threshold:0.6"
+    # max_split_size_mb:1024"
+    # "backend:cudaMallocAsync"
+    # roundup_power2_divisions:4
+    print(f"{os.environ['PYTORCH_CUDA_ALLOC_CONF']=}")
+
+if False:
+    os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = "1"
+
 import torch
 import typer
-from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosity_error
+from diffusers import DiffusionPipeline
+from diffusers.utils.logging import \
+    set_verbosity_error as set_diffusers_verbosity_error
 from rich.logging import RichHandler
 
 from animatediff import __version__, console, get_dir
@@ -30,7 +47,11 @@ from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, 
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
-from animatediff.utils.util import is_v2_motion_module, path_from_cwd, save_video, set_tensor_interpolation_method
+from animatediff.utils.util import (extract_frames, is_sdxl_checkpoint,
+                                    is_v2_motion_module, path_from_cwd,
+                                    save_frames, save_imgs, save_video,
+                                    set_tensor_interpolation_method, show_gpu)
+from animatediff.utils.wild_card import replace_wild_card
 
 cli: typer.Typer = typer.Typer(
     context_settings=dict(help_option_names=["-h", "--help"]),
@@ -80,10 +101,10 @@ diffuser_ver = meta_version("diffusers")
 
 logger.info(f"{diffuser_ver=}")
 
-if version.parse(diffuser_ver) < version.parse("0.21.2"):
+if version.parse(diffuser_ver) < version.parse('0.23.0'):
     logger.error(f"The version of diffusers is out of date")
-    logger.error(f"python -m pip install diffusers==0.21.2")
-    raise ImportError("Please update diffusers to 0.21.2")
+    logger.error(f"python -m pip install diffusers==0.23.0")
+    raise ImportError("Please update diffusers to 0.23.0")
 
 try:
     from animatediff.rife import app as rife_app
@@ -98,7 +119,7 @@ from animatediff.stylize import stylize
 cli.add_typer(stylize, name="stylize")
 
 # mildly cursed globals to allow for reuse of the pipeline if we're being called as a module
-g_pipeline: Optional[AnimationPipeline] = None
+g_pipeline: Optional[DiffusionPipeline] = None
 last_model_path: Optional[Path] = None
 
 
@@ -118,174 +139,164 @@ def get_random():
 
 @cli.command()
 def generate(
-    model_name_or_path: Annotated[
-        Path,
-        typer.Option(
-            ...,
-            "--model-path",
-            "-m",
-            path_type=Path,
-            help="Base model to use (path or HF repo ID). You probably don't need to change this.",
-        ),
-    ] = Path("runwayml/stable-diffusion-v1-5"),
-    config_path: Annotated[
-        Path,
-        typer.Option(
-            "--config-path",
-            "-c",
-            path_type=Path,
-            exists=True,
-            readable=True,
-            dir_okay=False,
-            help="Path to a prompt configuration JSON file",
-        ),
-    ] = Path("config/prompts/01-ToonYou.json"),
-    width: Annotated[
-        int,
-        typer.Option(
-            "--width",
-            "-W",
-            min=64,
-            max=3840,
-            help="Width of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = 512,
-    height: Annotated[
-        int,
-        typer.Option(
-            "--height",
-            "-H",
-            min=64,
-            max=2160,
-            help="Height of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = 512,
-    length: Annotated[
-        int,
-        typer.Option(
-            "--length",
-            "-L",
-            min=1,
-            max=9999,
-            help="Number of frames to generate",
-            rich_help_panel="Generation",
-        ),
-    ] = 16,
-    context: Annotated[
-        Optional[int],
-        typer.Option(
-            "--context",
-            "-C",
-            min=1,
-            max=32,
-            help="Number of frames to condition on (default: max of <length> or 32). max for motion module v1 is 24",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    overlap: Annotated[
-        Optional[int],
-        typer.Option(
-            "--overlap",
-            "-O",
-            min=0,
-            max=12,
-            help="Number of frames to overlap in context (default: context//4)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    stride: Annotated[
-        Optional[int],
-        typer.Option(
-            "--stride",
-            "-S",
-            min=0,
-            max=8,
-            help="Max motion stride as a power of 2 (default: 0)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    repeats: Annotated[
-        int,
-        typer.Option(
-            "--repeats",
-            "-r",
-            min=1,
-            max=99,
-            help="Number of times to repeat the prompt (default: 1)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 1,
-    device: Annotated[
-        str,
-        typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
-    ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    force_half_vae: Annotated[
-        bool,
-        typer.Option(
-            "--half-vae",
-            is_flag=True,
-            help="Force VAE to use fp16 (not recommended)",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    out_dir: Annotated[
-        Path,
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Directory for output folders (frames, gifs, etc)",
-            rich_help_panel="Output",
-        ),
-    ] = Path("output/"),
-    no_frames: Annotated[
-        bool,
-        typer.Option(
-            "--no-frames",
-            "-N",
-            is_flag=True,
-            help="Don't save frames, only the animation",
-            rich_help_panel="Output",
-        ),
-    ] = False,
-    save_merged: Annotated[
-        bool,
-        typer.Option(
-            "--save-merged",
-            "-m",
-            is_flag=True,
-            help="Save a merged animation of all prompts",
-            rich_help_panel="Output",
-        ),
-    ] = False,
-    version: Annotated[
-        Optional[bool],
-        typer.Option(
-            "--version",
-            "-v",
-            callback=version_callback,
-            is_eager=True,
-            is_flag=True,
-            help="Show version",
-        ),
-    ] = None,
+        config_path: Annotated[
+            Path,
+            typer.Option(
+                "--config-path",
+                "-c",
+                path_type=Path,
+                exists=True,
+                readable=True,
+                dir_okay=False,
+                help="Path to a prompt configuration JSON file",
+            ),
+        ] = Path("config/prompts/01-ToonYou.json"),
+        width: Annotated[
+            int,
+            typer.Option(
+                "--width",
+                "-W",
+                min=64,
+                max=3840,
+                help="Width of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = 512,
+        height: Annotated[
+            int,
+            typer.Option(
+                "--height",
+                "-H",
+                min=64,
+                max=2160,
+                help="Height of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = 512,
+        length: Annotated[
+            int,
+            typer.Option(
+                "--length",
+                "-L",
+                min=1,
+                max=9999,
+                help="Number of frames to generate",
+                rich_help_panel="Generation",
+            ),
+        ] = 16,
+        context: Annotated[
+            Optional[int],
+            typer.Option(
+                "--context",
+                "-C",
+                min=1,
+                max=32,
+                help="Number of frames to condition on (default: max of <length> or 32). max for motion module v1 is 24",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        overlap: Annotated[
+            Optional[int],
+            typer.Option(
+                "--overlap",
+                "-O",
+                min=0,
+                max=12,
+                help="Number of frames to overlap in context (default: context//4)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        stride: Annotated[
+            Optional[int],
+            typer.Option(
+                "--stride",
+                "-S",
+                min=0,
+                max=8,
+                help="Max motion stride as a power of 2 (default: 0)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        repeats: Annotated[
+            int,
+            typer.Option(
+                "--repeats",
+                "-r",
+                min=1,
+                max=99,
+                help="Number of times to repeat the prompt (default: 1)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = 1,
+        device: Annotated[
+            str,
+            typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
+        ] = "cuda",
+        use_xformers: Annotated[
+            bool,
+            typer.Option(
+                "--xformers",
+                "-x",
+                is_flag=True,
+                help="Use XFormers instead of SDP Attention",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        force_half_vae: Annotated[
+            bool,
+            typer.Option(
+                "--half-vae",
+                is_flag=True,
+                help="Force VAE to use fp16 (not recommended)",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        out_dir: Annotated[
+            Path,
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Directory for output folders (frames, gifs, etc)",
+                rich_help_panel="Output",
+            ),
+        ] = Path("output/"),
+        no_frames: Annotated[
+            bool,
+            typer.Option(
+                "--no-frames",
+                "-N",
+                is_flag=True,
+                help="Don't save frames, only the animation",
+                rich_help_panel="Output",
+            ),
+        ] = False,
+        save_merged: Annotated[
+            bool,
+            typer.Option(
+                "--save-merged",
+                "-m",
+                is_flag=True,
+                help="Save a merged animation of all prompts",
+                rich_help_panel="Output",
+            ),
+        ] = False,
+        version: Annotated[
+            Optional[bool],
+            typer.Option(
+                "--version",
+                "-v",
+                callback=version_callback,
+                is_eager=True,
+                is_flag=True,
+                help="Show version",
+            ),
+        ] = None,
 ):
     """
     Do the thing. Make the animation happen. Waow.
@@ -294,28 +305,39 @@ def generate(
     # be quiet, diffusers. we care not for your safety checker
     set_diffusers_verbosity_error()
 
+    # torch.set_flush_denormal(True)
+
     config_path = config_path.absolute()
     project_dir = config_path.parent
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
-    is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
-    infer_config: InferenceConfig = get_infer_config(is_v2)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+
+    if is_sdxl:
+        is_v2 = False
+    else:
+        is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
+
+    infer_config: InferenceConfig = get_infer_config(is_v2, is_sdxl)
 
     set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
 
     # set sane defaults for context, overlap, and stride if not supplied
     context, overlap, stride = get_context_params(length, context, overlap, stride)
 
-    if (not is_v2) and (context > 24):
+    if (not is_v2) and (not is_sdxl) and (context > 24):
         logger.warning("For motion module v1, the maximum value of context is 24. Set to 24")
         context = 24
 
     # turn the device string into a torch.device
     device: torch.device = torch.device(device)
 
+    model_name_or_path = Path("runwayml/stable-diffusion-v1-5") if not is_sdxl else Path(
+        "stabilityai/stable-diffusion-xl-base-1.0")
+
     # Get the base model if we don't have it already
     logger.info(f"Using base model: {model_name_or_path}")
-    base_model_path: Path = get_base_model(model_name_or_path, local_dir=path_mgr.huggingface_pipeline)
+    base_model_path: Path = get_base_model(model_name_or_path, local_dir=path_mgr.huggingface_pipeline, is_sdxl=is_sdxl)
 
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -324,9 +346,10 @@ def generate(
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
-    controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
-        project_dir, model_config.controlnet_map, width, height, length, save_dir, device
-    )
+    controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(project_dir,
+                                                                                          model_config.controlnet_map,
+                                                                                          width, height, length,
+                                                                                          save_dir, device, is_sdxl)
     img2img_map = img2img_preprocess(project_dir, model_config.img2img_map, width, height, length, save_dir)
 
     # beware the pipeline
@@ -339,22 +362,26 @@ def generate(
             infer_config=infer_config,
             use_xformers=use_xformers,
             video_length=length,
+            is_sdxl=is_sdxl
         )
         last_model_path = model_config.checkpoint.resolve()
     else:
         logger.info("Pipeline already loaded, skipping initialization")
         # reload TIs; create_pipeline does this for us, but they may have changed
         # since load time if we're being called from another package
-        load_text_embeddings(g_pipeline)
+        load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
-    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config)
+    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config, is_sdxl=is_sdxl)
 
     if g_pipeline.device == device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
     else:
+
         g_pipeline = send_to_device(
-            g_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile
+            g_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile, is_sdxl=is_sdxl
         )
+
+        torch.cuda.empty_cache()
 
     # save raw config to output directory
     save_config_path = save_dir.joinpath("raw_prompt.json")
@@ -370,7 +397,7 @@ def generate(
 
     is_init_img_exist = img2img_map != None
     region_condi_list, region_list, ip_adapter_config_map = region_preprocess(
-        project_dir, model_config, width, height, length, save_dir, is_init_img_exist
+        project_dir, model_config, width, height, length, save_dir, is_init_img_exist, is_sdxl
     )
 
     # save config to output directory
@@ -428,6 +455,8 @@ def generate(
                 region_condi_list=region_condi_list,
                 output_map=model_config.output,
                 is_single_prompt_mode=model_config.is_single_prompt_mode,
+                is_sdxl=is_sdxl,
+                apply_lcm_lora=model_config.apply_lcm_lora
             )
             outputs.append(output)
             torch.cuda.empty_cache()
@@ -449,88 +478,88 @@ def generate(
 
 @cli.command()
 def tile_upscale(
-    frames_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
-    ] = ...,
-    config_path: Annotated[
-        Path,
-        typer.Option(
-            "--config-path",
-            "-c",
-            path_type=Path,
-            exists=True,
-            readable=True,
-            dir_okay=False,
-            help="Path to a prompt configuration JSON file. default is frames_dir/../prompt.json",
-        ),
-    ] = None,
-    width: Annotated[
-        int,
-        typer.Option(
-            "--width",
-            "-W",
-            min=-1,
-            max=3840,
-            help="Width of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    height: Annotated[
-        int,
-        typer.Option(
-            "--height",
-            "-H",
-            min=-1,
-            max=2160,
-            help="Height of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    device: Annotated[
-        str,
-        typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
-    ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    force_half_vae: Annotated[
-        bool,
-        typer.Option(
-            "--half-vae",
-            is_flag=True,
-            help="Force VAE to use fp16 (not recommended)",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    out_dir: Annotated[
-        Path,
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Directory for output folders (frames, gifs, etc)",
-            rich_help_panel="Output",
-        ),
-    ] = Path("upscaled/"),
-    no_frames: Annotated[
-        bool,
-        typer.Option(
-            "--no-frames",
-            "-N",
-            is_flag=True,
-            help="Don't save frames, only the animation",
-            rich_help_panel="Output",
-        ),
-    ] = False,
+        frames_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
+        ] = ...,
+        config_path: Annotated[
+            Path,
+            typer.Option(
+                "--config-path",
+                "-c",
+                path_type=Path,
+                exists=True,
+                readable=True,
+                dir_okay=False,
+                help="Path to a prompt configuration JSON file. default is frames_dir/../prompt.json",
+            ),
+        ] = None,
+        width: Annotated[
+            int,
+            typer.Option(
+                "--width",
+                "-W",
+                min=-1,
+                max=3840,
+                help="Width of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        height: Annotated[
+            int,
+            typer.Option(
+                "--height",
+                "-H",
+                min=-1,
+                max=2160,
+                help="Height of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        device: Annotated[
+            str,
+            typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
+        ] = "cuda",
+        use_xformers: Annotated[
+            bool,
+            typer.Option(
+                "--xformers",
+                "-x",
+                is_flag=True,
+                help="Use XFormers instead of SDP Attention",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        force_half_vae: Annotated[
+            bool,
+            typer.Option(
+                "--half-vae",
+                is_flag=True,
+                help="Force VAE to use fp16 (not recommended)",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        out_dir: Annotated[
+            Path,
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Directory for output folders (frames, gifs, etc)",
+                rich_help_panel="Output",
+            ),
+        ] = Path("upscaled/"),
+        no_frames: Annotated[
+            bool,
+            typer.Option(
+                "--no-frames",
+                "-N",
+                is_flag=True,
+                help="Don't save frames, only the animation",
+                rich_help_panel="Output",
+            ),
+        ] = False,
 ):
     """Upscale frames using controlnet tile"""
     # be quiet, diffusers. we care not for your safety checker
@@ -548,8 +577,12 @@ def tile_upscale(
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+    if is_sdxl:
+        raise ValueError("Currently SDXL model is not available for this command.")
+
     infer_config: InferenceConfig = get_infer_config(
-        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion))
+        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion)), is_sdxl
     )
     frames_dir = frames_dir.absolute()
 
@@ -706,41 +739,41 @@ def tile_upscale(
 
 @cli.command()
 def civitai2config(
-    lora_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to loras directory"),
-    ] = ...,
-    config_org: Annotated[
-        Path,
-        typer.Option(
-            "--config-org",
-            "-c",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="Path to original config file",
-        ),
-    ] = Path("config/prompts/prompt_travel.json"),
-    out_dir: Annotated[
-        Optional[Path],
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Target directory for generated configs",
-        ),
-    ] = Path("config/prompts/converted/"),
-    lora_weight: Annotated[
-        float,
-        typer.Option(
-            "--lora_weight",
-            "-l",
-            min=0.0,
-            max=3.0,
-            help="Lora weight",
-        ),
-    ] = 0.75,
+        lora_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to loras directory"),
+        ] = ...,
+        config_org: Annotated[
+            Path,
+            typer.Option(
+                "--config-org",
+                "-c",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="Path to original config file",
+            ),
+        ] = Path("config/prompts/prompt_travel.json"),
+        out_dir: Annotated[
+            Optional[Path],
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Target directory for generated configs",
+            ),
+        ] = Path("config/prompts/converted/"),
+        lora_weight: Annotated[
+            float,
+            typer.Option(
+                "--lora_weight",
+                "-l",
+                min=0.0,
+                max=3.0,
+                help="Lora weight",
+            ),
+        ] = 0.75,
 ):
     """Generate config file from *.civitai.info"""
 
@@ -753,27 +786,27 @@ def civitai2config(
 
 @cli.command()
 def convert(
-    checkpoint: Annotated[
-        Path,
-        typer.Option(
-            "--checkpoint",
-            "-i",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="Path to a model checkpoint file",
-        ),
-    ] = ...,
-    out_dir: Annotated[
-        Optional[Path],
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Target directory for converted model",
-        ),
-    ] = None,
+        checkpoint: Annotated[
+            Path,
+            typer.Option(
+                "--checkpoint",
+                "-i",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="Path to a model checkpoint file",
+            ),
+        ] = ...,
+        out_dir: Annotated[
+            Optional[Path],
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Target directory for converted model",
+            ),
+        ] = None,
 ):
     """Convert a StableDiffusion checkpoint into a Diffusers pipeline"""
     logger.info(f"Converting checkpoint: {checkpoint}")
@@ -783,19 +816,19 @@ def convert(
 
 @cli.command()
 def fix_checkpoint(
-    checkpoint: Annotated[
-        Path,
-        typer.Argument(path_type=Path, dir_okay=False, exists=True, help="Path to a model checkpoint file"),
-    ] = ...,
-    debug: Annotated[
-        bool,
-        typer.Option(
-            "--debug",
-            "-d",
-            is_flag=True,
-            rich_help_panel="Debug",
-        ),
-    ] = False,
+        checkpoint: Annotated[
+            Path,
+            typer.Argument(path_type=Path, dir_okay=False, exists=True, help="Path to a model checkpoint file"),
+        ] = ...,
+        debug: Annotated[
+            bool,
+            typer.Option(
+                "--debug",
+                "-d",
+                is_flag=True,
+                rich_help_panel="Debug",
+            ),
+        ] = False,
 ):
     """Fix checkpoint with error "AttributeError: 'Attention' object has no attribute 'to_to_k'" on loading"""
     set_diffusers_verbosity_error()
@@ -806,27 +839,27 @@ def fix_checkpoint(
 
 @cli.command()
 def merge(
-    checkpoint: Annotated[
-        Path,
-        typer.Option(
-            "--checkpoint",
-            "-i",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="Path to a model checkpoint file",
-        ),
-    ] = ...,
-    out_dir: Annotated[
-        Optional[Path],
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Target directory for converted model",
-        ),
-    ] = None,
+        checkpoint: Annotated[
+            Path,
+            typer.Option(
+                "--checkpoint",
+                "-i",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="Path to a model checkpoint file",
+            ),
+        ] = ...,
+        out_dir: Annotated[
+            Optional[Path],
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Target directory for converted model",
+            ),
+        ] = None,
 ):
     """Convert a StableDiffusion checkpoint into an AnimationPipeline"""
     raise NotImplementedError("Sorry, haven't implemented this yet!")
@@ -849,159 +882,159 @@ def merge(
 
 @cli.command(no_args_is_help=True)
 def refine(
-    frames_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
-    ] = ...,
-    config_path: Annotated[
-        Path,
-        typer.Option(
-            "--config-path",
-            "-c",
-            path_type=Path,
-            exists=True,
-            readable=True,
-            dir_okay=False,
-            help="Path to a prompt configuration JSON file. default is frames_dir/../prompt.json",
-        ),
-    ] = None,
-    interpolation_multiplier: Annotated[
-        int,
-        typer.Option(
-            "--interpolation-multiplier",
-            "-M",
-            min=1,
-            max=10,
-            help="Interpolate with RIFE before generation. (I'll leave it as is, but I think interpolation after generation is sufficient).",
-            rich_help_panel="Generation",
-        ),
-    ] = 1,
-    tile_conditioning_scale: Annotated[
-        float,
-        typer.Option(
-            "--tile",
-            "-t",
-            min=0,
-            max=1.0,
-            help="controlnet_tile conditioning scale",
-            rich_help_panel="Generation",
-        ),
-    ] = 0.75,
-    width: Annotated[
-        int,
-        typer.Option(
-            "--width",
-            "-W",
-            min=-1,
-            max=3840,
-            help="Width of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    height: Annotated[
-        int,
-        typer.Option(
-            "--height",
-            "-H",
-            min=-1,
-            max=2160,
-            help="Height of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    length: Annotated[
-        int,
-        typer.Option(
-            "--length",
-            "-L",
-            min=-1,
-            max=9999,
-            help="Number of frames to generate. -1 means using all frames in frames_dir.",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    context: Annotated[
-        Optional[int],
-        typer.Option(
-            "--context",
-            "-C",
-            min=1,
-            max=32,
-            help="Number of frames to condition on (default: max of <length> or 32). max for motion module v1 is 24",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    overlap: Annotated[
-        Optional[int],
-        typer.Option(
-            "--overlap",
-            "-O",
-            min=1,
-            max=12,
-            help="Number of frames to overlap in context (default: context//4)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    stride: Annotated[
-        Optional[int],
-        typer.Option(
-            "--stride",
-            "-S",
-            min=0,
-            max=8,
-            help="Max motion stride as a power of 2 (default: 0)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = None,
-    repeats: Annotated[
-        int,
-        typer.Option(
-            "--repeats",
-            "-r",
-            min=1,
-            max=99,
-            help="Number of times to repeat the refine (default: 1)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 1,
-    device: Annotated[
-        str,
-        typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
-    ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    force_half_vae: Annotated[
-        bool,
-        typer.Option(
-            "--half-vae",
-            is_flag=True,
-            help="Force VAE to use fp16 (not recommended)",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    out_dir: Annotated[
-        Path,
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Directory for output folders (frames, gifs, etc)",
-            rich_help_panel="Output",
-        ),
-    ] = Path("refine/"),
+        frames_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
+        ] = ...,
+        config_path: Annotated[
+            Path,
+            typer.Option(
+                "--config-path",
+                "-c",
+                path_type=Path,
+                exists=True,
+                readable=True,
+                dir_okay=False,
+                help="Path to a prompt configuration JSON file. default is frames_dir/../prompt.json",
+            ),
+        ] = None,
+        interpolation_multiplier: Annotated[
+            int,
+            typer.Option(
+                "--interpolation-multiplier",
+                "-M",
+                min=1,
+                max=10,
+                help="Interpolate with RIFE before generation. (I'll leave it as is, but I think interpolation after generation is sufficient).",
+                rich_help_panel="Generation",
+            ),
+        ] = 1,
+        tile_conditioning_scale: Annotated[
+            float,
+            typer.Option(
+                "--tile",
+                "-t",
+                min=0,
+                max=1.0,
+                help="controlnet_tile conditioning scale",
+                rich_help_panel="Generation",
+            ),
+        ] = 0.75,
+        width: Annotated[
+            int,
+            typer.Option(
+                "--width",
+                "-W",
+                min=-1,
+                max=3840,
+                help="Width of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        height: Annotated[
+            int,
+            typer.Option(
+                "--height",
+                "-H",
+                min=-1,
+                max=2160,
+                help="Height of generated frames",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        length: Annotated[
+            int,
+            typer.Option(
+                "--length",
+                "-L",
+                min=-1,
+                max=9999,
+                help="Number of frames to generate. -1 means using all frames in frames_dir.",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        context: Annotated[
+            Optional[int],
+            typer.Option(
+                "--context",
+                "-C",
+                min=1,
+                max=32,
+                help="Number of frames to condition on (default: max of <length> or 32). max for motion module v1 is 24",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        overlap: Annotated[
+            Optional[int],
+            typer.Option(
+                "--overlap",
+                "-O",
+                min=1,
+                max=12,
+                help="Number of frames to overlap in context (default: context//4)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        stride: Annotated[
+            Optional[int],
+            typer.Option(
+                "--stride",
+                "-S",
+                min=0,
+                max=8,
+                help="Max motion stride as a power of 2 (default: 0)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = None,
+        repeats: Annotated[
+            int,
+            typer.Option(
+                "--repeats",
+                "-r",
+                min=1,
+                max=99,
+                help="Number of times to repeat the refine (default: 1)",
+                show_default=False,
+                rich_help_panel="Generation",
+            ),
+        ] = 1,
+        device: Annotated[
+            str,
+            typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
+        ] = "cuda",
+        use_xformers: Annotated[
+            bool,
+            typer.Option(
+                "--xformers",
+                "-x",
+                is_flag=True,
+                help="Use XFormers instead of SDP Attention",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        force_half_vae: Annotated[
+            bool,
+            typer.Option(
+                "--half-vae",
+                is_flag=True,
+                help="Force VAE to use fp16 (not recommended)",
+                rich_help_panel="Advanced",
+            ),
+        ] = False,
+        out_dir: Annotated[
+            Path,
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="Directory for output folders (frames, gifs, etc)",
+                rich_help_panel="Output",
+            ),
+        ] = Path("refine/"),
 ):
     """Create upscaled or improved video using pre-generated frames"""
     import shutil

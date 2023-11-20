@@ -264,7 +264,6 @@ from animatediff.cli import generate, tile_upscale
 
 def fn_generate(project, frames):
     generate(
-        model_name_or_path=Path("runwayml/stable-diffusion-v1-5"),
         config_path=path_mgr.projects / project / "prompts.json",
         # width=504,
         # height=896,
@@ -286,7 +285,6 @@ def fn_generate(project, frames):
 
 def fn_generate_1(project, frames):
     generate(
-        model_name_or_path=Path("runwayml/stable-diffusion-v1-5"),
         config_path=path_mgr.projects / project / "prompts.json",
         width=896,
         height=504,

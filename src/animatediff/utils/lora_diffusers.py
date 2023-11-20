@@ -1,6 +1,6 @@
 # https://github.com/kohya-ss/sd-scripts/blob/dev/networks/lora_diffusers.py
 
-# Diffusersで動くLoRA。このファイル単独で完結する。
+# Diffusers で動く LoRA。このファイル単独で完結する。
 # LoRA module for Diffusers. This file works independently.
 
 import bisect
@@ -120,7 +120,7 @@ class LoRAModule(torch.nn.Module):
         super().__init__()
         self.lora_name = lora_name
 
-        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv":
+        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv" or org_module.__class__.__name__ == "InflatedConv3d":
             in_dim = org_module.in_channels
             out_dim = org_module.out_channels
         else:
@@ -129,7 +129,7 @@ class LoRAModule(torch.nn.Module):
 
         self.lora_dim = lora_dim
 
-        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv":
+        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv" or org_module.__class__.__name__ == "InflatedConv3d":
             kernel_size = org_module.kernel_size
             stride = org_module.stride
             padding = org_module.padding
@@ -285,7 +285,7 @@ def merge_lora_weights(pipe, weights_sd: Dict, multiplier: float = 1.0):
     lora_network.merge_to(multiplier=multiplier)
 
 
-# block weightや学習に対応しない簡易版 / simple version without block weight and training
+# block weight や学習に対応しない簡易版 / simple version without block weight and training
 class LoRANetwork(torch.nn.Module):
     UNET_TARGET_REPLACE_MODULE_TYPE1 = ["Transformer3DModel"]
     UNET_TARGET_REPLACE_MODULE_CONV2D_3X3_TYPE1 = ["ResnetBlock3D", "Downsample3D", "Upsample3D"]
@@ -340,13 +340,13 @@ class LoRANetwork(torch.nn.Module):
             for name, module in root_module.named_modules():
                 if module.__class__.__name__ in target_replace_modules:
                     for child_name, child_module in module.named_modules():
+                        #print(f"{name=} / {child_name=} / {child_module.__class__.__name__}")
                         is_linear = (
                             child_module.__class__.__name__ == "Linear"
                             or child_module.__class__.__name__ == "LoRACompatibleLinear"
                         )
                         is_conv2d = (
-                            child_module.__class__.__name__ == "Conv2d"
-                            or child_module.__class__.__name__ == "LoRACompatibleConv"
+                            child_module.__class__.__name__ == "Conv2d" or child_module.__class__.__name__ == "LoRACompatibleConv" or child_module.__class__.__name__ == "InflatedConv3d"
                         )
 
                         if is_linear or is_conv2d:
@@ -367,6 +367,7 @@ class LoRANetwork(torch.nn.Module):
                                 dim,
                                 alpha,
                             )
+                            #print(f"{lora_name=}")
                             loras.append(lora)
             return loras, skipped
 
@@ -621,7 +622,7 @@ if __name__ == "__main__":
 
     # restore (unmerge) LoRA weights: numerically unstable
     # マージされた重みを元に戻す。計算誤差のため、元の重みと完全に一致しないことがあるかもしれない
-    # 保存したstate_dictから元の重みを復元するのが確実
+    # 保存した state_dict から元の重みを復元するのが確実
     print(f"restore (unmerge) LoRA weights")
     lora_network.restore_from(multiplier=1.0)
 
