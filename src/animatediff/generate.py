@@ -406,12 +406,12 @@ def get_preprocessed_img(type_str, img, use_preprocessor, device_str, preprocess
 
 
 def create_pipeline_sdxl(
-    base_model: Union[str, PathLike] = default_base_path,
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
-    use_xformers: bool = True,
-    video_length: int = 16,
-    motion_module_path=...,
+        base_model: Union[str, PathLike] = default_base_path,
+        model_config: ModelConfig = ...,
+        infer_config: InferenceConfig = ...,
+        use_xformers: bool = True,
+        video_length: int = 16,
+        motion_module_path=...,
 ):
     from animatediff.pipelines.sdxl_animation import AnimationPipeline
     from animatediff.sdxl_models.unet import UNet3DConditionModel
@@ -482,7 +482,7 @@ def create_pipeline_sdxl(
         logger.info("Using base model weights (no checkpoint/LoRA)")
 
     if model_config.vae_path:
-        vae_path = data_dir.joinpath(model_config.vae_path)
+        vae_path = path_mgr.vaes / model_config.vae_path
         logger.info(f"Loading vae from {vae_path}")
 
         if vae_path.is_dir():
@@ -551,12 +551,12 @@ def create_pipeline_sdxl(
 
 
 def create_pipeline(
-    base_model: Union[str, PathLike] = default_base_path,
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
-    use_xformers: bool = True,
-    video_length: int = 16,
-    is_sdxl: bool = False,
+        base_model: Union[str, PathLike] = default_base_path,
+        model_config: ModelConfig = ...,
+        infer_config: InferenceConfig = ...,
+        use_xformers: bool = True,
+        video_length: int = 16,
+        is_sdxl: bool = False,
 ) -> DiffusionPipeline:
     """Create an AnimationPipeline from a pretrained model.
     Uses the base_model argument to load or download the pretrained reference pipeline model."""
@@ -699,7 +699,7 @@ def create_pipeline(
 
 
 def load_controlnet_models(
-    project_dir: Path, pipe: DiffusionPipeline, model_config: ModelConfig = ..., is_sdxl: bool = False
+        project_dir: Path, pipe: DiffusionPipeline, model_config: ModelConfig = ..., is_sdxl: bool = False
 ):
     # controlnet
     controlnet_map = {}
@@ -735,13 +735,13 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 
 
 def create_us_pipeline(
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
-    use_xformers: bool = True,
-    use_controlnet_ref: bool = False,
-    use_controlnet_tile: bool = False,
-    use_controlnet_line_anime: bool = False,
-    use_controlnet_ip2p: bool = False,
+        model_config: ModelConfig = ...,
+        infer_config: InferenceConfig = ...,
+        use_xformers: bool = True,
+        use_controlnet_ref: bool = False,
+        use_controlnet_tile: bool = False,
+        use_controlnet_line_anime: bool = False,
+        use_controlnet_ip2p: bool = False,
 ) -> DiffusionPipeline:
     # set up scheduler
     sched_kwargs = infer_config.noise_scheduler_kwargs
@@ -857,19 +857,19 @@ def seed_everything(seed):
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed % (2**32))
+    np.random.seed(seed % (2 ** 32))
     random.seed(seed)
 
 
 def controlnet_preprocess(
-    project_dir: Path,
-    controlnet_map: Dict[str, Any] = None,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
-    device_str: str = None,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        controlnet_map: Dict[str, Any] = None,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
+        device_str: str = None,
+        is_sdxl: bool = False,
 ):
     if not controlnet_map:
         return None, None, None
@@ -967,13 +967,13 @@ def controlnet_preprocess(
 
 
 def ip_adapter_preprocess(
-    project_dir: Path,
-    ip_adapter_config_map: Dict[str, Any] = None,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        ip_adapter_config_map: Dict[str, Any] = None,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
+        is_sdxl: bool = False,
 ):
     ip_adapter_map = {}
 
@@ -1028,11 +1028,11 @@ def ip_adapter_preprocess(
 
 
 def prompt_preprocess(
-    prompt_config_map: Dict[str, Any],
-    head_prompt: str,
-    tail_prompt: str,
-    prompt_fixed_ratio: float,
-    video_length: int,
+        prompt_config_map: Dict[str, Any],
+        head_prompt: str,
+        tail_prompt: str,
+        prompt_fixed_ratio: float,
+        video_length: int,
 ):
     prompt_map = {}
     for k in prompt_config_map.keys():
@@ -1058,14 +1058,14 @@ def prompt_preprocess(
 
 
 def region_preprocess(
-    project_dir: Path,
-    model_config: ModelConfig = ...,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
-    is_init_img_exist: bool = False,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        model_config: ModelConfig = ...,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
+        is_init_img_exist: bool = False,
+        is_sdxl: bool = False,
 ):
     is_bg_init_img = False
     if is_init_img_exist:
@@ -1196,12 +1196,12 @@ def region_preprocess(
 
 
 def img2img_preprocess(
-    project_dir: Path,
-    img2img_config_map: Dict[str, Any] = None,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
+        project_dir: Path,
+        img2img_config_map: Dict[str, Any] = None,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
 ):
     img2img_map = {}
 
@@ -1231,12 +1231,12 @@ def img2img_preprocess(
 
 
 def mask_preprocess(
-    project_dir: Path,
-    region_config_map: Dict[str, Any] = None,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
+        project_dir: Path,
+        region_config_map: Dict[str, Any] = None,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
 ):
     mask_map = {}
 
@@ -1281,7 +1281,7 @@ def mask_preprocess(
 
 
 def wild_card_conversion(
-    model_config: ModelConfig = ...,
+        model_config: ModelConfig = ...,
 ):
     from animatediff.utils.wild_card import replace_wild_card
 
@@ -1315,13 +1315,13 @@ def wild_card_conversion(
 
 
 def save_output(
-    pipeline_output,
-    frame_dir: str,
-    out_file: str,
-    output_map: Dict[str, Any] = {},
-    no_frames: bool = False,
-    save_frames=save_frames,
-    save_video=None,
+        pipeline_output,
+        frame_dir: str,
+        out_file: str,
+        output_map: Dict[str, Any] = {},
+        no_frames: bool = False,
+        save_frames=save_frames,
+        save_video=None,
 ):
     output_format = "gif"
     output_fps = 8
@@ -1374,35 +1374,35 @@ def save_output(
 
 
 def run_inference(
-    pipeline: DiffusionPipeline,
-    n_prompt: str = ...,
-    seed: int = -1,
-    steps: int = 25,
-    guidance_scale: float = 7.5,
-    unet_batch_size: int = 1,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    idx: int = 0,
-    out_dir: PathLike = ...,
-    context_frames: int = -1,
-    context_stride: int = 3,
-    context_overlap: int = 4,
-    context_schedule: str = "uniform",
-    clip_skip: int = 1,
-    controlnet_map: Dict[str, Any] = None,
-    controlnet_image_map: Dict[str, Any] = None,
-    controlnet_type_map: Dict[str, Any] = None,
-    controlnet_ref_map: Dict[str, Any] = None,
-    no_frames: bool = False,
-    img2img_map: Dict[str, Any] = None,
-    ip_adapter_config_map: Dict[str, Any] = None,
-    region_list: List[Any] = None,
-    region_condi_list: List[Any] = None,
-    output_map: Dict[str, Any] = None,
-    is_single_prompt_mode: bool = False,
-    is_sdxl: bool = False,
-    apply_lcm_lora: bool = False,
+        pipeline: DiffusionPipeline,
+        n_prompt: str = ...,
+        seed: int = -1,
+        steps: int = 25,
+        guidance_scale: float = 7.5,
+        unet_batch_size: int = 1,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        idx: int = 0,
+        out_dir: PathLike = ...,
+        context_frames: int = -1,
+        context_stride: int = 3,
+        context_overlap: int = 4,
+        context_schedule: str = "uniform",
+        clip_skip: int = 1,
+        controlnet_map: Dict[str, Any] = None,
+        controlnet_image_map: Dict[str, Any] = None,
+        controlnet_type_map: Dict[str, Any] = None,
+        controlnet_ref_map: Dict[str, Any] = None,
+        no_frames: bool = False,
+        img2img_map: Dict[str, Any] = None,
+        ip_adapter_config_map: Dict[str, Any] = None,
+        region_list: List[Any] = None,
+        region_condi_list: List[Any] = None,
+        output_map: Dict[str, Any] = None,
+        is_single_prompt_mode: bool = False,
+        is_sdxl: bool = False,
+        apply_lcm_lora: bool = False,
 ):
     out_dir = Path(out_dir)  # ensure out_dir is a Path
 
@@ -1477,27 +1477,27 @@ def run_inference(
 
 
 def run_upscale(
-    project_dir: Path,
-    org_imgs: List[str],
-    pipeline: DiffusionPipeline,
-    prompt_map: Dict[int, str] = None,
-    n_prompt: str = ...,
-    seed: int = -1,
-    steps: int = 25,
-    strength: float = 0.5,
-    guidance_scale: float = 7.5,
-    clip_skip: int = 1,
-    us_width: int = 512,
-    us_height: int = 512,
-    idx: int = 0,
-    out_dir: PathLike = ...,
-    upscale_config: Dict[str, Any] = None,
-    use_controlnet_ref: bool = False,
-    use_controlnet_tile: bool = False,
-    use_controlnet_line_anime: bool = False,
-    use_controlnet_ip2p: bool = False,
-    no_frames: bool = False,
-    output_map: Dict[str, Any] = None,
+        project_dir: Path,
+        org_imgs: List[str],
+        pipeline: DiffusionPipeline,
+        prompt_map: Dict[int, str] = None,
+        n_prompt: str = ...,
+        seed: int = -1,
+        steps: int = 25,
+        strength: float = 0.5,
+        guidance_scale: float = 7.5,
+        clip_skip: int = 1,
+        us_width: int = 512,
+        us_height: int = 512,
+        idx: int = 0,
+        out_dir: PathLike = ...,
+        upscale_config: Dict[str, Any] = None,
+        use_controlnet_ref: bool = False,
+        use_controlnet_tile: bool = False,
+        use_controlnet_line_anime: bool = False,
+        use_controlnet_ip2p: bool = False,
+        no_frames: bool = False,
+        output_map: Dict[str, Any] = None,
 ):
     from animatediff.utils.lpw_stable_diffusion import lpw_encode_prompt
 
@@ -1541,8 +1541,8 @@ def run_upscale(
     ref_image = None
     if use_controlnet_ref:
         if (
-            not upscale_config["controlnet_ref"]["use_frame_as_ref_image"]
-            and not upscale_config["controlnet_ref"]["use_1st_frame_as_ref_image"]
+                not upscale_config["controlnet_ref"]["use_frame_as_ref_image"]
+                and not upscale_config["controlnet_ref"]["use_1st_frame_as_ref_image"]
         ):
             ref_image = get_resized_images(
                 [project_dir.joinpath(upscale_config["controlnet_ref"]["ref_image"])], us_width, us_height

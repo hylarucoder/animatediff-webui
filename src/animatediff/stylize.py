@@ -42,158 +42,158 @@ data_dir = get_dir("data")
 
 @stylize.command(no_args_is_help=True)
 def create_config(
-    org_movie: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=True, dir_okay=False, exists=True, help="Path to movie file"),
-    ] = ...,
-    config_org: Annotated[
-        Path,
-        typer.Option(
-            "--config-org",
-            "-c",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="Path to original config file",
-        ),
-    ] = Path("config/prompts/prompt_travel.json"),
-    ignore_list: Annotated[
-        Path,
-        typer.Option(
-            "--ignore-list",
-            "-g",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="path to ignore token list file",
-        ),
-    ] = Path("config/prompts/ignore_tokens.txt"),
-    out_dir: Annotated[
-        Optional[Path],
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="output directory",
-        ),
-    ] = Path("stylize/"),
-    fps: Annotated[
-        int,
-        typer.Option(
-            "--fps",
-            "-f",
-            min=1,
-            max=120,
-            help="fps",
-        ),
-    ] = 8,
-    duration: Annotated[
-        int,
-        typer.Option(
-            "--duration",
-            "-d",
-            min=-1,
-            max=3600,
-            help="Video duration in seconds. -1 means that the duration of the input video is used as is",
-        ),
-    ] = -1,
-    offset: Annotated[
-        int,
-        typer.Option(
-            "--offset",
-            "-of",
-            min=0,
-            max=3600,
-            help="offset in seconds. '-d 30 -of 1200' means to use 1200-1230 seconds of the input video",
-        ),
-    ] = 0,
-    aspect_ratio: Annotated[
-        float,
-        typer.Option(
-            "--aspect-ratio",
-            "-a",
-            min=-1,
-            max=5.0,
-            help="aspect ratio (width / height). (ex. 512 / 512 = 1.0 , 512 / 768 = 0.6666 , 768 / 512 = 1.5) -1 means that the aspect ratio of the input video is used as is.",
-        ),
-    ] = -1,
-    size_of_short_edge: Annotated[
-        int,
-        typer.Option(
-            "--short-edge",
-            "-sh",
-            min=100,
-            max=1024,
-            help="size of short edge",
-        ),
-    ] = 512,
-    predicte_interval: Annotated[
-        int,
-        typer.Option(
-            "--predicte-interval",
-            "-p",
-            min=1,
-            max=120,
-            help="Interval of frames to be predicted",
-        ),
-    ] = 1,
-    general_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold",
-            "-th",
-            min=0.0,
-            max=1.0,
-            help="threshold for general token confidence",
-        ),
-    ] = 0.35,
-    character_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold2",
-            "-th2",
-            min=0.0,
-            max=1.0,
-            help="threshold for character token confidence",
-        ),
-    ] = 0.85,
-    without_confidence: Annotated[
-        bool,
-        typer.Option(
-            "--no-confidence-format",
-            "-ncf",
-            is_flag=True,
-            help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
-        ),
-    ] = False,
-    is_no_danbooru_format: Annotated[
-        bool,
-        typer.Option(
-            "--no-danbooru-format",
-            "-ndf",
-            is_flag=True,
-            help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
-        ),
-    ] = False,
-    is_img2img: Annotated[
-        bool,
-        typer.Option(
-            "--img2img",
-            "-i2i",
-            is_flag=True,
-            help="img2img or not(txt2img).",
-        ),
-    ] = False,
-    low_vram: Annotated[
-        bool,
-        typer.Option(
-            "--low_vram",
-            "-lo",
-            is_flag=True,
-            help="low vram mode",
-        ),
-    ] = False,
+        org_movie: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=True, dir_okay=False, exists=True, help="Path to movie file"),
+        ] = ...,
+        config_org: Annotated[
+            Path,
+            typer.Option(
+                "--config-org",
+                "-c",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="Path to original config file",
+            ),
+        ] = Path("config/prompts/prompt_travel.json"),
+        ignore_list: Annotated[
+            Path,
+            typer.Option(
+                "--ignore-list",
+                "-g",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="path to ignore token list file",
+            ),
+        ] = Path("config/prompts/ignore_tokens.txt"),
+        out_dir: Annotated[
+            Optional[Path],
+            typer.Option(
+                "--out-dir",
+                "-o",
+                path_type=Path,
+                file_okay=False,
+                help="output directory",
+            ),
+        ] = Path("stylize/"),
+        fps: Annotated[
+            int,
+            typer.Option(
+                "--fps",
+                "-f",
+                min=1,
+                max=120,
+                help="fps",
+            ),
+        ] = 8,
+        duration: Annotated[
+            int,
+            typer.Option(
+                "--duration",
+                "-d",
+                min=-1,
+                max=3600,
+                help="Video duration in seconds. -1 means that the duration of the input video is used as is",
+            ),
+        ] = -1,
+        offset: Annotated[
+            int,
+            typer.Option(
+                "--offset",
+                "-of",
+                min=0,
+                max=3600,
+                help="offset in seconds. '-d 30 -of 1200' means to use 1200-1230 seconds of the input video",
+            ),
+        ] = 0,
+        aspect_ratio: Annotated[
+            float,
+            typer.Option(
+                "--aspect-ratio",
+                "-a",
+                min=-1,
+                max=5.0,
+                help="aspect ratio (width / height). (ex. 512 / 512 = 1.0 , 512 / 768 = 0.6666 , 768 / 512 = 1.5) -1 means that the aspect ratio of the input video is used as is.",
+            ),
+        ] = -1,
+        size_of_short_edge: Annotated[
+            int,
+            typer.Option(
+                "--short-edge",
+                "-sh",
+                min=100,
+                max=1024,
+                help="size of short edge",
+            ),
+        ] = 512,
+        predicte_interval: Annotated[
+            int,
+            typer.Option(
+                "--predicte-interval",
+                "-p",
+                min=1,
+                max=120,
+                help="Interval of frames to be predicted",
+            ),
+        ] = 1,
+        general_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold",
+                "-th",
+                min=0.0,
+                max=1.0,
+                help="threshold for general token confidence",
+            ),
+        ] = 0.35,
+        character_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold2",
+                "-th2",
+                min=0.0,
+                max=1.0,
+                help="threshold for character token confidence",
+            ),
+        ] = 0.85,
+        without_confidence: Annotated[
+            bool,
+            typer.Option(
+                "--no-confidence-format",
+                "-ncf",
+                is_flag=True,
+                help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
+            ),
+        ] = False,
+        is_no_danbooru_format: Annotated[
+            bool,
+            typer.Option(
+                "--no-danbooru-format",
+                "-ndf",
+                is_flag=True,
+                help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
+            ),
+        ] = False,
+        is_img2img: Annotated[
+            bool,
+            typer.Option(
+                "--img2img",
+                "-i2i",
+                is_flag=True,
+                help="img2img or not(txt2img).",
+            ),
+        ] = False,
+        low_vram: Annotated[
+            bool,
+            typer.Option(
+                "--low_vram",
+                "-lo",
+                is_flag=True,
+                help="low vram mode",
+            ),
+        ] = False,
 ):
     """Create a config file for video stylization"""
     is_danbooru_format = not is_no_danbooru_format
@@ -455,32 +455,32 @@ def create_config(
 
 @stylize.command(no_args_is_help=True)
 def generate(
-    stylize_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
-    ] = ...,
-    length: Annotated[
-        int,
-        typer.Option(
-            "--length",
-            "-L",
-            min=-1,
-            max=9999,
-            help="Number of frames to generate. -1 means that the value in the config file is referenced.",
-            rich_help_panel="Generation",
-        ),
-    ] = -1,
-    frame_offset: Annotated[
-        int,
-        typer.Option(
-            "--frame-offset",
-            "-FO",
-            min=0,
-            max=999999,
-            help="Frame offset at generation.",
-            rich_help_panel="Generation",
-        ),
-    ] = 0,
+        stylize_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
+        ] = ...,
+        length: Annotated[
+            int,
+            typer.Option(
+                "--length",
+                "-L",
+                min=-1,
+                max=9999,
+                help="Number of frames to generate. -1 means that the value in the config file is referenced.",
+                rich_help_panel="Generation",
+            ),
+        ] = -1,
+        frame_offset: Annotated[
+            int,
+            typer.Option(
+                "--frame-offset",
+                "-FO",
+                min=0,
+                max=999999,
+                help="Frame offset at generation.",
+                rich_help_panel="Generation",
+            ),
+        ] = 0,
 ):
     """Run video stylization"""
     from animatediff.cli import generate
@@ -488,6 +488,7 @@ def generate(
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
     config_org = stylize_dir.joinpath("prompt.json")
+    project_dir = config_org.parent
 
     model_config: ModelConfig = get_model_config(config_org)
 
@@ -569,7 +570,7 @@ def generate(
         model_config.controlnet_map["input_image_dir"] = os.path.relpath(new_controlnet_img_dir.absolute(), data_dir)
         model_config.img2img_map["init_img_dir"] = os.path.relpath(new_img2img_img_dir.absolute(), data_dir)
 
-        tmp_config_path = stylize_dir.joinpath("prompt_tmp.json")
+        tmp_config_path = project_dir.joinpath("prompt_tmp.json")
         tmp_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
         config_org = tmp_config_path
 
@@ -581,12 +582,12 @@ def generate(
         context=model_config.stylize_config["0"]["context"],
         overlap=model_config.stylize_config["0"]["overlap"],
         stride=model_config.stylize_config["0"]["stride"],
-        out_dir=stylize_dir,
+        out_dir=project_dir / "draft",
     )
 
     torch.cuda.empty_cache()
 
-    output_0_dir = output_0_dir.rename(output_0_dir.parent / f"{time_str}_{0:02d}")
+    # output_0_dir = output_0_dir.rename(output_0_dir.parent / f"{time_str}_{0:02d}")
 
     if "1" not in model_config.stylize_config:
         logger.info(f"Stylized results are output to {output_0_dir}")
@@ -594,7 +595,7 @@ def generate(
 
     logger.info(f"Intermediate files have been output to {output_0_dir}")
 
-    output_0_img_dir = glob.glob(os.path.join(output_0_dir, "00-[0-9]*"), recursive=False)[0]
+    output_0_img_dir = glob.glob(os.path.join(output_0_dir, "00-frames"), recursive=False)[0]
 
     interpolation_multiplier = 1
     if "interpolation_multiplier" in model_config.stylize_config["1"]:
@@ -707,20 +708,20 @@ def generate(
 
 @stylize.command(no_args_is_help=True)
 def interpolate(
-    frame_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to frame dir"),
-    ] = ...,
-    interpolation_multiplier: Annotated[
-        int,
-        typer.Option(
-            "--interpolation_multiplier",
-            "-m",
-            min=1,
-            max=10,
-            help="interpolation_multiplier",
-        ),
-    ] = 1,
+        frame_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to frame dir"),
+        ] = ...,
+        interpolation_multiplier: Annotated[
+            int,
+            typer.Option(
+                "--interpolation_multiplier",
+                "-m",
+                min=1,
+                max=10,
+                help="interpolation_multiplier",
+            ),
+        ] = 1,
 ):
     """Interpolation with original frames. This function does not work well if the shape of the subject is changed from the original video. Large movements can also ruin the picture.(Since this command is experimental, it is better to use other interpolation methods in most cases.)"""
 
@@ -828,168 +829,168 @@ def interpolate(
 
 @stylize.command(no_args_is_help=True)
 def create_mask(
-    stylize_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
-    ] = ...,
-    frame_dir: Annotated[
-        Path,
-        typer.Option(
-            "--frame_dir",
-            "-f",
-            path_type=Path,
-            file_okay=False,
-            help="Path to source frames directory. default is 'STYLIZE_DIR/00_img2img'",
-        ),
-    ] = None,
-    box_threshold: Annotated[
-        float,
-        typer.Option(
-            "--box_threshold",
-            "-b",
-            min=0.0,
-            max=1.0,
-            help="box_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.3,
-    text_threshold: Annotated[
-        float,
-        typer.Option(
-            "--text_threshold",
-            "-t",
-            min=0.0,
-            max=1.0,
-            help="text_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.25,
-    mask_padding: Annotated[
-        int,
-        typer.Option(
-            "--mask_padding",
-            "-mp",
-            min=-100,
-            max=100,
-            help="padding pixel value",
-            rich_help_panel="create mask",
-        ),
-    ] = 0,
-    no_gb: Annotated[
-        bool,
-        typer.Option(
-            "--no_gb",
-            "-ng",
-            is_flag=True,
-            help="no green back",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    no_crop: Annotated[
-        bool,
-        typer.Option(
-            "--no_crop",
-            "-nc",
-            is_flag=True,
-            help="no crop",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    use_rembg: Annotated[
-        bool,
-        typer.Option(
-            "--use_rembg",
-            "-rem",
-            is_flag=True,
-            help="use [rembg] instead of [Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    use_animeseg: Annotated[
-        bool,
-        typer.Option(
-            "--use_animeseg",
-            "-anim",
-            is_flag=True,
-            help="use [anime-segmentation] instead of [Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    low_vram: Annotated[
-        bool,
-        typer.Option(
-            "--low_vram",
-            "-lo",
-            is_flag=True,
-            help="low vram mode",
-            rich_help_panel="create mask/tag",
-        ),
-    ] = False,
-    ignore_list: Annotated[
-        Path,
-        typer.Option(
-            "--ignore-list",
-            "-g",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="path to ignore token list file",
-            rich_help_panel="create tag",
-        ),
-    ] = Path("config/prompts/ignore_tokens.txt"),
-    predicte_interval: Annotated[
-        int,
-        typer.Option(
-            "--predicte-interval",
-            "-p",
-            min=1,
-            max=120,
-            help="Interval of frames to be predicted",
-            rich_help_panel="create tag",
-        ),
-    ] = 1,
-    general_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold",
-            "-th",
-            min=0.0,
-            max=1.0,
-            help="threshold for general token confidence",
-            rich_help_panel="create tag",
-        ),
-    ] = 0.35,
-    character_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold2",
-            "-th2",
-            min=0.0,
-            max=1.0,
-            help="threshold for character token confidence",
-            rich_help_panel="create tag",
-        ),
-    ] = 0.85,
-    without_confidence: Annotated[
-        bool,
-        typer.Option(
-            "--no-confidence-format",
-            "-ncf",
-            is_flag=True,
-            help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
-            rich_help_panel="create tag",
-        ),
-    ] = False,
-    is_no_danbooru_format: Annotated[
-        bool,
-        typer.Option(
-            "--no-danbooru-format",
-            "-ndf",
-            is_flag=True,
-            help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
-            rich_help_panel="create tag",
-        ),
-    ] = False,
+        stylize_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
+        ] = ...,
+        frame_dir: Annotated[
+            Path,
+            typer.Option(
+                "--frame_dir",
+                "-f",
+                path_type=Path,
+                file_okay=False,
+                help="Path to source frames directory. default is 'STYLIZE_DIR/00_img2img'",
+            ),
+        ] = None,
+        box_threshold: Annotated[
+            float,
+            typer.Option(
+                "--box_threshold",
+                "-b",
+                min=0.0,
+                max=1.0,
+                help="box_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.3,
+        text_threshold: Annotated[
+            float,
+            typer.Option(
+                "--text_threshold",
+                "-t",
+                min=0.0,
+                max=1.0,
+                help="text_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.25,
+        mask_padding: Annotated[
+            int,
+            typer.Option(
+                "--mask_padding",
+                "-mp",
+                min=-100,
+                max=100,
+                help="padding pixel value",
+                rich_help_panel="create mask",
+            ),
+        ] = 0,
+        no_gb: Annotated[
+            bool,
+            typer.Option(
+                "--no_gb",
+                "-ng",
+                is_flag=True,
+                help="no green back",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        no_crop: Annotated[
+            bool,
+            typer.Option(
+                "--no_crop",
+                "-nc",
+                is_flag=True,
+                help="no crop",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        use_rembg: Annotated[
+            bool,
+            typer.Option(
+                "--use_rembg",
+                "-rem",
+                is_flag=True,
+                help="use [rembg] instead of [Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        use_animeseg: Annotated[
+            bool,
+            typer.Option(
+                "--use_animeseg",
+                "-anim",
+                is_flag=True,
+                help="use [anime-segmentation] instead of [Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        low_vram: Annotated[
+            bool,
+            typer.Option(
+                "--low_vram",
+                "-lo",
+                is_flag=True,
+                help="low vram mode",
+                rich_help_panel="create mask/tag",
+            ),
+        ] = False,
+        ignore_list: Annotated[
+            Path,
+            typer.Option(
+                "--ignore-list",
+                "-g",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="path to ignore token list file",
+                rich_help_panel="create tag",
+            ),
+        ] = Path("config/prompts/ignore_tokens.txt"),
+        predicte_interval: Annotated[
+            int,
+            typer.Option(
+                "--predicte-interval",
+                "-p",
+                min=1,
+                max=120,
+                help="Interval of frames to be predicted",
+                rich_help_panel="create tag",
+            ),
+        ] = 1,
+        general_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold",
+                "-th",
+                min=0.0,
+                max=1.0,
+                help="threshold for general token confidence",
+                rich_help_panel="create tag",
+            ),
+        ] = 0.35,
+        character_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold2",
+                "-th2",
+                min=0.0,
+                max=1.0,
+                help="threshold for character token confidence",
+                rich_help_panel="create tag",
+            ),
+        ] = 0.85,
+        without_confidence: Annotated[
+            bool,
+            typer.Option(
+                "--no-confidence-format",
+                "-ncf",
+                is_flag=True,
+                help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
+                rich_help_panel="create tag",
+            ),
+        ] = False,
+        is_no_danbooru_format: Annotated[
+            bool,
+            typer.Option(
+                "--no-danbooru-format",
+                "-ndf",
+                is_flag=True,
+                help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
+                rich_help_panel="create tag",
+            ),
+        ] = False,
 ):
     """Create mask from prompt"""
     from animatediff.utils.mask import create_bg, create_fg, crop_frames, crop_mask_list, save_crop_info
@@ -1216,83 +1217,83 @@ def create_mask(
 
 @stylize.command(no_args_is_help=True)
 def composite(
-    stylize_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
-    ] = ...,
-    box_threshold: Annotated[
-        float,
-        typer.Option(
-            "--box_threshold",
-            "-b",
-            min=0.0,
-            max=1.0,
-            help="box_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.3,
-    text_threshold: Annotated[
-        float,
-        typer.Option(
-            "--text_threshold",
-            "-t",
-            min=0.0,
-            max=1.0,
-            help="text_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.25,
-    mask_padding: Annotated[
-        int,
-        typer.Option(
-            "--mask_padding",
-            "-mp",
-            min=-100,
-            max=100,
-            help="padding pixel value",
-            rich_help_panel="create mask",
-        ),
-    ] = 0,
-    use_rembg: Annotated[
-        bool,
-        typer.Option(
-            "--use_rembg",
-            "-rem",
-            is_flag=True,
-            help="use \[rembg] instead of \[Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    use_animeseg: Annotated[
-        bool,
-        typer.Option(
-            "--use_animeseg",
-            "-anim",
-            is_flag=True,
-            help="use \[anime-segmentation] instead of \[Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    low_vram: Annotated[
-        bool,
-        typer.Option(
-            "--low_vram",
-            "-lo",
-            is_flag=True,
-            help="low vram mode",
-            rich_help_panel="create mask/tag",
-        ),
-    ] = False,
-    is_simple_composite: Annotated[
-        bool,
-        typer.Option(
-            "--simple_composite",
-            "-si",
-            is_flag=True,
-            help="simple composite",
-            rich_help_panel="composite",
-        ),
-    ] = False,
+        stylize_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
+        ] = ...,
+        box_threshold: Annotated[
+            float,
+            typer.Option(
+                "--box_threshold",
+                "-b",
+                min=0.0,
+                max=1.0,
+                help="box_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.3,
+        text_threshold: Annotated[
+            float,
+            typer.Option(
+                "--text_threshold",
+                "-t",
+                min=0.0,
+                max=1.0,
+                help="text_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.25,
+        mask_padding: Annotated[
+            int,
+            typer.Option(
+                "--mask_padding",
+                "-mp",
+                min=-100,
+                max=100,
+                help="padding pixel value",
+                rich_help_panel="create mask",
+            ),
+        ] = 0,
+        use_rembg: Annotated[
+            bool,
+            typer.Option(
+                "--use_rembg",
+                "-rem",
+                is_flag=True,
+                help="use \[rembg] instead of \[Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        use_animeseg: Annotated[
+            bool,
+            typer.Option(
+                "--use_animeseg",
+                "-anim",
+                is_flag=True,
+                help="use \[anime-segmentation] instead of \[Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        low_vram: Annotated[
+            bool,
+            typer.Option(
+                "--low_vram",
+                "-lo",
+                is_flag=True,
+                help="low vram mode",
+                rich_help_panel="create mask/tag",
+            ),
+        ] = False,
+        is_simple_composite: Annotated[
+            bool,
+            typer.Option(
+                "--simple_composite",
+                "-si",
+                is_flag=True,
+                help="simple composite",
+                rich_help_panel="composite",
+            ),
+        ] = False,
 ):
     """composite FG and BG"""
 
@@ -1424,148 +1425,148 @@ def composite(
 
 @stylize.command(no_args_is_help=True)
 def create_region(
-    stylize_dir: Annotated[
-        Path,
-        typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
-    ] = ...,
-    frame_dir: Annotated[
-        Path,
-        typer.Option(
-            "--frame_dir",
-            "-f",
-            path_type=Path,
-            file_okay=False,
-            help="Path to source frames directory. default is 'STYLIZE_DIR/00_img2img'",
-        ),
-    ] = None,
-    box_threshold: Annotated[
-        float,
-        typer.Option(
-            "--box_threshold",
-            "-b",
-            min=0.0,
-            max=1.0,
-            help="box_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.3,
-    text_threshold: Annotated[
-        float,
-        typer.Option(
-            "--text_threshold",
-            "-t",
-            min=0.0,
-            max=1.0,
-            help="text_threshold",
-            rich_help_panel="create mask",
-        ),
-    ] = 0.25,
-    mask_padding: Annotated[
-        int,
-        typer.Option(
-            "--mask_padding",
-            "-mp",
-            min=-100,
-            max=100,
-            help="padding pixel value",
-            rich_help_panel="create mask",
-        ),
-    ] = 0,
-    use_rembg: Annotated[
-        bool,
-        typer.Option(
-            "--use_rembg",
-            "-rem",
-            is_flag=True,
-            help="use [rembg] instead of [Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    use_animeseg: Annotated[
-        bool,
-        typer.Option(
-            "--use_animeseg",
-            "-anim",
-            is_flag=True,
-            help="use [anime-segmentation] instead of [Sam+GroundingDINO]",
-            rich_help_panel="create mask",
-        ),
-    ] = False,
-    low_vram: Annotated[
-        bool,
-        typer.Option(
-            "--low_vram",
-            "-lo",
-            is_flag=True,
-            help="low vram mode",
-            rich_help_panel="create mask/tag",
-        ),
-    ] = False,
-    ignore_list: Annotated[
-        Path,
-        typer.Option(
-            "--ignore-list",
-            "-g",
-            path_type=Path,
-            dir_okay=False,
-            exists=True,
-            help="path to ignore token list file",
-            rich_help_panel="create tag",
-        ),
-    ] = Path("config/prompts/ignore_tokens.txt"),
-    predicte_interval: Annotated[
-        int,
-        typer.Option(
-            "--predicte-interval",
-            "-p",
-            min=1,
-            max=120,
-            help="Interval of frames to be predicted",
-            rich_help_panel="create tag",
-        ),
-    ] = 1,
-    general_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold",
-            "-th",
-            min=0.0,
-            max=1.0,
-            help="threshold for general token confidence",
-            rich_help_panel="create tag",
-        ),
-    ] = 0.35,
-    character_threshold: Annotated[
-        float,
-        typer.Option(
-            "--threshold2",
-            "-th2",
-            min=0.0,
-            max=1.0,
-            help="threshold for character token confidence",
-            rich_help_panel="create tag",
-        ),
-    ] = 0.85,
-    without_confidence: Annotated[
-        bool,
-        typer.Option(
-            "--no-confidence-format",
-            "-ncf",
-            is_flag=True,
-            help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
-            rich_help_panel="create tag",
-        ),
-    ] = False,
-    is_no_danbooru_format: Annotated[
-        bool,
-        typer.Option(
-            "--no-danbooru-format",
-            "-ndf",
-            is_flag=True,
-            help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
-            rich_help_panel="create tag",
-        ),
-    ] = False,
+        stylize_dir: Annotated[
+            Path,
+            typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
+        ] = ...,
+        frame_dir: Annotated[
+            Path,
+            typer.Option(
+                "--frame_dir",
+                "-f",
+                path_type=Path,
+                file_okay=False,
+                help="Path to source frames directory. default is 'STYLIZE_DIR/00_img2img'",
+            ),
+        ] = None,
+        box_threshold: Annotated[
+            float,
+            typer.Option(
+                "--box_threshold",
+                "-b",
+                min=0.0,
+                max=1.0,
+                help="box_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.3,
+        text_threshold: Annotated[
+            float,
+            typer.Option(
+                "--text_threshold",
+                "-t",
+                min=0.0,
+                max=1.0,
+                help="text_threshold",
+                rich_help_panel="create mask",
+            ),
+        ] = 0.25,
+        mask_padding: Annotated[
+            int,
+            typer.Option(
+                "--mask_padding",
+                "-mp",
+                min=-100,
+                max=100,
+                help="padding pixel value",
+                rich_help_panel="create mask",
+            ),
+        ] = 0,
+        use_rembg: Annotated[
+            bool,
+            typer.Option(
+                "--use_rembg",
+                "-rem",
+                is_flag=True,
+                help="use [rembg] instead of [Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        use_animeseg: Annotated[
+            bool,
+            typer.Option(
+                "--use_animeseg",
+                "-anim",
+                is_flag=True,
+                help="use [anime-segmentation] instead of [Sam+GroundingDINO]",
+                rich_help_panel="create mask",
+            ),
+        ] = False,
+        low_vram: Annotated[
+            bool,
+            typer.Option(
+                "--low_vram",
+                "-lo",
+                is_flag=True,
+                help="low vram mode",
+                rich_help_panel="create mask/tag",
+            ),
+        ] = False,
+        ignore_list: Annotated[
+            Path,
+            typer.Option(
+                "--ignore-list",
+                "-g",
+                path_type=Path,
+                dir_okay=False,
+                exists=True,
+                help="path to ignore token list file",
+                rich_help_panel="create tag",
+            ),
+        ] = Path("config/prompts/ignore_tokens.txt"),
+        predicte_interval: Annotated[
+            int,
+            typer.Option(
+                "--predicte-interval",
+                "-p",
+                min=1,
+                max=120,
+                help="Interval of frames to be predicted",
+                rich_help_panel="create tag",
+            ),
+        ] = 1,
+        general_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold",
+                "-th",
+                min=0.0,
+                max=1.0,
+                help="threshold for general token confidence",
+                rich_help_panel="create tag",
+            ),
+        ] = 0.35,
+        character_threshold: Annotated[
+            float,
+            typer.Option(
+                "--threshold2",
+                "-th2",
+                min=0.0,
+                max=1.0,
+                help="threshold for character token confidence",
+                rich_help_panel="create tag",
+            ),
+        ] = 0.85,
+        without_confidence: Annotated[
+            bool,
+            typer.Option(
+                "--no-confidence-format",
+                "-ncf",
+                is_flag=True,
+                help="confidence token format or not. ex. '(close-up:0.57), (monochrome:1.1)' -> 'close-up, monochrome'",
+                rich_help_panel="create tag",
+            ),
+        ] = False,
+        is_no_danbooru_format: Annotated[
+            bool,
+            typer.Option(
+                "--no-danbooru-format",
+                "-ndf",
+                is_flag=True,
+                help="danbooru token format or not. ex. 'bandaid_on_leg, short_hair' -> 'bandaid on leg, short hair'",
+                rich_help_panel="create tag",
+            ),
+        ] = False,
 ):
     """Create region from prompt"""
     from animatediff.utils.mask import create_bg, create_fg
