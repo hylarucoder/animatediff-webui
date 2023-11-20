@@ -44,10 +44,6 @@ project_setting = ProjectSetting(
     template_prompts_dir=TEMPLATES_DIR / "proj_000_template_t2v/prompts.json",
 )
 
-project_state = WorkflowState(
-    interval=16,
-)
-
 controlnets = [
     "controlnet_canny",
     "controlnet_depth",
@@ -113,16 +109,6 @@ def p(
     prompt_tmpl["n_prompt"] = [negative_prompt]
     prompt_tmpl["lora_map"] = {f"{lora}": 0.7 for lora in loras}
     prompt_tmpl["motion_lora_map"] = {f"{lora}": 0.7 for lora in motion_loras}
-    for i, (img, prompt) in enumerate(group_by_n(image_prompts, 2)):
-        frame = i * project_state.interval
-        if img:
-            img.save(project_setting.project_dir / "00_ip_adapter" / f"{str(frame).zfill(4)}.png")
-            img.save(
-                project_setting.project_dir / "00_controlnet_image/controlnet_softedge" / f"{str(frame).zfill(8)}.png"
-            )
-        if prompt:
-            prompt_tmpl["prompt_map"][f"{frame}"] = prompt
-
     open(project_setting.project_dir / "prompts.json", "wt").write(json.dumps(prompt_tmpl, indent=2))
     # subprocess.Popen(f'start cmd /k call {project_dir}/gen_preview.bat', shell=True)
 
@@ -201,13 +187,6 @@ def build_setup():
             row_count=5,
             col_count=(3, "fixed"),
         ),
-        with gr.Row():
-            for i in range(project_state.max_frames // project_state.interval):
-                with gr.Column(min_width=200):
-                    i_01 = gr.Image(label=f"Frame {str(16 * i).zfill(4)}", type="pil")
-                    p_01 = gr.Textbox(label=f"Prompt {str(16 * i).zfill(4)}")
-                    image_prompts.append(i_01)
-                    image_prompts.append(p_01)
 
         with gr.Row():
             with gr.Column():
@@ -271,28 +250,6 @@ with gr.Blocks() as tab_03:
     )
 
 
-def fn_generate(project, frames):
-    from animatediff.cli import generate, tile_upscale
-    generate(
-        config_path=path_mgr.projects / project / "prompts.json",
-        width=504,
-        height=896,
-        # height=504,
-        # width=896,
-        length=frames,
-        context=16,
-        overlap=16 // 4,
-        stride=0,
-        repeats=1,
-        device="cuda",
-        use_xformers=False,
-        force_half_vae=False,
-        out_dir=path_mgr.projects / project / "draft",
-        no_frames=False,
-        save_merged=False,
-    )
-
-
 def fn_generate_1(project, frames):
     from animatediff.cli import generate, tile_upscale
     generate(
@@ -315,21 +272,6 @@ def fn_generate_1(project, frames):
     )
 
 
-def fn_upscale(project):
-    from animatediff.cli import generate, tile_upscale
-    tile_upscale(
-        frames_dir="",
-        config_path=path_mgr.projects / project / "prompts.json",
-        width=1024,
-        height=-1,
-        device="cuda",
-        use_xformers=False,
-        force_half_vae=False,
-        out_dir=path_mgr.projects / project / "upscaled",
-        no_frames=False,
-    )
-
-
 def get_projects():
     return [BLANK_PLACEHOLDER] + list(sorted([_.name for _ in path_mgr.projects.iterdir() if _.is_dir()]))
 
@@ -339,113 +281,6 @@ class TState(BaseModel):
     project_choices: list[str] = [BLANK_PLACEHOLDER]
     frames_dirs: list[str] = [BLANK_PLACEHOLDER]
 
-
-g_state = TState()
-
-with gr.Blocks() as tab_01:
-    gr.Markdown("# 执行跑视频任务")
-    state = gr.State(g_state)
-
-
-    def fn_refresh_projects(
-            project_name,
-    ):
-        # TODO? get value
-        state.project = project_name
-        state.project_choices = get_projects()
-        gr.update(choices=state.project_choices, value=state.project)
-        return project_name
-
-
-    with gr.Row():
-        dp_project = gr.Dropdown(
-            label="Project",
-            choices=get_projects(),
-            value=BLANK_PLACEHOLDER,
-            interactive=True,
-        )
-        btn_refresh = gr.Button("🔁")
-        btn_refresh.click(fn_refresh_projects, inputs=[dp_project], outputs=[dp_project])
-
-    with gr.Row():
-        frames = gr.Number(
-            label="Frames",
-            value=16,
-            precision=0,
-            interactive=True,
-        )
-        btn_preview = gr.Button(
-            "Preview",
-        )
-        btn_preview.click(
-            fn=fn_generate_1,
-            inputs=[
-                dp_project,
-                frames,
-            ],
-        )
-
-    with gr.Row():
-        frames = gr.Number(
-            label="Frames",
-            value=200,
-            precision=0,
-            interactive=True,
-        )
-        btn_generate = gr.Button(
-            "Generate",
-        )
-        btn_generate.click(
-            fn=fn_generate,
-            inputs=[
-                dp_project,
-                frames,
-            ],
-        )
-
-    with gr.Row():
-        ip_frame_dir = gr.Dropdown(
-            label="Draft",
-            choices=[BLANK_PLACEHOLDER, "aaa"],
-            value=BLANK_PLACEHOLDER,
-            interactive=True,
-        )
-        btn_refresh_frame = gr.Button("🔁")
-
-
-        @btn_refresh_frame.click(inputs=dp_project, outputs=ip_frame_dir)
-        def fn_refresh_project_draft(project_name):
-            state.frames_dirs = frames_dirs = list(
-                sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
-            )
-            # TODO: 这里还是没更新上...
-            gr.update(choices=frames_dirs)
-
-
-        @dp_project.change(inputs=dp_project, outputs=ip_frame_dir)
-        def fn_refresh_project_draft(project_name):
-            state.frames_dirs = frames_dirs = list(
-                sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
-            )
-            # TODO: 这里还是没更新上...
-            gr.update(choices=frames_dirs)
-
-
-        btn_upscale = gr.Button(
-            "Upscale",
-        )
-        btn_upscale.click(
-            fn=fn_upscale,
-            inputs=[
-                dp_project,
-            ],
-        )
-
-    with gr.Row():
-        input_refine_frames = gr.Number(label="Refine Frames", value=200, precision=0, interactive=True, step=1)
-        btn_refine = gr.Button(
-            "Refine",
-        )
 
 default_sampler = "k_dpmpp_sde"
 default_seed = "666"
@@ -474,14 +309,14 @@ lora_arr = [
     ] for _ in range(5)
 ]
 
-with gr.Blocks(
+with (gr.Blocks(
         title="Animatediff WebUI",
         css="aaa",
         theme=gr.themes.Default(
             spacing_size="sm",
             text_size="sm",
         ),
-) as demo:
+) as demo):
     def render_container():
         ...
 
@@ -571,44 +406,65 @@ with gr.Blocks(
             with gr.Tab(label='Draft'):
                 with gr.Row():
                     with gr.Column(scale=3):
-                        progressing = gr.Textbox(show_label=False)
+                        ...
                     with gr.Column(scale=1):
                         generate_button = gr.Button(
                             value="Generate",
-                            elem_classes='type_row',
-                            elem_id='generate_button',
                             visible=True
-                        )
-                        skip_button = gr.Button(
-                            "Skip",
-                            elem_classes='type_row_half',
-                            visible=False
                         )
                         stop_button = gr.Button(
                             "Stop",
-                            elem_classes='type_row_half',
-                            elem_id='stop_button',
-                            visible=False
+                            interactive=False,
                         )
-
-            # TODO? 改为按钮?
-            with gr.Row(visible=False) as image_input_panel:
-                with gr.Tabs():
-                    with gr.TabItem(label='Upscale or Variation') as uov_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                uov_input_image = gr.Image(label='Drag above image to here', type='numpy')
-                            with gr.Column():
-                                gr.HTML(
-                                    '<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Document</a>')
-                    with gr.TabItem(label='Image Prompt') as ip_tab:
-                        with gr.Row():
-                            ...
-                gr.Textbox("settings")
             with gr.Tab(label='Upscale'):
-                gr.Textbox("settings")
+                with gr.Row():
+                    with gr.Column(scale=3):
+                        dp_upscale = gr.Dropdown(
+                            label="draft",
+                            choices=[BLANK_PLACEHOLDER],
+                            value=BLANK_PLACEHOLDER,
+                            interactive=True
+                        )
+                    with gr.Column(scale=1):
+                        btn_refresh = gr.Button("🔁")
+                        btn_upscale = gr.Button("Upscale")
+
+
+                @btn_refresh.click(inputs=dp_project, outputs=dp_upscale)
+                def fn_refresh_project_draft(project_name):
+                    state.frames_dirs = frames_dirs = list(
+                        sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
+                    )
+                    return gr.update(
+                        choices=[BLANK_PLACEHOLDER] + frames_dirs,
+                        value=frames_dirs[-1] if frames_dirs else BLANK_PLACEHOLDER,
+                        interactive=True,
+                    )
+
+
+                @btn_upscale.click(inputs=[
+                    dp_project,
+                    dp_upscale,
+                ], outputs=dp_upscale)
+                def fn_upscale(project, upscale_dir):
+                    from animatediff.cli import tile_upscale
+                    tile_upscale(
+                        frames_dir=path_mgr.projects / project / "draft" / upscale_dir / "00-frames",
+                        config_path=path_mgr.projects / project / "prompts.json",
+                        width=1024,
+                        height=-1,
+                        device="cuda",
+                        use_xformers=False,
+                        force_half_vae=False,
+                        out_dir=path_mgr.projects / project / "upscaled",
+                        no_frames=False,
+                    )
+
+                # state.frames_dirs = frames_dirs = list(
+                #     sorted([_.name for _ in (path_mgr.projects / project_name / "draft").iterdir() if _.is_dir()])
+                # )
             with gr.Tab(label='Refine'):
-                gr.Textbox("settings")
+                gr.Dropdown("settings")
             gr.Button("🔁")
 
         with gr.Column(scale=1):
@@ -726,33 +582,57 @@ with gr.Blocks(
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
 
-    def track_tqdm(data, progress=gr.Progress(track_tqdm=True)):
+    def track_tqdm(project, data, progress=gr.Progress(track_tqdm=True)):
         for i in tqdm.tqdm(range(2), desc="outer"):
             for j in tqdm.tqdm(range(2), desc="inner"):
                 time.sleep(1)
-        return path_mgr.projects / "100_v2v/input.mp4"
+
+        from animatediff.cli import generate
+        save_dir = generate(
+            config_path=path_mgr.projects / project / "prompts.json",
+            width=504,
+            height=896,
+            # height=504,
+            # width=896,
+            # length=frames,
+            length=16,
+            context=16,
+            overlap=16 // 4,
+            stride=0,
+            repeats=1,
+            device="cuda",
+            use_xformers=False,
+            force_half_vae=False,
+            out_dir=path_mgr.projects / project / "draft",
+            no_frames=False,
+            save_merged=False,
+        )
+        # TODO: 缩减 name
+        # TODO: 如果搞定,则选中 video 最新的 video
+
+        return save_dir / "video.mp4"
 
 
     generate_button.click(
         lambda: (
-            gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True),
+            gr.update(visible=True, interactive=True),
             gr.update(visible=False)
         ),
         inputs=[],
         outputs=[
             stop_button,
-            skip_button,
             generate_button,
         ]
-    ).then(track_tqdm, outputs=[preview_video]).then(
+    ).then(track_tqdm, inputs=[
+        dp_project,
+    ], outputs=[preview_video]).then(
         lambda: (
-            gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False),
+            gr.update(visible=False, interactive=False),
             gr.update(visible=True)
         ),
         inputs=[],
         outputs=[
             stop_button,
-            skip_button,
             generate_button,
         ]
     )
