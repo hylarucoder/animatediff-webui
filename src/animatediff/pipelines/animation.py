@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from diffusers import LCMScheduler
 from diffusers.configuration_utils import FrozenDict
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.loaders import LoraLoaderMixin, TextualInversionLoaderMixin
@@ -29,7 +30,7 @@ from tqdm.rich import tqdm
 from transformers import CLIPImageProcessor, CLIPTokenizer
 
 from animatediff.consts import path_mgr
-from animatediff.ip_adapter import IPAdapter, IPAdapterPlus
+from animatediff.ip_adapter import IPAdapter, IPAdapterFull, IPAdapterPlus
 from animatediff.models.attention import BasicTransformerBlock
 from animatediff.models.clip import CLIPSkipTextModel
 from animatediff.models.unet import UNet3DConditionModel, UNetMidBlock3DCrossAttn
@@ -1025,8 +1026,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
         image = image.to(device=device, dtype=dtype)
 
-        if do_classifier_free_guidance and not guess_mode:
-            image = torch.cat([image] * 2)
+        # if do_classifier_free_guidance and not guess_mode:
+        #    image = torch.cat([image] * 2)
 
         return image
 
@@ -2298,13 +2299,18 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         region_condi_list: List[Any] = None,
         interpolation_factor=1,
         is_single_prompt_mode=False,
+        apply_lcm_lora=False,
         **kwargs,
     ):
         global C_REF_MODE
 
+        logger.info(f"{apply_lcm_lora=}")
+        if apply_lcm_lora:
+            self.scheduler = LCMScheduler.from_config(self.scheduler.config)
+
         controlnet_image_map_org = controlnet_image_map
 
-        controlnet_max_models_on_vram = max(controlnet_max_models_on_vram, 1)
+        controlnet_max_models_on_vram = max(controlnet_max_models_on_vram, 0)
 
         # Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor
@@ -2328,8 +2334,12 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
         if ip_adapter_config_map:
             if self.ip_adapter is None:
-                img_enc_path = path_mgr.ip_adapter / "image_encoder/"
-                if ip_adapter_config_map["is_light"]:
+                img_enc_path = path_mgr.ip_adapter / "image_encoder"
+                if ip_adapter_config_map["is_full_face"]:
+                    self.ip_adapter = IPAdapterFull(
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter-full-face_sd15.bin", device, 257
+                    )
+                elif ip_adapter_config_map["is_light"]:
                     self.ip_adapter = IPAdapter(
                         self, img_enc_path, path_mgr.ip_adapter / "ip-adapter_sd15_light.bin", device, 4
                     )
@@ -2370,6 +2380,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             multi_uncond_mode,
         )
 
+        if self.ip_adapter:
+            self.ip_adapter.delete_encoder()
+
         if controlnet_ref_map is not None:
             if unet_batch_size < prompt_encoder.get_condi_size():
                 raise ValueError(
@@ -2381,11 +2394,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         # 3.5 Prepare controlnet variables
 
         if self.controlnet_map:
-            if controlnet_max_models_on_vram < len(self.controlnet_map):
-                for _, type_str in zip(range(controlnet_max_models_on_vram - 1), self.controlnet_map):
-                    self.controlnet_map[type_str].to(device=device, non_blocking=True)
-            else:
-                for type_str in self.controlnet_map:
+            for i, type_str in enumerate(self.controlnet_map):
+                if i < controlnet_max_models_on_vram:
                     self.controlnet_map[type_str].to(device=device, non_blocking=True)
 
         # controlnet_image_map
@@ -2418,10 +2428,14 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         controlnet_scale_map = {}
         controlnet_affected_list = np.zeros(video_length, dtype=int)
 
+        is_v2v = True
+
         if controlnet_image_map:
             for type_str in controlnet_image_map:
                 for key_frame_no in controlnet_image_map[type_str]:
                     scale_list = controlnet_type_map[type_str]["control_scale_list"]
+                    if len(scale_list) > 0:
+                        is_v2v = False
                     scale_list = scale_list[0:context_frames]
                     scale_len = len(scale_list)
 
@@ -2844,13 +2858,16 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                     stopwatch_record("lora_map UNapply end")
 
                     if controlnet_image_map:
-                        controlnet_target = (
-                            list(range(context[0] - context_frames, context[0]))
-                            + context
-                            + list(range(context[-1] + 1, context[-1] + 1 + context_frames))
-                        )
-                        controlnet_target = [f % video_length for f in controlnet_target]
-                        controlnet_target = list(set(controlnet_target))
+                        if is_v2v:
+                            controlnet_target = context
+                        else:
+                            controlnet_target = (
+                                list(range(context[0] - context_frames, context[0]))
+                                + context
+                                + list(range(context[-1] + 1, context[-1] + 1 + context_frames))
+                            )
+                            controlnet_target = [f % video_length for f in controlnet_target]
+                            controlnet_target = list(set(controlnet_target))
 
                         process_controlnet(controlnet_target)
 

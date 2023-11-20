@@ -2,13 +2,13 @@ import logging
 from pathlib import Path
 from typing import Optional, TypeVar
 
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from huggingface_hub import hf_hub_download
 from torch import nn
 
 from animatediff import HF_HUB_CACHE, HF_MODULE_REPO, get_dir
-from animatediff.consts import path_mgr
-from animatediff.utils.huggingface import get_hf_pipeline
+from animatediff.settings import CKPT_EXTENSIONS
+from animatediff.utils.huggingface import get_hf_pipeline, get_hf_pipeline_sdxl
 from animatediff.utils.util import path_from_cwd
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def nop_train(self: T, mode: bool = True) -> T:
     return self
 
 
-def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False) -> Path:
+def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False, is_sdxl: bool = False) -> Path:
     model_name_or_path = Path(model_name_or_path)
 
     model_save_dir = local_dir.joinpath(str(model_name_or_path).split("/")[-1]).resolve()
@@ -39,7 +39,10 @@ def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False
             logger.debug(f"Base model already downloaded to: {path_from_cwd(model_save_dir)}")
         else:
             logger.info(f"Downloading base model from {model_name_or_path}...")
-            _ = get_hf_pipeline(model_name_or_path, model_save_dir, save=True, force_download=force)
+            if is_sdxl:
+                _ = get_hf_pipeline_sdxl(model_name_or_path, model_save_dir, save=True, force_download=force)
+            else:
+                _ = get_hf_pipeline(model_name_or_path, model_save_dir, save=True, force_download=force)
         model_name_or_path = model_save_dir
 
     return Path(model_name_or_path)
@@ -133,6 +136,28 @@ def checkpoint_to_pipeline(
     return pipeline, target_dir
 
 
+def checkpoint_to_pipeline_sdxl(
+    checkpoint: Path,
+    target_dir: Optional[Path] = None,
+    save: bool = True,
+) -> StableDiffusionXLPipeline:
+    logger.debug(f"Converting checkpoint {path_from_cwd(checkpoint)}")
+    if target_dir is None:
+        target_dir = pipeline_dir.joinpath(checkpoint.stem)
+
+    pipeline = StableDiffusionXLPipeline.from_single_file(
+        pretrained_model_link_or_path=str(checkpoint.absolute()),
+        local_files_only=True,
+        load_safety_checker=False,
+    )
+
+    if save:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Saving pipeline to {path_from_cwd(target_dir)}")
+        pipeline.save_pretrained(target_dir, safe_serialization=True)
+    return pipeline, target_dir
+
+
 def get_checkpoint_weights(checkpoint: Path):
     temp_pipeline: StableDiffusionPipeline
     temp_pipeline, _ = checkpoint_to_pipeline(checkpoint, save=False)
@@ -140,6 +165,16 @@ def get_checkpoint_weights(checkpoint: Path):
     tenc_state_dict = temp_pipeline.text_encoder.state_dict()
     vae_state_dict = temp_pipeline.vae.state_dict()
     return unet_state_dict, tenc_state_dict, vae_state_dict
+
+
+def get_checkpoint_weights_sdxl(checkpoint: Path):
+    temp_pipeline: StableDiffusionXLPipeline
+    temp_pipeline, _ = checkpoint_to_pipeline_sdxl(checkpoint, save=False)
+    unet_state_dict = temp_pipeline.unet.state_dict()
+    tenc_state_dict = temp_pipeline.text_encoder.state_dict()
+    tenc2_state_dict = temp_pipeline.text_encoder_2.state_dict()
+    vae_state_dict = temp_pipeline.vae.state_dict()
+    return unet_state_dict, tenc_state_dict, tenc2_state_dict, vae_state_dict
 
 
 def ensure_motion_modules(

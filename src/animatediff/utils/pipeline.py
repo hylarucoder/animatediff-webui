@@ -3,7 +3,7 @@ from typing import Optional
 
 import torch
 import torch._dynamo as dynamo
-from diffusers import StableDiffusionPipeline
+from diffusers import DiffusionPipeline, StableDiffusionPipeline, StableDiffusionXLPipeline
 from einops._torch_specific import allow_ops_in_compiled_graph
 
 from animatediff.utils.device import get_memory_format, get_model_dtypes
@@ -13,12 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 def send_to_device(
-    pipeline: StableDiffusionPipeline,
+    pipeline: DiffusionPipeline,
     device: torch.device,
     freeze: bool = True,
     force_half: bool = False,
     compile: bool = False,
-) -> StableDiffusionPipeline:
+    is_sdxl: bool = False,
+) -> DiffusionPipeline:
+    if is_sdxl:
+        return send_to_device_sdxl(
+            pipeline=pipeline,
+            device=device,
+            freeze=freeze,
+            force_half=force_half,
+            compile=compile,
+        )
+
     logger.info(f"Sending pipeline to device \"{device.type}{device.index if device.index else ''}\"")
 
     # Freeze model weights and force-disable training
@@ -83,6 +93,31 @@ def send_to_device(
             )
         else:
             logger.debug("Skipping model compilation, already compiled!")
+
+    return pipeline
+
+
+def send_to_device_sdxl(
+    pipeline: StableDiffusionXLPipeline,
+    device: torch.device,
+    freeze: bool = True,
+    force_half: bool = False,
+    compile: bool = False,
+) -> StableDiffusionXLPipeline:
+    logger.info(f"Sending pipeline to device \"{device.type}{device.index if device.index else ''}\"")
+
+    pipeline.unet = pipeline.unet.half()
+    pipeline.text_encoder = pipeline.text_encoder.half()
+    pipeline.text_encoder_2 = pipeline.text_encoder_2.half()
+
+    if False:
+        pipeline.to(device)
+    else:
+        pipeline.enable_model_cpu_offload()
+
+    pipeline.enable_xformers_memory_efficient_attention()
+    pipeline.enable_vae_slicing()
+    pipeline.enable_vae_tiling()
 
     return pipeline
 

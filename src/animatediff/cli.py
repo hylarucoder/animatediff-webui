@@ -5,8 +5,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
+if False:
+    if "PYTORCH_CUDA_ALLOC_CONF" in os.environ:
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = ",backend:cudaMallocAsync"
+    else:
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "backend:cudaMallocAsync"
+
+    # "garbage_collection_threshold:0.6"
+    # max_split_size_mb:1024"
+    # "backend:cudaMallocAsync"
+    # roundup_power2_divisions:4
+    print(f"{os.environ['PYTORCH_CUDA_ALLOC_CONF']=}")
+
+if False:
+    os.environ["PYTORCH_NO_CUDA_MEMORY_CACHING"] = "1"
+
 import torch
 import typer
+from diffusers import DiffusionPipeline
 from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosity_error
 from rich.logging import RichHandler
 
@@ -30,7 +46,18 @@ from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, 
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
-from animatediff.utils.util import is_v2_motion_module, path_from_cwd, save_video, set_tensor_interpolation_method
+from animatediff.utils.util import (
+    extract_frames,
+    is_sdxl_checkpoint,
+    is_v2_motion_module,
+    path_from_cwd,
+    save_frames,
+    save_imgs,
+    save_video,
+    set_tensor_interpolation_method,
+    show_gpu,
+)
+from animatediff.utils.wild_card import replace_wild_card
 
 cli: typer.Typer = typer.Typer(
     context_settings=dict(help_option_names=["-h", "--help"]),
@@ -80,10 +107,10 @@ diffuser_ver = meta_version("diffusers")
 
 logger.info(f"{diffuser_ver=}")
 
-if version.parse(diffuser_ver) < version.parse("0.21.2"):
+if version.parse(diffuser_ver) < version.parse("0.23.0"):
     logger.error(f"The version of diffusers is out of date")
-    logger.error(f"python -m pip install diffusers==0.21.2")
-    raise ImportError("Please update diffusers to 0.21.2")
+    logger.error(f"python -m pip install diffusers==0.23.0")
+    raise ImportError("Please update diffusers to 0.23.0")
 
 try:
     from animatediff.rife import app as rife_app
@@ -98,7 +125,7 @@ from animatediff.stylize import stylize
 cli.add_typer(stylize, name="stylize")
 
 # mildly cursed globals to allow for reuse of the pipeline if we're being called as a module
-g_pipeline: Optional[AnimationPipeline] = None
+g_pipeline: Optional[DiffusionPipeline] = None
 last_model_path: Optional[Path] = None
 
 
@@ -118,16 +145,6 @@ def get_random():
 
 @cli.command()
 def generate(
-    model_name_or_path: Annotated[
-        Path,
-        typer.Option(
-            ...,
-            "--model-path",
-            "-m",
-            path_type=Path,
-            help="Base model to use (path or HF repo ID). You probably don't need to change this.",
-        ),
-    ] = Path("runwayml/stable-diffusion-v1-5"),
     config_path: Annotated[
         Path,
         typer.Option(
@@ -294,28 +311,40 @@ def generate(
     # be quiet, diffusers. we care not for your safety checker
     set_diffusers_verbosity_error()
 
+    # torch.set_flush_denormal(True)
+
     config_path = config_path.absolute()
     project_dir = config_path.parent
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
-    is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
-    infer_config: InferenceConfig = get_infer_config(is_v2)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+
+    if is_sdxl:
+        is_v2 = False
+    else:
+        is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
+
+    infer_config: InferenceConfig = get_infer_config(is_v2, is_sdxl)
 
     set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
 
     # set sane defaults for context, overlap, and stride if not supplied
     context, overlap, stride = get_context_params(length, context, overlap, stride)
 
-    if (not is_v2) and (context > 24):
+    if (not is_v2) and (not is_sdxl) and (context > 24):
         logger.warning("For motion module v1, the maximum value of context is 24. Set to 24")
         context = 24
 
     # turn the device string into a torch.device
     device: torch.device = torch.device(device)
 
+    model_name_or_path = (
+        Path("runwayml/stable-diffusion-v1-5") if not is_sdxl else Path("stabilityai/stable-diffusion-xl-base-1.0")
+    )
+
     # Get the base model if we don't have it already
     logger.info(f"Using base model: {model_name_or_path}")
-    base_model_path: Path = get_base_model(model_name_or_path, local_dir=path_mgr.huggingface_pipeline)
+    base_model_path: Path = get_base_model(model_name_or_path, local_dir=path_mgr.huggingface_pipeline, is_sdxl=is_sdxl)
 
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -325,7 +354,7 @@ def generate(
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
-        project_dir, model_config.controlnet_map, width, height, length, save_dir, device
+        project_dir, model_config.controlnet_map, width, height, length, save_dir, device, is_sdxl
     )
     img2img_map = img2img_preprocess(project_dir, model_config.img2img_map, width, height, length, save_dir)
 
@@ -339,22 +368,25 @@ def generate(
             infer_config=infer_config,
             use_xformers=use_xformers,
             video_length=length,
+            is_sdxl=is_sdxl,
         )
         last_model_path = model_config.checkpoint.resolve()
     else:
         logger.info("Pipeline already loaded, skipping initialization")
         # reload TIs; create_pipeline does this for us, but they may have changed
         # since load time if we're being called from another package
-        load_text_embeddings(g_pipeline)
+        load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
-    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config)
+    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config, is_sdxl=is_sdxl)
 
     if g_pipeline.device == device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
     else:
         g_pipeline = send_to_device(
-            g_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile
+            g_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile, is_sdxl=is_sdxl
         )
+
+        torch.cuda.empty_cache()
 
     # save raw config to output directory
     save_config_path = save_dir.joinpath("raw_prompt.json")
@@ -370,7 +402,7 @@ def generate(
 
     is_init_img_exist = img2img_map != None
     region_condi_list, region_list, ip_adapter_config_map = region_preprocess(
-        project_dir, model_config, width, height, length, save_dir, is_init_img_exist
+        project_dir, model_config, width, height, length, save_dir, is_init_img_exist, is_sdxl
     )
 
     # save config to output directory
@@ -428,6 +460,8 @@ def generate(
                 region_condi_list=region_condi_list,
                 output_map=model_config.output,
                 is_single_prompt_mode=model_config.is_single_prompt_mode,
+                is_sdxl=is_sdxl,
+                apply_lcm_lora=model_config.apply_lcm_lora,
             )
             outputs.append(output)
             torch.cuda.empty_cache()
@@ -548,8 +582,12 @@ def tile_upscale(
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
     model_config: ModelConfig = get_model_config(config_path)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+    if is_sdxl:
+        raise ValueError("Currently SDXL model is not available for this command.")
+
     infer_config: InferenceConfig = get_infer_config(
-        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion))
+        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion)), is_sdxl
     )
     frames_dir = frames_dir.absolute()
 

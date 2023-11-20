@@ -59,19 +59,24 @@ class InferenceConfig(BaseSettings):
 
 def get_infer_config(
     is_v2: bool,
+    is_sdxl: bool,
 ) -> InferenceConfig:
     config_path: Path = get_dir("config").joinpath(
         "inference/default.json" if not is_v2 else "inference/motion_v2.json"
     )
-    d = read_json(config_path)
-    settings = InferenceConfig(**d)
+
+    if is_sdxl:
+        config_path = get_dir("config").joinpath("inference/motion_sdxl.json")
+
+    settings = InferenceConfig(**read_json(config_path))
     return settings
 
 
 class ModelConfig(BaseSettings):
     name: str = Field(...)  # Config name, not actually used for much of anything
-    path: Path = Field(...)  # Path to the model
     checkpoint: Path = Field(...)  # Path to the model
+    apply_lcm_lora: bool = Field(False)
+    lcm_lora_scale: float = Field(1.0)
     vae_path: str = ""  # Path to the model
     motion: Path = Field(...)  # Path to the motion module
     compile: bool = Field(False)  # whether to compile the model with TorchDynamo

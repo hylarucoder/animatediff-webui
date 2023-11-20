@@ -3,7 +3,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional
 
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline
 from huggingface_hub import hf_hub_download, snapshot_download
 from tqdm.rich import tqdm
 
@@ -104,6 +104,42 @@ def get_hf_pipeline(
             pretrained_model_name_or_path=str(repo_id).lstrip("./").replace("\\", "/"),
             cache_dir=HF_HUB_CACHE,
             resume_download=True,
+        )
+        if save and force_download:
+            logger.warning(f"Pipeline already exists at {path_from_cwd(target_dir)}. Overwriting!")
+            pipeline.save_pretrained(target_dir, safe_serialization=True)
+        elif save and not pipeline_exists:
+            logger.info(f"Saving pipeline to {path_from_cwd(target_dir)}")
+            pipeline.save_pretrained(target_dir, safe_serialization=True)
+    return pipeline
+
+
+def get_hf_pipeline_sdxl(
+    repo_id: Path,
+    target_dir: Path,
+    save: bool = True,
+    force_download: bool = False,
+) -> StableDiffusionXLPipeline:
+    import torch
+
+    pipeline_exists = target_dir.joinpath("model_index.json").exists()
+    if pipeline_exists and force_download is not True:
+        pipeline = StableDiffusionXLPipeline.from_pretrained(
+            pretrained_model_name_or_path=target_dir,
+            local_files_only=True,
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",
+        )
+    else:
+        target_dir.mkdir(exist_ok=True, parents=True)
+        pipeline = StableDiffusionXLPipeline.from_pretrained(
+            pretrained_model_name_or_path=str(repo_id).lstrip("./").replace("\\", "/"),
+            cache_dir=HF_HUB_CACHE,
+            resume_download=True,
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",
         )
         if save and force_download:
             logger.warning(f"Pipeline already exists at {path_from_cwd(target_dir)}. Overwriting!")
