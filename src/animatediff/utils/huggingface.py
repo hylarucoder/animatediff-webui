@@ -113,6 +113,7 @@ def get_hf_pipeline(
             pipeline.save_pretrained(target_dir, safe_serialization=True)
     return pipeline
 
+
 def get_hf_pipeline_sdxl(
     repo_id: Path,
     target_dir: Path,
@@ -120,12 +121,15 @@ def get_hf_pipeline_sdxl(
     force_download: bool = False,
 ) -> StableDiffusionXLPipeline:
     import torch
+
     pipeline_exists = target_dir.joinpath("model_index.json").exists()
     if pipeline_exists and force_download is not True:
         pipeline = StableDiffusionXLPipeline.from_pretrained(
             pretrained_model_name_or_path=target_dir,
             local_files_only=True,
-            torch_dtype=torch.float16, use_safetensors=True, variant="fp16"
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",
         )
     else:
         target_dir.mkdir(exist_ok=True, parents=True)
@@ -133,7 +137,9 @@ def get_hf_pipeline_sdxl(
             pretrained_model_name_or_path=str(repo_id).lstrip("./").replace("\\", "/"),
             cache_dir=HF_HUB_CACHE,
             resume_download=True,
-            torch_dtype=torch.float16, use_safetensors=True, variant="fp16"
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",
         )
         if save and force_download:
             logger.warning(f"Pipeline already exists at {path_from_cwd(target_dir)}. Overwriting!")

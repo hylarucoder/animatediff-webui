@@ -56,11 +56,11 @@ def load_lcm_lora(pipe, scale, is_sdxl=False):
 
 class LoraMap:
     def __init__(
-            self,
-            pipe,
-            lora_map,
-            video_length,
-            is_sdxl,
+        self,
+        pipe,
+        lora_map,
+        video_length,
+        is_sdxl,
     ):
         self.networks = []
 
@@ -94,8 +94,9 @@ class LoraMap:
             if not sd:
                 continue
             te_en = [pipe.text_encoder, pipe.text_encoder_2] if is_sdxl else pipe.text_encoder
-            lora_network: LoRANetwork = create_network_from_weights(te_en, pipe.unet, sd, multiplier=0.75,
-                                                                    is_animatediff=not is_sdxl)
+            lora_network: LoRANetwork = create_network_from_weights(
+                te_en, pipe.unet, sd, multiplier=0.75, is_animatediff=not is_sdxl
+            )
             lora_network.load_state_dict(sd, False)
             lora_network.apply_to(0.75)
 
@@ -126,18 +127,18 @@ class LoraMap:
             self.is_valid = False
 
     def to(
-            self,
-            device,
-            dtype,
+        self,
+        device,
+        dtype,
     ):
         for net in self.networks:
             net["network"].to(device=device, dtype=dtype)
 
     def apply(
-            self,
-            cond_index,
-            cond_nums,
-            frame_no,
+        self,
+        cond_index,
+        cond_nums,
+        frame_no,
     ):
         """
         neg 0 (bg)
@@ -169,7 +170,7 @@ class LoraMap:
     #               logger.info(f"{i=} DEactive")
 
     def unapply(
-            self,
+        self,
     ):
         for net in self.networks:
             net["network"].deactive()

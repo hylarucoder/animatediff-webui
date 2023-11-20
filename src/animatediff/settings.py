@@ -22,8 +22,8 @@ class JsonSettingsSource:
     __slots__ = ["json_config_path"]
 
     def __init__(
-            self,
-            json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
+        self,
+        json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
     ) -> None:
         if isinstance(json_config_path, list):
             self.json_config_path = [Path(path) for path in json_config_path]
@@ -58,18 +58,17 @@ class InferenceConfig(BaseSettings):
 
 
 def get_infer_config(
-        is_v2: bool,
-        is_sdxl: bool,
+    is_v2: bool,
+    is_sdxl: bool,
 ) -> InferenceConfig:
     config_path: Path = get_dir("config").joinpath(
-        "inference/default.json" if not is_v2 else "inference/motion_v2.json")
+        "inference/default.json" if not is_v2 else "inference/motion_v2.json"
+    )
 
     if is_sdxl:
         config_path = get_dir("config").joinpath("inference/motion_sdxl.json")
 
-    settings = InferenceConfig(
-        **read_json(config_path)
-    )
+    settings = InferenceConfig(**read_json(config_path))
     return settings
 
 

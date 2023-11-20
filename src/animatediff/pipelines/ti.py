@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 def scan_text_embeddings(is_sdxl=False) -> list[Path]:
-    embed_dir=EMBED_DIR_SDXL if is_sdxl else EMBED_DIR
+    embed_dir = EMBED_DIR_SDXL if is_sdxl else EMBED_DIR
     return [x for x in embed_dir.rglob("**/*") if x.is_file() and x.suffix.lower() in EMBED_EXTS]
 
 
-def get_text_embeddings(return_tensors: bool = True, is_sdxl:bool = False) -> dict[str, Union[Tensor, Path]]:
-    embed_dir=EMBED_DIR_SDXL if is_sdxl else EMBED_DIR
+def get_text_embeddings(return_tensors: bool = True, is_sdxl: bool = False) -> dict[str, Union[Tensor, Path]]:
+    embed_dir = EMBED_DIR_SDXL if is_sdxl else EMBED_DIR
     embeds = {}
     skipped = {}
     path: Path
@@ -96,7 +96,7 @@ def load_embed_weights(path: Path, key: Optional[str] = None) -> Optional[Tensor
 
 
 def load_text_embeddings(
-    pipeline: DiffusionPipeline, text_embeds: Optional[tuple[str, torch.Tensor]] = None, is_sdxl = False
+    pipeline: DiffusionPipeline, text_embeds: Optional[tuple[str, torch.Tensor]] = None, is_sdxl=False
 ) -> None:
     if text_embeds is None:
         text_embeds = get_text_embeddings(True, is_sdxl)

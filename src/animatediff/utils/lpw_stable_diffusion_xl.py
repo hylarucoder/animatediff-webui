@@ -15,26 +15,28 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 from diffusers import DiffusionPipeline, StableDiffusionXLPipeline
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import (FromSingleFileMixin, LoraLoaderMixin,
-                               TextualInversionLoaderMixin)
+from diffusers.loaders import FromSingleFileMixin, LoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
-from diffusers.models.attention_processor import (AttnProcessor2_0,
-                                                  LoRAAttnProcessor2_0,
-                                                  LoRAXFormersAttnProcessor,
-                                                  XFormersAttnProcessor)
-from diffusers.pipelines.stable_diffusion_xl import \
-    StableDiffusionXLPipelineOutput
+from diffusers.models.attention_processor import (
+    AttnProcessor2_0,
+    LoRAAttnProcessor2_0,
+    LoRAXFormersAttnProcessor,
+    XFormersAttnProcessor,
+)
+from diffusers.pipelines.stable_diffusion_xl import StableDiffusionXLPipelineOutput
 from diffusers.schedulers import KarrasDiffusionSchedulers
-from diffusers.utils import (is_accelerate_available, is_accelerate_version,
-                             is_invisible_watermark_available, logging,
-                             replace_example_docstring)
+from diffusers.utils import (
+    is_accelerate_available,
+    is_accelerate_version,
+    is_invisible_watermark_available,
+    logging,
+    replace_example_docstring,
+)
 from diffusers.utils.torch_utils import randn_tensor
-from transformers import (CLIPTextModel, CLIPTextModelWithProjection,
-                          CLIPTokenizer)
+from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer
 
 if is_invisible_watermark_available():
-    from diffusers.pipelines.stable_diffusion_xl.watermark import \
-        StableDiffusionXLWatermarker
+    from diffusers.pipelines.stable_diffusion_xl.watermark import StableDiffusionXLWatermarker
 
 
 def parse_prompt_attention(text):
@@ -345,9 +347,7 @@ def get_weighted_text_embeddings_sdxl(
 
         for j in range(len(weight_tensor)):
             if weight_tensor[j] != 1.0:
-                token_embedding[j] = (
-                    token_embedding[-1] + (token_embedding[j] - token_embedding[-1]) * weight_tensor[j]
-                )
+                token_embedding[j] = token_embedding[-1] + (token_embedding[j] - token_embedding[-1]) * weight_tensor[j]
 
         token_embedding = token_embedding.unsqueeze(0)
         embeds.append(token_embedding)
@@ -384,12 +384,11 @@ def get_weighted_text_embeddings_sdxl(
     return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
 
-
 def get_weighted_text_embeddings_sdxl2(
     pipe: StableDiffusionXLPipeline,
     prompt_list: List[str] = [],
     neg_prompt_list: List[str] = [],
-    device: str= "",
+    device: str = "",
 ):
     """
     This function can process long prompt with weights, no length limitation
@@ -411,10 +410,10 @@ def get_weighted_text_embeddings_sdxl2(
 
     eos = pipe.tokenizer.eos_token_id
 
-    prompt_tokens_list=[]
-    prompt_weights_list=[]
-    neg_prompt_tokens_list=[]
-    neg_prompt_weights_list=[]
+    prompt_tokens_list = []
+    prompt_weights_list = []
+    neg_prompt_tokens_list = []
+    neg_prompt_weights_list = []
 
     for prompt, neg_prompt in zip(prompt_list, neg_prompt_list):
         # tokenizer 1
@@ -426,10 +425,10 @@ def get_weighted_text_embeddings_sdxl2(
         neg_prompt_tokens_list.append(neg_prompt_tokens)
         neg_prompt_weights_list.append(neg_prompt_weights)
 
-    prompt_tokens_2_list=[]
-    prompt_weights_2_list=[]
-    neg_prompt_tokens_2_list=[]
-    neg_prompt_weights_2_list=[]
+    prompt_tokens_2_list = []
+    prompt_weights_2_list = []
+    neg_prompt_tokens_2_list = []
+    neg_prompt_weights_2_list = []
 
     for prompt, neg_prompt in zip(prompt_list, neg_prompt_list):
         # tokenizer 2
@@ -443,10 +442,10 @@ def get_weighted_text_embeddings_sdxl2(
 
     def padding(token_list, weight_list, neg_token_list, neg_weight_list):
         max_length = len(max(token_list + neg_token_list, key=len))
-        token_list = [ cur + [eos] * (max_length-len(cur)) for cur in token_list ]
-        weight_list = [ cur + [1.0] * (max_length-len(cur)) for cur in weight_list ]
-        neg_token_list = [ cur + [eos] * (max_length-len(cur)) for cur in neg_token_list ]
-        neg_weight_list = [ cur + [1.0] * (max_length-len(cur)) for cur in neg_weight_list ]
+        token_list = [cur + [eos] * (max_length - len(cur)) for cur in token_list]
+        weight_list = [cur + [1.0] * (max_length - len(cur)) for cur in weight_list]
+        neg_token_list = [cur + [eos] * (max_length - len(cur)) for cur in neg_token_list]
+        neg_weight_list = [cur + [1.0] * (max_length - len(cur)) for cur in neg_weight_list]
         return token_list, weight_list, neg_token_list, neg_weight_list
 
     prompt_tokens_list, prompt_weights_list, neg_prompt_tokens_list, neg_prompt_weights_list = padding(
@@ -458,8 +457,15 @@ def get_weighted_text_embeddings_sdxl2(
     )
 
     def get_embeddings(
-            prompt_tokens, prompt_weights, neg_prompt_tokens, neg_prompt_weights,
-            prompt_tokens_2, prompt_weights_2, neg_prompt_tokens_2, neg_prompt_weights_2):
+        prompt_tokens,
+        prompt_weights,
+        neg_prompt_tokens,
+        neg_prompt_weights,
+        prompt_tokens_2,
+        prompt_weights_2,
+        neg_prompt_tokens_2,
+        neg_prompt_weights_2,
+    ):
         embeds = []
         neg_embeds = []
 
@@ -528,7 +534,8 @@ def get_weighted_text_embeddings_sdxl2(
             for z in range(len(neg_weight_tensor)):
                 if neg_weight_tensor[z] != 1.0:
                     neg_token_embedding[z] = (
-                        neg_token_embedding[-1] + (neg_token_embedding[z] - neg_token_embedding[-1]) * neg_weight_tensor[z]
+                        neg_token_embedding[-1]
+                        + (neg_token_embedding[z] - neg_token_embedding[-1]) * neg_weight_tensor[z]
                     )
 
             neg_token_embedding = neg_token_embedding.unsqueeze(0)
@@ -537,12 +544,17 @@ def get_weighted_text_embeddings_sdxl2(
         prompt_embeds = torch.cat(embeds, dim=1)
         negative_prompt_embeds = torch.cat(neg_embeds, dim=1)
 
-        return prompt_embeds.to(device), negative_prompt_embeds.to(device), pooled_prompt_embeds.to(device), negative_pooled_prompt_embeds.to(device)
+        return (
+            prompt_embeds.to(device),
+            negative_prompt_embeds.to(device),
+            pooled_prompt_embeds.to(device),
+            negative_pooled_prompt_embeds.to(device),
+        )
 
-    p_list,n_list,pp_list,np_list = ([],[],[],[])
+    p_list, n_list, pp_list, np_list = ([], [], [], [])
 
     for i in range(len(prompt_tokens_list)):
-        p,n,pp,np = get_embeddings(
+        p, n, pp, np = get_embeddings(
             prompt_tokens_list[i],
             prompt_weights_list[i],
             neg_prompt_tokens_list[i],
@@ -557,8 +569,7 @@ def get_weighted_text_embeddings_sdxl2(
         pp_list.append(pp)
         np_list.append(np)
 
-    return p_list,n_list,pp_list,np_list
-
+    return p_list, n_list, pp_list, np_list
 
 
 # -------------------------------------------------------------------------------------------------------------------------------

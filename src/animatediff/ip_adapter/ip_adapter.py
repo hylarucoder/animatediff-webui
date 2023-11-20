@@ -44,6 +44,7 @@ class ImageProjModel(torch.nn.Module):
 
 class MLPProjModel(torch.nn.Module):
     """SD model with image prompt"""
+
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
         super().__init__()
 
@@ -51,7 +52,7 @@ class MLPProjModel(torch.nn.Module):
             torch.nn.Linear(clip_embeddings_dim, clip_embeddings_dim),
             torch.nn.GELU(),
             torch.nn.Linear(clip_embeddings_dim, cross_attention_dim),
-            torch.nn.LayerNorm(cross_attention_dim)
+            torch.nn.LayerNorm(cross_attention_dim),
         )
 
     def forward(self, image_embeds):
@@ -338,7 +339,7 @@ class IPAdapterPlusXL(IPAdapter):
             num_queries=self.num_tokens,
             embedding_dim=self.image_encoder.config.hidden_size,
             output_dim=self.pipe.unet.config.cross_attention_dim,
-            ff_mult=4
+            ff_mult=4,
         ).to(self.device, dtype=torch.float16)
         return image_proj_model
 
@@ -350,7 +351,9 @@ class IPAdapterPlusXL(IPAdapter):
         clip_image = clip_image.to(self.device, dtype=torch.float16)
         clip_image_embeds = self.image_encoder(clip_image, output_hidden_states=True).hidden_states[-2]
         image_prompt_embeds = self.image_proj_model(clip_image_embeds)
-        uncond_clip_image_embeds = self.image_encoder(torch.zeros_like(clip_image), output_hidden_states=True).hidden_states[-2]
+        uncond_clip_image_embeds = self.image_encoder(
+            torch.zeros_like(clip_image), output_hidden_states=True
+        ).hidden_states[-2]
         uncond_image_prompt_embeds = self.image_proj_model(uncond_clip_image_embeds)
         return image_prompt_embeds, uncond_image_prompt_embeds
 
@@ -390,8 +393,17 @@ class IPAdapterPlusXL(IPAdapter):
         uncond_image_prompt_embeds = uncond_image_prompt_embeds.view(bs_embed * num_samples, seq_len, -1)
 
         with torch.inference_mode():
-            prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds = self.pipe.encode_prompt(
-                prompt, num_images_per_prompt=num_samples, do_classifier_free_guidance=True, negative_prompt=negative_prompt)
+            (
+                prompt_embeds,
+                negative_prompt_embeds,
+                pooled_prompt_embeds,
+                negative_pooled_prompt_embeds,
+            ) = self.pipe.encode_prompt(
+                prompt,
+                num_images_per_prompt=num_samples,
+                do_classifier_free_guidance=True,
+                negative_prompt=negative_prompt,
+            )
             prompt_embeds = torch.cat([prompt_embeds, image_prompt_embeds], dim=1)
             negative_prompt_embeds = torch.cat([negative_prompt_embeds, uncond_image_prompt_embeds], dim=1)
 

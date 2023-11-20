@@ -26,7 +26,7 @@ def nop_train(self: T, mode: bool = True) -> T:
     return self
 
 
-def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False, is_sdxl:bool=False) -> Path:
+def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False, is_sdxl: bool = False) -> Path:
     model_name_or_path = Path(model_name_or_path)
 
     model_save_dir = local_dir.joinpath(str(model_name_or_path).split("/")[-1]).resolve()
@@ -135,6 +135,7 @@ def checkpoint_to_pipeline(
         pipeline.save_pretrained(target_dir, safe_serialization=True)
     return pipeline, target_dir
 
+
 def checkpoint_to_pipeline_sdxl(
     checkpoint: Path,
     target_dir: Optional[Path] = None,
@@ -156,6 +157,7 @@ def checkpoint_to_pipeline_sdxl(
         pipeline.save_pretrained(target_dir, safe_serialization=True)
     return pipeline, target_dir
 
+
 def get_checkpoint_weights(checkpoint: Path):
     temp_pipeline: StableDiffusionPipeline
     temp_pipeline, _ = checkpoint_to_pipeline(checkpoint, save=False)
@@ -163,6 +165,7 @@ def get_checkpoint_weights(checkpoint: Path):
     tenc_state_dict = temp_pipeline.text_encoder.state_dict()
     vae_state_dict = temp_pipeline.vae.state_dict()
     return unet_state_dict, tenc_state_dict, vae_state_dict
+
 
 def get_checkpoint_weights_sdxl(checkpoint: Path):
     temp_pipeline: StableDiffusionXLPipeline

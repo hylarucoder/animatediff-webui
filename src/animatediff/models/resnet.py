@@ -9,7 +9,7 @@ from einops import rearrange
 from torch import Tensor, nn
 
 
-#class InflatedConv3d(nn.Conv2d):
+# class InflatedConv3d(nn.Conv2d):
 class InflatedConv3d(LoRACompatibleConv):
     def forward(self, x: Tensor) -> Tensor:
         frames = x.shape[2]
@@ -164,7 +164,7 @@ class ResnetBlock3D(nn.Module):
             else:
                 raise ValueError(f"unknown time_embedding_norm : {self.time_embedding_norm} ")
 
-#            self.time_emb_proj = nn.Linear(temb_channels, time_emb_proj_out_channels)
+            #            self.time_emb_proj = nn.Linear(temb_channels, time_emb_proj_out_channels)
             self.time_emb_proj = LoRACompatibleLinear(temb_channels, time_emb_proj_out_channels)
         else:
             self.time_emb_proj = None

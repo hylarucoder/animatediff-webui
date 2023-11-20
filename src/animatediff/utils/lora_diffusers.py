@@ -120,7 +120,11 @@ class LoRAModule(torch.nn.Module):
         super().__init__()
         self.lora_name = lora_name
 
-        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv" or org_module.__class__.__name__ == "InflatedConv3d":
+        if (
+            org_module.__class__.__name__ == "Conv2d"
+            or org_module.__class__.__name__ == "LoRACompatibleConv"
+            or org_module.__class__.__name__ == "InflatedConv3d"
+        ):
             in_dim = org_module.in_channels
             out_dim = org_module.out_channels
         else:
@@ -129,7 +133,11 @@ class LoRAModule(torch.nn.Module):
 
         self.lora_dim = lora_dim
 
-        if org_module.__class__.__name__ == "Conv2d" or org_module.__class__.__name__ == "LoRACompatibleConv" or org_module.__class__.__name__ == "InflatedConv3d":
+        if (
+            org_module.__class__.__name__ == "Conv2d"
+            or org_module.__class__.__name__ == "LoRACompatibleConv"
+            or org_module.__class__.__name__ == "InflatedConv3d"
+        ):
             kernel_size = org_module.kernel_size
             stride = org_module.stride
             padding = org_module.padding
@@ -340,13 +348,15 @@ class LoRANetwork(torch.nn.Module):
             for name, module in root_module.named_modules():
                 if module.__class__.__name__ in target_replace_modules:
                     for child_name, child_module in module.named_modules():
-                        #print(f"{name=} / {child_name=} / {child_module.__class__.__name__}")
+                        # print(f"{name=} / {child_name=} / {child_module.__class__.__name__}")
                         is_linear = (
                             child_module.__class__.__name__ == "Linear"
                             or child_module.__class__.__name__ == "LoRACompatibleLinear"
                         )
                         is_conv2d = (
-                            child_module.__class__.__name__ == "Conv2d" or child_module.__class__.__name__ == "LoRACompatibleConv" or child_module.__class__.__name__ == "InflatedConv3d"
+                            child_module.__class__.__name__ == "Conv2d"
+                            or child_module.__class__.__name__ == "LoRACompatibleConv"
+                            or child_module.__class__.__name__ == "InflatedConv3d"
                         )
 
                         if is_linear or is_conv2d:
@@ -367,7 +377,7 @@ class LoRANetwork(torch.nn.Module):
                                 dim,
                                 alpha,
                             )
-                            #print(f"{lora_name=}")
+                            # print(f"{lora_name=}")
                             loras.append(lora)
             return loras, skipped
 

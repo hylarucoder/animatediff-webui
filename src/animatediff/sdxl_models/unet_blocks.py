@@ -4,13 +4,17 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from diffusers.models.activations import get_activation
-from diffusers.models.attention_processor import (Attention,
-                                                  AttnAddedKVProcessor,
-                                                  AttnAddedKVProcessor2_0)
+from diffusers.models.attention_processor import Attention, AttnAddedKVProcessor, AttnAddedKVProcessor2_0
 from diffusers.models.normalization import AdaGroupNorm
-from diffusers.models.resnet import (Downsample2D, FirDownsample2D,
-                                     FirUpsample2D, KDownsample2D, KUpsample2D,
-                                     ResnetBlock2D, Upsample2D)
+from diffusers.models.resnet import (
+    Downsample2D,
+    FirDownsample2D,
+    FirUpsample2D,
+    KDownsample2D,
+    KUpsample2D,
+    ResnetBlock2D,
+    Upsample2D,
+)
 from diffusers.models.transformer_2d import Transformer2DModel
 from diffusers.utils import is_torch_version, logging
 from einops import rearrange
@@ -21,27 +25,28 @@ from .motion_module import get_motion_module
 TORCH_CLEAR_CACHE = False
 
 
-
 def clear_cache():
-	if TORCH_CLEAR_CACHE:
+    if TORCH_CLEAR_CACHE:
+        import inspect
 
-		import inspect
-		callerframerecord = inspect.stack()[1]
-		frame = callerframerecord[0]
-		info = inspect.getframeinfo(frame)
+        callerframerecord = inspect.stack()[1]
+        frame = callerframerecord[0]
+        info = inspect.getframeinfo(frame)
 
-		import time
+        import time
 
-		import GPUtil
-		torch.cuda.synchronize()
+        import GPUtil
 
-		logger.info(f"{info.filename}/{info.lineno}/before clear cache")
-		GPUtil.showUtilization()
+        torch.cuda.synchronize()
 
-		torch.cuda.empty_cache()
+        logger.info(f"{info.filename}/{info.lineno}/before clear cache")
+        GPUtil.showUtilization()
+
+        torch.cuda.empty_cache()
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+
 
 def get_down_block(
     down_block_type,
@@ -207,6 +212,7 @@ def get_up_block(
 
     raise ValueError(f"{up_block_type} does not exist.")
 
+
 class UNetMidBlock3DCrossAttn(nn.Module):
     def __init__(
         self,
@@ -286,7 +292,9 @@ class UNetMidBlock3DCrossAttn(nn.Module):
                     in_channels=in_channels,
                     motion_module_type=motion_module_type,
                     motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
+                )
+                if use_motion_module
+                else None
             )
             resnets.append(
                 ResnetBlock2D(
@@ -345,9 +353,13 @@ class UNetMidBlock3DCrossAttn(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(motion_module), hidden_states, temb,
-                encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(motion_module), hidden_states, temb, encoder_hidden_states
+                    )
+                    if motion_module is not None
+                    else hidden_states
+                )
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(resnet),
@@ -367,12 +379,17 @@ class UNetMidBlock3DCrossAttn(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states)
+                    if motion_module is not None
+                    else hidden_states
+                )
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 hidden_states = resnet(hidden_states, temb)
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
 
         return hidden_states
+
 
 class DownBlock3D(nn.Module):
     def __init__(
@@ -419,7 +436,9 @@ class DownBlock3D(nn.Module):
                     in_channels=out_channels,
                     motion_module_type=motion_module_type,
                     motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
+                )
+                if use_motion_module
+                else None
             )
 
         self.resnets = nn.ModuleList(resnets)
@@ -439,16 +458,17 @@ class DownBlock3D(nn.Module):
         self.gradient_checkpointing = False
 
     def forward(self, hidden_states, temb=None, encoder_hidden_states=None):
-
         output_states = ()
 
         for resnet, motion_module in zip(self.resnets, self.motion_modules):
             if self.training and self.gradient_checkpointing:
+
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
                         return module(*inputs)
 
                     return custom_forward
+
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 if is_torch_version(">=", "1.11.0"):
@@ -460,17 +480,29 @@ class DownBlock3D(nn.Module):
                         create_custom_forward(resnet), hidden_states, temb
                     )
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(motion_module), hidden_states, temb, encoder_hidden_states, use_reentrant=False) if motion_module is not None else hidden_states
+                hidden_states = (
+                    torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(motion_module),
+                        hidden_states,
+                        temb,
+                        encoder_hidden_states,
+                        use_reentrant=False,
+                    )
+                    if motion_module is not None
+                    else hidden_states
+                )
             else:
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 hidden_states = resnet(hidden_states, temb)
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = motion_module(hidden_states, temb, encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    motion_module(hidden_states, temb, encoder_hidden_states)
+                    if motion_module is not None
+                    else hidden_states
+                )
 
             output_states = output_states + (hidden_states,)
-
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
@@ -479,7 +511,6 @@ class DownBlock3D(nn.Module):
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
 
             output_states = output_states + (hidden_states,)
-
 
         return hidden_states, output_states
 
@@ -531,7 +562,9 @@ class UpBlock3D(nn.Module):
                     in_channels=out_channels,
                     motion_module_type=motion_module_type,
                     motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
+                )
+                if use_motion_module
+                else None
             )
 
         self.resnets = nn.ModuleList(resnets)
@@ -544,8 +577,10 @@ class UpBlock3D(nn.Module):
 
         self.gradient_checkpointing = False
 
-    def forward(self, hidden_states, res_hidden_states_tuple, encoder_hidden_states=None, temb=None, upsample_size=None):
-        for (resnet, motion_module) in zip(self.resnets, self.motion_modules):
+    def forward(
+        self, hidden_states, res_hidden_states_tuple, encoder_hidden_states=None, temb=None, upsample_size=None
+    ):
+        for resnet, motion_module in zip(self.resnets, self.motion_modules):
             # pop res hidden states
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
@@ -558,6 +593,7 @@ class UpBlock3D(nn.Module):
                         return module(*inputs)
 
                     return custom_forward
+
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 if is_torch_version(">=", "1.11.0"):
@@ -569,15 +605,27 @@ class UpBlock3D(nn.Module):
                         create_custom_forward(resnet), hidden_states, temb
                     )
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(motion_module), hidden_states,
-                        temb, encoder_hidden_states, use_reentrant=False) if motion_module is not None else hidden_states
+                hidden_states = (
+                    torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(motion_module),
+                        hidden_states,
+                        temb,
+                        encoder_hidden_states,
+                        use_reentrant=False,
+                    )
+                    if motion_module is not None
+                    else hidden_states
+                )
             else:
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
                 hidden_states = resnet(hidden_states, temb)
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = motion_module(hidden_states, temb, encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    motion_module(hidden_states, temb, encoder_hidden_states)
+                    if motion_module is not None
+                    else hidden_states
+                )
 
         if self.upsamplers is not None:
             for upsampler in self.upsamplers:
@@ -671,7 +719,9 @@ class CrossAttnDownBlock3D(nn.Module):
                     in_channels=out_channels,
                     motion_module_type=motion_module_type,
                     motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
+                )
+                if use_motion_module
+                else None
             )
 
         self.attentions = nn.ModuleList(attentions)
@@ -735,10 +785,17 @@ class CrossAttnDownBlock3D(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(motion_module),
-                    hidden_states, temb,
-                    encoder_hidden_states, use_reentrant=False) if motion_module is not None else hidden_states
+                hidden_states = (
+                    torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(motion_module),
+                        hidden_states,
+                        temb,
+                        encoder_hidden_states,
+                        use_reentrant=False,
+                    )
+                    if motion_module is not None
+                    else hidden_states
+                )
             else:
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
@@ -752,7 +809,11 @@ class CrossAttnDownBlock3D(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states)
+                    if motion_module is not None
+                    else hidden_states
+                )
 
             # apply additional residuals to the output of the last pair of resnet and attention blocks
             if i == len(blocks) - 1 and additional_residuals is not None:
@@ -769,6 +830,7 @@ class CrossAttnDownBlock3D(nn.Module):
             output_states = output_states + (hidden_states,)
 
         return hidden_states, output_states
+
 
 class CrossAttnUpBlock3D(nn.Module):
     def __init__(
@@ -855,7 +917,9 @@ class CrossAttnUpBlock3D(nn.Module):
                     in_channels=out_channels,
                     motion_module_type=motion_module_type,
                     motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
+                )
+                if use_motion_module
+                else None
             )
         self.attentions = nn.ModuleList(attentions)
         self.resnets = nn.ModuleList(resnets)
@@ -914,10 +978,17 @@ class CrossAttnUpBlock3D(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(motion_module),
-                    hidden_states, temb, encoder_hidden_states,
-                    use_reentrant=False) if motion_module is not None else hidden_states
+                hidden_states = (
+                    torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(motion_module),
+                        hidden_states,
+                        temb,
+                        encoder_hidden_states,
+                        use_reentrant=False,
+                    )
+                    if motion_module is not None
+                    else hidden_states
+                )
             else:
                 video_length = hidden_states.shape[2]
                 hidden_states = rearrange(hidden_states, "b c f h w -> (b f) c h w")
@@ -931,7 +1002,11 @@ class CrossAttnUpBlock3D(nn.Module):
                     return_dict=False,
                 )[0]
                 hidden_states = rearrange(hidden_states, "(b f) c h w -> b c f h w", f=video_length)
-                hidden_states = motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states) if motion_module is not None else hidden_states
+                hidden_states = (
+                    motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states)
+                    if motion_module is not None
+                    else hidden_states
+                )
 
         if self.upsamplers is not None:
             for upsampler in self.upsamplers:

@@ -20,8 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 def zero_rank_print(s):
-    if not isinstance(s, str): s = repr(s)
-    if (not dist.is_initialized()) or (dist.is_initialized() and dist.get_rank() == 0): print("### " + s)
+    if not isinstance(s, str):
+        s = repr(s)
+    if (not dist.is_initialized()) or (dist.is_initialized() and dist.get_rank() == 0):
+        print("### " + s)
 
 
 def save_frames(video: Tensor, frames_dir: PathLike, show_progress: bool = True):
@@ -160,11 +162,13 @@ def show_bytes(comment, obj):
 def show_gpu(comment=""):
     return
     import inspect
+
     callerframerecord = inspect.stack()[1]
     frame = callerframerecord[0]
     info = inspect.getframeinfo(frame)
 
     import GPUtil
+
     torch.cuda.synchronize()
 
     #    time.sleep(1.5)
@@ -347,7 +351,7 @@ def prepare_softsplat():
 
 
 def extract_frames(
-        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+    movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
 ):
     import ffmpeg
 
@@ -431,9 +435,11 @@ def is_v2_motion_module(motion_module_path: Path):
 def is_sdxl_checkpoint(checkpoint_path: Path):
     if checkpoint_path.suffix == ".safetensors":
         from safetensors.torch import load_file
+
         loaded = load_file(checkpoint_path, "cpu")
     else:
         from torch import load
+
         loaded = load(checkpoint_path, "cpu")
 
     is_sdxl = False

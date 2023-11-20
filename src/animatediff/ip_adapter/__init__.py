@@ -1,5 +1,4 @@
-from .ip_adapter import (IPAdapter, IPAdapterFull, IPAdapterPlus,
-                         IPAdapterPlusXL, IPAdapterXL)
+from .ip_adapter import IPAdapter, IPAdapterFull, IPAdapterPlus, IPAdapterPlusXL, IPAdapterXL
 
 __all__ = [
     "IPAdapter",

@@ -3,8 +3,7 @@ from typing import Optional
 
 import torch
 import torch._dynamo as dynamo
-from diffusers import (DiffusionPipeline, StableDiffusionPipeline,
-                       StableDiffusionXLPipeline)
+from diffusers import DiffusionPipeline, StableDiffusionPipeline, StableDiffusionXLPipeline
 from einops._torch_specific import allow_ops_in_compiled_graph
 
 from animatediff.utils.device import get_memory_format, get_model_dtypes
@@ -121,7 +120,6 @@ def send_to_device_sdxl(
     pipeline.enable_vae_tiling()
 
     return pipeline
-
 
 
 def get_context_params(

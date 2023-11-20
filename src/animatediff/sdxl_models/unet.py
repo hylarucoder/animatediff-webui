@@ -24,16 +24,19 @@ import torch.utils.checkpoint
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import AttnProcsLayers, UNet2DConditionLoadersMixin
 from diffusers.models.activations import get_activation
-from diffusers.models.attention_processor import (AttentionProcessor,
-                                                  AttnProcessor,
-                                                  LoRAAttnProcessor)
-from diffusers.models.embeddings import (GaussianFourierProjection,
-                                         ImageHintTimeEmbedding,
-                                         ImageProjection, ImageTimeEmbedding,
-                                         PositionNet, TextImageProjection,
-                                         TextImageTimeEmbedding,
-                                         TextTimeEmbedding, TimestepEmbedding,
-                                         Timesteps)
+from diffusers.models.attention_processor import AttentionProcessor, AttnProcessor, LoRAAttnProcessor
+from diffusers.models.embeddings import (
+    GaussianFourierProjection,
+    ImageHintTimeEmbedding,
+    ImageProjection,
+    ImageTimeEmbedding,
+    PositionNet,
+    TextImageProjection,
+    TextImageTimeEmbedding,
+    TextTimeEmbedding,
+    TimestepEmbedding,
+    Timesteps,
+)
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.utils import BaseOutput, logging
 from einops import rearrange, repeat
@@ -202,12 +205,11 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         mid_block_only_cross_attention: Optional[bool] = None,
         cross_attention_norm: Optional[str] = None,
         addition_embed_type_num_heads=64,
-
         # motion module
         use_motion_module=False,
-        motion_module_resolutions = (1,2,4,8),
-        motion_module_mid_block = False,
-        motion_module_decoder_only = False,
+        motion_module_resolutions=(1, 2, 4, 8),
+        motion_module_mid_block=False,
+        motion_module_decoder_only=False,
         motion_module_type=None,
         motion_module_kwargs=None,
     ):
@@ -433,7 +435,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             input_channel = output_channel
             output_channel = block_out_channels[i]
             is_final_block = i == len(block_out_channels) - 1
-            res = 2 ** i
+            res = 2**i
             down_block = get_down_block(
                 down_block_type,
                 num_layers=layers_per_block[i],
@@ -458,7 +460,9 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 resnet_out_scale_factor=resnet_out_scale_factor,
                 cross_attention_norm=cross_attention_norm,
                 attention_head_dim=attention_head_dim[i] if attention_head_dim[i] is not None else output_channel,
-                use_motion_module=use_motion_module and (res in motion_module_resolutions) and (not motion_module_decoder_only),
+                use_motion_module=use_motion_module
+                and (res in motion_module_resolutions)
+                and (not motion_module_decoder_only),
                 motion_module_type=motion_module_type,
                 motion_module_kwargs=motion_module_kwargs,
             )
@@ -598,8 +602,10 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         del lora_layers
 
     def set_image_layer_lora_scale(self, lora_scale: float = 1.0):
-        for block in self.down_blocks: setattr(block, "lora_scale", lora_scale)
-        for block in self.up_blocks:   setattr(block, "lora_scale", lora_scale)
+        for block in self.down_blocks:
+            setattr(block, "lora_scale", lora_scale)
+        for block in self.up_blocks:
+            setattr(block, "lora_scale", lora_scale)
         setattr(self.mid_block, "lora_scale", lora_scale)
 
     @property
@@ -627,7 +633,9 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         return processors
 
-    def set_attn_processor(self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]], is_motion_module=False):
+    def set_attn_processor(
+        self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]], is_motion_module=False
+    ):
         r"""
         Sets the attention processor to use to compute attention.
 
@@ -640,7 +648,9 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 processor. This is strongly recommended when setting trainable attention processors.
 
         """
-        count = len(self.attn_processors.keys()) if not is_motion_module else len(self.motion_module_attn_processors.keys())
+        count = (
+            len(self.attn_processors.keys()) if not is_motion_module else len(self.motion_module_attn_processors.keys())
+        )
 
         if isinstance(processor, dict) and len(processor) != count:
             raise ValueError(
@@ -650,7 +660,9 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         def fn_recursive_attn_processor(name: str, module: torch.nn.Module, processor):
             if hasattr(module, "set_processor"):
-                if ((not is_motion_module) and (not "motion_modules." in name)) or (is_motion_module and ("motion_modules." in name)):
+                if ((not is_motion_module) and (not "motion_modules." in name)) or (
+                    is_motion_module and ("motion_modules." in name)
+                ):
                     if not isinstance(processor, dict):
                         module.set_processor(processor)
                     else:
@@ -691,8 +703,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
     def set_motion_module_lora(self, motion_module_lora_rank: int = 256, motion_lora_resolution=[32, 64, 128]):
         lora_attn_procs = {}
-        #motion_name = []
-        #if 32 in motion_lora_resolution:
+        # motion_name = []
+        # if 32 in motion_lora_resolution:
         #    motion_name.append('up_blocks.0')
         #     motion_name.append('down_blocks.2')
         # if 64 in motion_lora_resolution:
@@ -702,8 +714,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         #     motion_name.append('up_blocks.2')
         #     motion_name.append('down_blocks.0')
         for name in self.motion_module_attn_processors.keys():
-            #prefix = '.'.join(name.split('.')[:2])
-            #if prefix not in motion_name:
+            # prefix = '.'.join(name.split('.')[:2])
+            # if prefix not in motion_name:
             #    continue
             print(f"(add motion lora) {name}")
 
@@ -726,8 +738,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         lora_layers = AttnProcsLayers(self.motion_module_attn_processors)
         print(f"(motion lora parameters): {sum(p.numel() for p in lora_layers.parameters()) / 1e6:.3f} M")
         del lora_layers
-
-
 
     def set_attention_slice(self, slice_size):
         r"""
@@ -841,7 +851,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 a `tuple` is returned where the first element is the sample tensor.
         """
 
-
         # By default samples have to be AT least a multiple of the overall upsampling factor.
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
@@ -853,11 +862,13 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         timestep = repeat(timestep, "b-> (b f)", f=video_length)
         if encoder_hidden_states.shape[0] < video_length:
             encoder_hidden_states = repeat(encoder_hidden_states, "b n c -> (b f) n c", f=video_length)
-        added_cond_kwargs['time_ids'] = repeat(added_cond_kwargs['time_ids'], "b c -> (b f) c", f=video_length)
-        if added_cond_kwargs['text_embeds'].shape[0] < video_length:
-            added_cond_kwargs['text_embeds'] = repeat(added_cond_kwargs['text_embeds'], "b c -> (b f) c", f=video_length)
+        added_cond_kwargs["time_ids"] = repeat(added_cond_kwargs["time_ids"], "b c -> (b f) c", f=video_length)
+        if added_cond_kwargs["text_embeds"].shape[0] < video_length:
+            added_cond_kwargs["text_embeds"] = repeat(
+                added_cond_kwargs["text_embeds"], "b c -> (b f) c", f=video_length
+            )
 
-        #sample = rearrange(sample, "b c f h w -> (b f) c h w")
+        # sample = rearrange(sample, "b c f h w -> (b f) c h w")
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         forward_upsample_size = False
@@ -892,7 +903,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         if self.config.center_input_sample:
             sample = 2 * sample - 1.0
 
-
         # 1. time
         timesteps = timestep
         if not torch.is_tensor(timesteps):
@@ -908,8 +918,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             timesteps = timesteps[None].to(sample.device)
 
         # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
-       # timesteps = timesteps
-
+        # timesteps = timesteps
 
         t_emb = self.time_proj(timesteps)
 
@@ -952,7 +961,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             text_embs = added_cond_kwargs.get("text_embeds", encoder_hidden_states)
             aug_emb = self.add_embedding(text_embs, image_embs)
         elif self.config.addition_embed_type == "text_time":
-
             # SDXL - style
             if "text_embeds" not in added_cond_kwargs:
                 raise ValueError(
@@ -1015,13 +1023,11 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             image_embeds = added_cond_kwargs.get("image_embeds")
             encoder_hidden_states = self.encoder_hid_proj(image_embeds)
 
-
         # 2. pre-process
         video_length = sample.shape[2]
         sample = rearrange(sample, "b c f h w -> (b f) c h w")
         sample = self.conv_in(sample)
         sample = rearrange(sample, "(b f) c h w -> b c f h w", f=video_length)
-
 
         # 2.5 GLIGEN position net
         if cross_attention_kwargs is not None and cross_attention_kwargs.get("gligen", None) is not None:
@@ -1069,7 +1075,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 new_down_block_res_samples = new_down_block_res_samples + (down_block_res_sample,)
 
             down_block_res_samples = new_down_block_res_samples
-
 
         # 4. mid
         if self.mid_block is not None:
@@ -1123,7 +1128,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         video_length = sample.shape[2]
         sample = rearrange(sample, "b c f h w -> (b f) c h w")
 
-
         # 6. post-process
         if self.conv_norm_out:
             sample = self.conv_norm_out(sample)
@@ -1145,7 +1149,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             pretrained_model_path = os.path.join(pretrained_model_path, subfolder)
         print(f"loaded temporal unet's pretrained weights from {pretrained_model_path} ...")
 
-        config_file = os.path.join(pretrained_model_path, 'config.json')
+        config_file = os.path.join(pretrained_model_path, "config.json")
         if not os.path.isfile(config_file):
             raise RuntimeError(f"{config_file} does not exist")
         with open(config_file, "r") as f:
@@ -1155,7 +1159,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             "DownBlock3D",
             "CrossAttnDownBlock3D",
             "CrossAttnDownBlock3D",
-
         ]
         config["up_block_types"] = [
             "CrossAttnUpBlock3D",
@@ -1165,20 +1168,21 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         config["mid_block_type"] = "UNetMidBlock3DCrossAttn"
         from diffusers.utils import SAFETENSORS_WEIGHTS_NAME
+
         model = cls.from_config(config, **unet_additional_kwargs)
         model.to(torch.float16)
         model_file = os.path.join(pretrained_model_path, SAFETENSORS_WEIGHTS_NAME)
         if not os.path.isfile(model_file):
             raise RuntimeError(f"{model_file} does not exist")
 
-        '''
+        """
         state_dict = {}
         from safetensors import safe_open
         with safe_open(model_file, framework='pt') as f:
             for k in f.keys():
                 state_dict[k] = f.get_tensor(k)
 
-        '''
+        """
 
         # load the vanilla weights
         logger.debug(f"loading safeTensors weights from {pretrained_model_path} ...")
@@ -1191,9 +1195,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             elif motion_module_path.suffix.lower() == ".safetensors":
                 motion_state_dict = load_file(motion_module_path, device="cpu")
             else:
-                raise RuntimeError(
-                    f"unknown file format for motion module weights: {motion_module_path.suffix}"
-                )
+                raise RuntimeError(f"unknown file format for motion module weights: {motion_module_path.suffix}")
         else:
             raise FileNotFoundError(f"no motion module weights found in {motion_module_path}")
 
@@ -1217,7 +1219,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             pretrained_model_path = os.path.join(pretrained_model_path, subfolder)
         print(f"loaded temporal unet's pretrained weights from {pretrained_model_path} ...")
 
-        config_file = os.path.join(pretrained_model_path, 'config.json')
+        config_file = os.path.join(pretrained_model_path, "config.json")
         if not os.path.isfile(config_file):
             raise RuntimeError(f"{config_file} does not exist")
         with open(config_file, "r") as f:
@@ -1227,7 +1229,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             "DownBlock3D",
             "CrossAttnDownBlock3D",
             "CrossAttnDownBlock3D",
-
         ]
         config["up_block_types"] = [
             "CrossAttnUpBlock3D",
@@ -1237,6 +1238,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         config["mid_block_type"] = "UNetMidBlock3DCrossAttn"
         from diffusers.utils import SAFETENSORS_WEIGHTS_NAME
+
         model = cls.from_config(config, **unet_additional_kwargs)
         model_file = os.path.join(pretrained_model_path, SAFETENSORS_WEIGHTS_NAME)
         if not os.path.isfile(model_file):
@@ -1244,7 +1246,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         state_dict = {}
         from safetensors import safe_open
-        with safe_open(model_file, framework='pt', device="cpu") as f:
+
+        with safe_open(model_file, framework="pt", device="cpu") as f:
             for k in f.keys():
                 state_dict[k] = f.get_tensor(k)
 

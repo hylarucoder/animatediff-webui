@@ -62,17 +62,17 @@ def torch_dfs(model: torch.nn.Module):
 
 class PromptEncoder:
     def __init__(
-            self,
-            pipe,
-            device,
-            latents_device,
-            num_videos_per_prompt,
-            do_classifier_free_guidance,
-            region_condi_list,
-            negative_prompt,
-            is_signle_prompt_mode,
-            clip_skip,
-            multi_uncond_mode,
+        self,
+        pipe,
+        device,
+        latents_device,
+        num_videos_per_prompt,
+        do_classifier_free_guidance,
+        region_condi_list,
+        negative_prompt,
+        is_signle_prompt_mode,
+        clip_skip,
+        multi_uncond_mode,
     ):
         self.pipe = pipe
         self.is_single_prompt_mode = is_signle_prompt_mode
@@ -131,7 +131,7 @@ class PromptEncoder:
         pos_index = 0
         for prompt_map, num in zip(prompt_map_list, prompt_nums):
             prompt_embeds_map = {}
-            pos = positive[pos_index: pos_index + num]
+            pos = positive[pos_index : pos_index + num]
 
             for i, key_frame in enumerate(prompt_map):
                 prompt_embeds_map[key_frame] = pos[i]
@@ -186,7 +186,7 @@ class PromptEncoder:
             pos_index = 0
             for ip_im_map, num in zip(ip_im_map_list, ip_im_nums):
                 im_prompt_embeds_map = {}
-                pos = positive[pos_index: pos_index + num]
+                pos = positive[pos_index : pos_index + num]
 
                 for i, key_frame in enumerate(ip_im_map):
                     im_prompt_embeds_map[key_frame] = pos[i]
@@ -201,7 +201,7 @@ class PromptEncoder:
             self.im_prompt_embeds_region_list = im_prompt_embeds_region_list
 
     def _get_current_prompt_embeds_from_text(
-            self, prompt_map, prompt_embeds_map, center_frame=None, video_length: int = 0
+        self, prompt_map, prompt_embeds_map, center_frame=None, video_length: int = 0
     ):
         key_prev = list(prompt_map.keys())[-1]
         key_next = list(prompt_map.keys())[0]
@@ -235,7 +235,7 @@ class PromptEncoder:
         return outputs
 
     def _get_current_prompt_embeds_from_image(
-            self, ip_im_map, im_prompt_embeds_map, center_frame=None, video_length: int = 0
+        self, ip_im_map, im_prompt_embeds_map, center_frame=None, video_length: int = 0
     ):
         key_prev = list(ip_im_map.keys())[-1]
         key_next = list(ip_im_map.keys())[0]
@@ -329,17 +329,17 @@ class PromptEncoder:
 
 class RegionMask:
     def __init__(
-            self,
-            region_list,
-            batch_size,
-            num_channels_latents,
-            video_length,
-            height,
-            width,
-            vae_scale_factor,
-            dtype,
-            device,
-            multi_uncond_mode,
+        self,
+        region_list,
+        batch_size,
+        num_channels_latents,
+        video_length,
+        height,
+        width,
+        vae_scale_factor,
+        dtype,
+        device,
+        multi_uncond_mode,
     ):
         shape = (
             batch_size,
@@ -418,16 +418,16 @@ class RegionMask:
                 self.cond2region[r["src"]] = i
 
     def get_mask(
-            self,
-            region_index,
+        self,
+        region_index,
     ):
         return self.region_list[region_index]["mask_latents"]
 
     def get_area(
-            self,
-            cond_layer,
-            cond_nums,
-            context,
+        self,
+        cond_layer,
+        cond_nums,
+        context,
     ):
         if self.multi_uncond_mode:
             cond_layer = cond_layer if cond_layer < cond_nums // 2 else cond_layer - cond_nums // 2
@@ -466,9 +466,9 @@ class RegionMask:
             return None, None
 
     def get_crop_generation_rate(
-            self,
-            cond_layer,
-            cond_nums,
+        self,
+        cond_layer,
+        cond_nums,
     ):
         if self.multi_uncond_mode:
             cond_layer = cond_layer if cond_layer < cond_nums // 2 else cond_layer - cond_nums // 2
@@ -514,21 +514,21 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
     ip_adapter: IPAdapter = None
 
     def __init__(
-            self,
-            vae: AutoencoderKL,
-            text_encoder: CLIPSkipTextModel,
-            tokenizer: CLIPTokenizer,
-            unet: UNet3DConditionModel,
-            scheduler: Union[
-                DDIMScheduler,
-                PNDMScheduler,
-                LMSDiscreteScheduler,
-                EulerDiscreteScheduler,
-                EulerAncestralDiscreteScheduler,
-                DPMSolverMultistepScheduler,
-            ],
-            feature_extractor: CLIPImageProcessor,
-            controlnet_map: Dict[str, ControlNetModel] = None,
+        self,
+        vae: AutoencoderKL,
+        text_encoder: CLIPSkipTextModel,
+        tokenizer: CLIPTokenizer,
+        unet: UNet3DConditionModel,
+        scheduler: Union[
+            DDIMScheduler,
+            PNDMScheduler,
+            LMSDiscreteScheduler,
+            EulerDiscreteScheduler,
+            EulerAncestralDiscreteScheduler,
+            DPMSolverMultistepScheduler,
+        ],
+        feature_extractor: CLIPImageProcessor,
+        controlnet_map: Dict[str, ControlNetModel] = None,
     ):
         super().__init__()
 
@@ -669,24 +669,24 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return self.device
         for module in self.unet.modules():
             if (
-                    hasattr(module, "_hf_hook")
-                    and hasattr(module._hf_hook, "execution_device")
-                    and module._hf_hook.execution_device is not None
+                hasattr(module, "_hf_hook")
+                and hasattr(module._hf_hook, "execution_device")
+                and module._hf_hook.execution_device is not None
             ):
                 return torch.device(module._hf_hook.execution_device)
         return self.device
 
     def _encode_prompt(
-            self,
-            prompt,
-            device,
-            num_videos_per_prompt: int = 1,
-            do_classifier_free_guidance: bool = False,
-            negative_prompt=None,
-            max_embeddings_multiples=3,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            clip_skip: int = 1,
+        self,
+        prompt,
+        device,
+        num_videos_per_prompt: int = 1,
+        do_classifier_free_guidance: bool = False,
+        negative_prompt=None,
+        max_embeddings_multiples=3,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        clip_skip: int = 1,
     ):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -758,16 +758,16 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         return prompt_embeds
 
     def __encode_prompt(
-            self,
-            prompt,
-            device,
-            num_videos_per_prompt: int = 1,
-            do_classifier_free_guidance: bool = False,
-            negative_prompt=None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            lora_scale: Optional[float] = None,
-            clip_skip: int = 1,
+        self,
+        prompt,
+        device,
+        num_videos_per_prompt: int = 1,
+        do_classifier_free_guidance: bool = False,
+        negative_prompt=None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        lora_scale: Optional[float] = None,
+        clip_skip: int = 1,
     ):
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
@@ -792,9 +792,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             untruncated_ids = self.tokenizer(prompt, padding="longest", return_tensors="pt").input_ids
 
             if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
-                    text_input_ids, untruncated_ids
+                text_input_ids, untruncated_ids
             ):
-                removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1: -1])
+                removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1])
                 logger.warning(
                     "The following part of your input was truncated because CLIP can only handle sequences up to"
                     f" {self.tokenizer.model_max_length} tokens: {removed_text}"
@@ -929,7 +929,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         video = []
         for frame_idx in range(latents.shape[0]):
             video.append(
-                self.vae.decode(latents[frame_idx: frame_idx + 1].to(self.vae.device, self.vae.dtype)).sample.cpu()
+                self.vae.decode(latents[frame_idx : frame_idx + 1].to(self.vae.device, self.vae.dtype)).sample.cpu()
             )
         video = torch.cat(video)
         video = rearrange(video, "(b f) c h w -> b c f h w", f=video_length)
@@ -956,14 +956,14 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         return extra_step_kwargs
 
     def check_inputs(
-            self,
-            prompt,
-            height,
-            width,
-            callback_steps,
-            negative_prompt=None,
-            prompt_embeds=None,
-            negative_prompt_embeds=None,
+        self,
+        prompt,
+        height,
+        width,
+        callback_steps,
+        negative_prompt=None,
+        prompt_embeds=None,
+        negative_prompt_embeds=None,
     ):
         if height % 8 != 0 or width % 8 != 0:
             raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
@@ -1002,16 +1002,16 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                 )
 
     def prepare_image(
-            self,
-            image,
-            width,
-            height,
-            batch_size,
-            num_images_per_prompt,
-            device,
-            dtype,
-            do_classifier_free_guidance=False,
-            guess_mode=False,
+        self,
+        image,
+        width,
+        height,
+        batch_size,
+        num_images_per_prompt,
+        device,
+        dtype,
+        do_classifier_free_guidance=False,
+        guess_mode=False,
     ):
         image = self.control_image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
         image_batch_size = image.shape[0]
@@ -1032,16 +1032,16 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         return image
 
     def prepare_ref_image(
-            self,
-            image,
-            width,
-            height,
-            batch_size,
-            num_images_per_prompt,
-            device,
-            dtype,
-            do_classifier_free_guidance=False,
-            guess_mode=False,
+        self,
+        image,
+        width,
+        height,
+        batch_size,
+        num_images_per_prompt,
+        device,
+        dtype,
+        do_classifier_free_guidance=False,
+        guess_mode=False,
     ):
         image = self.image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
         image_batch_size = image.shape[0]
@@ -1062,21 +1062,21 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         return image
 
     def prepare_latents(
-            self,
-            batch_size,
-            num_channels_latents,
-            video_length,
-            height,
-            width,
-            dtype,
-            device,
-            generator,
-            img2img_map,
-            timestep,
-            latents=None,
-            is_strength_max=True,
-            return_noise=True,
-            return_image_latents=True,
+        self,
+        batch_size,
+        num_channels_latents,
+        video_length,
+        height,
+        width,
+        dtype,
+        device,
+        generator,
+        img2img_map,
+        timestep,
+        latents=None,
+        is_strength_max=True,
+        return_noise=True,
+        return_image_latents=True,
     ):
         shape = (
             batch_size,
@@ -1134,7 +1134,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         # encode the mask image into latents space so we can concatenate it to the latents
         if isinstance(generator, list):
             ref_image_latents = [
-                self.vae.encode(refimage[i: i + 1]).latent_dist.sample(generator=generator[i])
+                self.vae.encode(refimage[i : i + 1]).latent_dist.sample(generator=generator[i])
                 for i in range(batch_size)
             ]
             ref_image_latents = torch.cat(ref_image_latents, dim=0)
@@ -1162,18 +1162,18 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
     # from diffusers/examples/community/stable_diffusion_controlnet_reference.py
     def prepare_controlnet_ref_only_without_motion(
-            self,
-            ref_image_latents,
-            batch_size,
-            num_images_per_prompt,
-            do_classifier_free_guidance,
-            attention_auto_machine_weight,
-            gn_auto_machine_weight,
-            style_fidelity,
-            reference_attn,
-            reference_adain,
-            _scale_pattern,
-            region_num,
+        self,
+        ref_image_latents,
+        batch_size,
+        num_images_per_prompt,
+        do_classifier_free_guidance,
+        attention_auto_machine_weight,
+        gn_auto_machine_weight,
+        style_fidelity,
+        reference_attn,
+        reference_adain,
+        _scale_pattern,
+        region_num,
     ):
         global C_REF_MODE
         # 9. Modify self attention and group norm
@@ -1196,14 +1196,14 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         rev_pattern = torch.tensor(_rev_pattern).to(self.device, dtype=self.unet.dtype)
 
         def hacked_basic_transformer_inner_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
-                timestep: Optional[torch.LongTensor] = None,
-                cross_attention_kwargs: Dict[str, Any] = None,
-                video_length=None,
+            self,
+            hidden_states: torch.FloatTensor,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            timestep: Optional[torch.LongTensor] = None,
+            cross_attention_kwargs: Dict[str, Any] = None,
+            video_length=None,
         ):
             if self.use_ada_layer_norm:
                 norm_hidden_states = self.norm1(hidden_states, timestep)
@@ -1263,8 +1263,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         )
 
                         attn_output = (
-                                scale_pattern_double[:, None, None] * attn_output
-                                + rev_pattern_double[:, None, None] * attn_org
+                            scale_pattern_double[:, None, None] * attn_output
+                            + rev_pattern_double[:, None, None] * attn_org
                         )
 
                     else:
@@ -1311,13 +1311,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hacked_mid_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ) -> torch.FloatTensor:
             eps = 1e-6
 
@@ -1379,13 +1379,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hack_CrossAttnDownBlock3D_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
             eps = 1e-6
 
@@ -1431,8 +1431,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 # add motion module
@@ -1491,8 +1491,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 # add motion module
@@ -1514,15 +1514,15 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states, output_states
 
         def hacked_CrossAttnUpBlock3D_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                upsample_size: Optional[int] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            upsample_size: Optional[int] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
             eps = 1e-6
             # TODO(Patrick, William) - attention mask is not used
@@ -1568,8 +1568,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 # add motion module
@@ -1587,7 +1587,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hacked_UpBlock3D_forward(
-                self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, encoder_hidden_states=None
+            self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, encoder_hidden_states=None
         ):
             eps = 1e-6
             for i, (resnet, motion_module) in enumerate(zip(self.resnets, self.motion_modules)):
@@ -1624,8 +1624,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 if motion_module:
@@ -1691,17 +1691,17 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
     # from diffusers/examples/community/stable_diffusion_controlnet_reference.py
     def prepare_controlnet_ref_only(
-            self,
-            ref_image_latents,
-            batch_size,
-            num_images_per_prompt,
-            do_classifier_free_guidance,
-            attention_auto_machine_weight,
-            gn_auto_machine_weight,
-            style_fidelity,
-            reference_attn,
-            reference_adain,
-            _scale_pattern,
+        self,
+        ref_image_latents,
+        batch_size,
+        num_images_per_prompt,
+        do_classifier_free_guidance,
+        attention_auto_machine_weight,
+        gn_auto_machine_weight,
+        style_fidelity,
+        reference_attn,
+        reference_adain,
+        _scale_pattern,
     ):
         global C_REF_MODE
         # 9. Modify self attention and group norm
@@ -1722,14 +1722,14 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         rev_pattern = torch.tensor(_rev_pattern).to(self.device, dtype=self.unet.dtype)
 
         def hacked_basic_transformer_inner_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
-                timestep: Optional[torch.LongTensor] = None,
-                cross_attention_kwargs: Dict[str, Any] = None,
-                video_length=None,
+            self,
+            hidden_states: torch.FloatTensor,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            timestep: Optional[torch.LongTensor] = None,
+            cross_attention_kwargs: Dict[str, Any] = None,
+            video_length=None,
         ):
             if self.use_ada_layer_norm:
                 norm_hidden_states = self.norm1(hidden_states, timestep)
@@ -1789,8 +1789,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         )
 
                         attn_output = (
-                                scale_pattern_double[:, None, None] * attn_output
-                                + rev_pattern_double[:, None, None] * attn_org
+                            scale_pattern_double[:, None, None] * attn_output
+                            + rev_pattern_double[:, None, None] * attn_org
                         )
 
                     else:
@@ -1837,13 +1837,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hacked_mid_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ) -> torch.FloatTensor:
             eps = 1e-6
 
@@ -1903,13 +1903,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hack_CrossAttnDownBlock3D_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
             eps = 1e-6
 
@@ -1961,8 +1961,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 output_states = output_states + (hidden_states,)
@@ -2018,8 +2018,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
                 output_states = output_states + (hidden_states,)
@@ -2037,15 +2037,15 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states, output_states
 
         def hacked_CrossAttnUpBlock3D_forward(
-                self,
-                hidden_states: torch.FloatTensor,
-                res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
-                temb: Optional[torch.FloatTensor] = None,
-                encoder_hidden_states: Optional[torch.FloatTensor] = None,
-                cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-                upsample_size: Optional[int] = None,
-                attention_mask: Optional[torch.FloatTensor] = None,
-                encoder_attention_mask: Optional[torch.FloatTensor] = None,
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            upsample_size: Optional[int] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
         ):
             eps = 1e-6
             # TODO(Patrick, William) - attention mask is not used
@@ -2095,8 +2095,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
             if C_REF_MODE == "read":
@@ -2110,7 +2110,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return hidden_states
 
         def hacked_UpBlock3D_forward(
-                self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, encoder_hidden_states=None
+            self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, encoder_hidden_states=None
         ):
             eps = 1e-6
             for i, (resnet, motion_module) in enumerate(zip(self.resnets, self.motion_modules)):
@@ -2150,8 +2150,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         mod_hidden_states = style_fidelity * hidden_states_c + (1.0 - style_fidelity) * hidden_states_uc
 
                         hidden_states = (
-                                scale_pattern[None, None, :, None, None] * mod_hidden_states
-                                + rev_pattern[None, None, :, None, None] * hidden_states
+                            scale_pattern[None, None, :, None, None] * mod_hidden_states
+                            + rev_pattern[None, None, :, None, None] * hidden_states
                         )
 
             if C_REF_MODE == "read":
@@ -2213,9 +2213,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             torch.cuda.empty_cache()
 
     def unload_controlnet_ref_only(
-            self,
-            reference_attn,
-            reference_adain,
+        self,
+        reference_attn,
+        reference_adain,
     ):
         if reference_attn:
             attn_modules = [module for module in torch_dfs(self.unet) if isinstance(module, BasicTransformerBlock)]
@@ -2257,50 +2257,50 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         init_timestep = min(int(num_inference_steps * strength), num_inference_steps)
 
         t_start = max(num_inference_steps - init_timestep, 0)
-        timesteps = self.scheduler.timesteps[t_start * self.scheduler.order:]
+        timesteps = self.scheduler.timesteps[t_start * self.scheduler.order :]
 
         return timesteps, num_inference_steps - t_start
 
     @torch.no_grad()
     def __call__(
-            self,
-            height: Optional[int] = None,
-            width: Optional[int] = None,
-            num_inference_steps: int = 50,
-            guidance_scale: float = 7.5,
-            unet_batch_size: int = 1,
-            negative_prompt: Optional[Union[str, List[str]]] = None,
-            video_length: Optional[int] = None,
-            num_videos_per_prompt: Optional[int] = 1,
-            eta: float = 0.0,
-            generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-            latents: Optional[torch.FloatTensor] = None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            output_type: Optional[str] = "tensor",
-            return_dict: bool = True,
-            callback: Optional[Callable[[int, torch.FloatTensor], None]] = None,
-            callback_steps: Optional[List[int]] = None,
-            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-            context_frames: int = -1,
-            context_stride: int = 3,
-            context_overlap: int = 4,
-            context_schedule: str = "uniform",
-            clip_skip: int = 1,
-            controlnet_type_map: Dict[str, Dict[str, float]] = None,
-            controlnet_image_map: Dict[int, Dict[str, Any]] = None,
-            controlnet_ref_map: Dict[str, Any] = None,
-            controlnet_max_samples_on_vram: int = 999,
-            controlnet_max_models_on_vram: int = 99,
-            controlnet_is_loop: bool = True,
-            img2img_map: Dict[str, Any] = None,
-            ip_adapter_config_map: Dict[str, Any] = None,
-            region_list: List[Any] = None,
-            region_condi_list: List[Any] = None,
-            interpolation_factor=1,
-            is_single_prompt_mode=False,
-            apply_lcm_lora=False,
-            **kwargs,
+        self,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5,
+        unet_batch_size: int = 1,
+        negative_prompt: Optional[Union[str, List[str]]] = None,
+        video_length: Optional[int] = None,
+        num_videos_per_prompt: Optional[int] = 1,
+        eta: float = 0.0,
+        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+        latents: Optional[torch.FloatTensor] = None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        output_type: Optional[str] = "tensor",
+        return_dict: bool = True,
+        callback: Optional[Callable[[int, torch.FloatTensor], None]] = None,
+        callback_steps: Optional[List[int]] = None,
+        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+        context_frames: int = -1,
+        context_stride: int = 3,
+        context_overlap: int = 4,
+        context_schedule: str = "uniform",
+        clip_skip: int = 1,
+        controlnet_type_map: Dict[str, Dict[str, float]] = None,
+        controlnet_image_map: Dict[int, Dict[str, Any]] = None,
+        controlnet_ref_map: Dict[str, Any] = None,
+        controlnet_max_samples_on_vram: int = 999,
+        controlnet_max_models_on_vram: int = 99,
+        controlnet_is_loop: bool = True,
+        img2img_map: Dict[str, Any] = None,
+        ip_adapter_config_map: Dict[str, Any] = None,
+        region_list: List[Any] = None,
+        region_condi_list: List[Any] = None,
+        interpolation_factor=1,
+        is_single_prompt_mode=False,
+        apply_lcm_lora=False,
+        **kwargs,
     ):
         global C_REF_MODE
 
@@ -2336,11 +2336,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             if self.ip_adapter is None:
                 img_enc_path = path_mgr.ip_adapter / "image_encoder"
                 if ip_adapter_config_map["is_full_face"]:
-                    self.ip_adapter = IPAdapterFull(self, img_enc_path,
-                                                    path_mgr.ip_adapter / "ip-adapter-full-face_sd15.bin", device, 257)
+                    self.ip_adapter = IPAdapterFull(
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter-full-face_sd15.bin", device, 257
+                    )
                 elif ip_adapter_config_map["is_light"]:
-                    self.ip_adapter = IPAdapter(self, img_enc_path, path_mgr.ip_adapter / "ip-adapter_sd15_light.bin",
-                                                device, 4)
+                    self.ip_adapter = IPAdapter(
+                        self, img_enc_path, path_mgr.ip_adapter / "ip-adapter_sd15_light.bin", device, 4
+                    )
                 elif ip_adapter_config_map["is_plus_face"]:
                     self.ip_adapter = IPAdapterPlus(
                         self, img_enc_path, path_mgr.ip_adapter / "ip-adapter-plus-face_sd15.bin", device, 16
@@ -2434,7 +2436,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                     scale_list = controlnet_type_map[type_str]["control_scale_list"]
                     if len(scale_list) > 0:
                         is_v2v = False
-                    scale_list = scale_list[0: context_frames]
+                    scale_list = scale_list[0:context_frames]
                     scale_len = len(scale_list)
 
                     if controlnet_is_loop:
@@ -2456,8 +2458,8 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
                         controlnet_scale_map[str(key_frame_no) + "_" + type_str] = {
                             "scales": scale_list[:key_frame_no][::-1]
-                                      + [1.0]
-                                      + scale_list[: video_length - key_frame_no - 1],
+                            + [1.0]
+                            + scale_list[: video_length - key_frame_no - 1],
                             "frames": frames,
                         }
 
@@ -2467,9 +2469,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return controlnet_affected_list[frame_index]
 
         def get_controlnet_scale(
-                type: str,
-                cur_step: int,
-                step_length: int,
+            type: str,
+            cur_step: int,
+            step_length: int,
         ):
             s = controlnet_type_map[type]["control_guidance_start"]
             e = controlnet_type_map[type]["control_guidance_end"]
@@ -2480,10 +2482,10 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             return keep * scale
 
         def get_controlnet_variable(
-                type_str: str,
-                cur_step: int,
-                step_length: int,
-                target_frames: List[int],
+            type_str: str,
+            cur_step: int,
+            step_length: int,
+            target_frames: List[int],
         ):
             cont_vars = []
 
@@ -2710,13 +2712,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
                             add = cur_mid * mod[None, None, :, None, None]
                             _mid_block_res_samples[:, :, loc_index, :, :] = (
-                                    _mid_block_res_samples[:, :, loc_index, :, :] + add
+                                _mid_block_res_samples[:, :, loc_index, :, :] + add
                             )
 
                             for ii in range(len(cur_down)):
                                 add = cur_down[ii] * mod[None, None, :, None, None]
                                 _down_block_res_samples[ii][:, :, loc_index, :, :] = (
-                                        _down_block_res_samples[ii][:, :, loc_index, :, :] + add
+                                    _down_block_res_samples[ii][:, :, loc_index, :, :] + add
                                 )
 
                     return _down_block_res_samples, _mid_block_res_samples
@@ -2795,12 +2797,12 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                                 __mid_list = []
                                 for layer_index in range(0, control_model_input.shape[0], unet_batch_size):
                                     __control_model_input = control_model_input[
-                                                            layer_index: layer_index + unet_batch_size
-                                                            ]
+                                        layer_index : layer_index + unet_batch_size
+                                    ]
                                     __controlnet_prompt_embeds = controlnet_prompt_embeds[
-                                                                 layer_index: (layer_index + unet_batch_size)
-                                                                 ]
-                                    __cont_var_img = cont_var_img[layer_index: layer_index + unet_batch_size]
+                                        layer_index : (layer_index + unet_batch_size)
+                                    ]
+                                    __cont_var_img = cont_var_img[layer_index : layer_index + unet_batch_size]
 
                                     __down_samples, __mid_sample = self.controlnet_map[type_str](
                                         __control_model_input,
@@ -2848,7 +2850,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                 stopwatch_record("STEP start")
 
                 for context in context_scheduler(
-                        i, num_inference_steps, latents.shape[2], context_frames, context_stride, context_overlap
+                    i, num_inference_steps, latents.shape[2], context_frames, context_stride, context_overlap
                 ):
                     stopwatch_record("lora_map UNapply start")
                     if self.lora_map:
@@ -2859,8 +2861,11 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         if is_v2v:
                             controlnet_target = context
                         else:
-                            controlnet_target = list(range(context[0] - context_frames, context[0])) + context + list(
-                                range(context[-1] + 1, context[-1] + 1 + context_frames))
+                            controlnet_target = (
+                                list(range(context[0] - context_frames, context[0]))
+                                + context
+                                + list(range(context[-1] + 1, context[-1] + 1 + context_frames))
+                            )
                             controlnet_target = [f % video_length for f in controlnet_target]
                             controlnet_target = list(set(controlnet_target))
 
@@ -2919,18 +2924,18 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         __do = []
                         if down_block_res_samples is not None:
                             for do in down_block_res_samples:
-                                __do.append(do[layer_index: layer_index + unet_batch_size])
+                                __do.append(do[layer_index : layer_index + unet_batch_size])
                         else:
                             __do = None
 
                         __mid = None
                         if mid_block_res_sample is not None:
-                            __mid = mid_block_res_sample[layer_index: layer_index + unet_batch_size]
+                            __mid = mid_block_res_sample[layer_index : layer_index + unet_batch_size]
 
-                        __lat = latent_model_input[layer_index: layer_index + unet_batch_size]
+                        __lat = latent_model_input[layer_index : layer_index + unet_batch_size]
                         __cur_prompt = cur_prompt[
-                                       layer_index * context_frames: (layer_index + unet_batch_size) * context_frames
-                                       ]
+                            layer_index * context_frames : (layer_index + unet_batch_size) * context_frames
+                        ]
 
                         stopwatch_record("self.unet start")
                         pred_layer = self.unet(
@@ -2947,7 +2952,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         wh = None
 
                         if i < len(timesteps) * region_mask.get_crop_generation_rate(
-                                layer_index, latent_model_input.shape[0]
+                            layer_index, latent_model_input.shape[0]
                         ):
                             wh, xy_list = region_mask.get_area(layer_index, latent_model_input.shape[0], context)
                             if wh:
@@ -2955,7 +2960,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                                 __lat_list = []
                                 for c_index, xy in enumerate(xy_list):
                                     a_x, a_y = xy
-                                    __lat_list.append(__lat[:, :, [c_index], a_y: a_y + a_h, a_x: a_x + a_w])
+                                    __lat_list.append(__lat[:, :, [c_index], a_y : a_y + a_h, a_x : a_x + a_w])
 
                                 __lat = torch.cat(__lat_list, dim=2)
 
@@ -2967,11 +2972,11 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                                             a_x, a_y = xy
                                             _inner_do_list.append(
                                                 _d[
-                                                :,
-                                                :,
-                                                [c_index],
-                                                a_y // rate: (a_y + a_h) // rate,
-                                                a_x // rate: (a_x + a_w) // rate,
+                                                    :,
+                                                    :,
+                                                    [c_index],
+                                                    a_y // rate : (a_y + a_h) // rate,
+                                                    a_x // rate : (a_x + a_w) // rate,
                                                 ]
                                             )
 
@@ -2985,11 +2990,11 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                                         a_x, a_y = xy
                                         _mid_list.append(
                                             __mid[
-                                            :,
-                                            :,
-                                            [c_index],
-                                            a_y // rate: (a_y + a_h) // rate,
-                                            a_x // rate: (a_x + a_w) // rate,
+                                                :,
+                                                :,
+                                                [c_index],
+                                                a_y // rate : (a_y + a_h) // rate,
+                                                a_x // rate : (a_x + a_w) // rate,
                                             ]
                                         )
                                     __mid = torch.cat(_mid_list, dim=2)
@@ -3010,9 +3015,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                                 a_w, a_h = wh
                                 for c_index, xy in enumerate(xy_list):
                                     a_x, a_y = xy
-                                    pred_layer[:, :, [c_index], a_y: a_y + a_h, a_x: a_x + a_w] = crop_pred_layer[
-                                                                                                  :, :, [c_index], :, :
-                                                                                                  ]
+                                    pred_layer[:, :, [c_index], a_y : a_y + a_h, a_x : a_x + a_w] = crop_pred_layer[
+                                        :, :, [c_index], :, :
+                                    ]
 
                         __pred.append(pred_layer)
 
@@ -3036,7 +3041,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
                     if multi_uncond_mode:
                         uc_noise_list = noise_list[: len(noise_list) // 2]
-                        noise_list = noise_list[len(noise_list) // 2:]
+                        noise_list = noise_list[len(noise_list) // 2 :]
                         for n in range(len(noise_list)):
                             noise_list[n] = uc_noise_list[n] + guidance_scale * (noise_list[n] - uc_noise_list[n])
                     else:
@@ -3048,7 +3053,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
                 # call the callback, if provided
                 if (
-                        i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0)
+                    i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0)
                 ) and (callback is not None and (callback_steps is not None and i in callback_steps)):
                     denoised = latents - noise_pred
                     denoised = self.interpolate_latents(denoised, interpolation_factor, device)
