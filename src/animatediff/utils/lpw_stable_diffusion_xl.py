@@ -40,16 +40,15 @@ if is_invisible_watermark_available():
 
 
 def parse_prompt_attention(text):
-    """
-    Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
       [abc] - decreases attention to abc by a multiplier of 1.1
-      \( - literal character '('
-      \[ - literal character '['
-      \) - literal character ')'
-      \] - literal character ']'
+      \\( - literal character '('
+      \\[ - literal character '['
+      \\) - literal character ')'
+      \\] - literal character ']'
       \\ - literal character '\'
       anything else - just text
 
@@ -59,7 +58,7 @@ def parse_prompt_attention(text):
     [['an ', 1.0], ['important', 1.1], [' word', 1.0]]
     >>> parse_prompt_attention('(unbalanced')
     [['unbalanced', 1.1]]
-    >>> parse_prompt_attention('\(literal\]')
+    >>> parse_prompt_attention('\\(literal\\]')
     [['(literal]', 1.0]]
     >>> parse_prompt_attention('(unnecessary)(parens)')
     [['unnecessaryparens', 1.1]]
@@ -142,22 +141,24 @@ def parse_prompt_attention(text):
 
 
 def get_prompts_tokens_with_weights(clip_tokenizer: CLIPTokenizer, prompt: str):
-    """
-    Get prompt token ids and weights, this function works for both prompt and negative prompt
+    """Get prompt token ids and weights, this function works for both prompt and negative prompt
 
     Args:
+    ----
         pipe (CLIPTokenizer)
             A CLIPTokenizer
         prompt (str)
             A prompt string with weights
 
     Returns:
+    -------
         text_tokens (list)
             A list contains token ids
         text_weight (list)
             A list contains the correspodent weight of token ids
 
     Example:
+    -------
         import torch
         from transformers import CLIPTokenizer
 
@@ -192,10 +193,10 @@ def get_prompts_tokens_with_weights(clip_tokenizer: CLIPTokenizer, prompt: str):
 
 
 def group_tokens_and_weights(token_ids: list, weights: list, pad_last_block=False):
-    """
-    Produce tokens and weights in groups and pad the missing tokens
+    """Produce tokens and weights in groups and pad the missing tokens
 
     Args:
+    ----
         token_ids (list)
             The token ids from tokenizer
         weights (list)
@@ -207,6 +208,7 @@ def group_tokens_and_weights(token_ids: list, weights: list, pad_last_block=Fals
         new_weights (2d list)
 
     Example:
+    -------
         token_groups,weight_groups = group_tokens_and_weights(
             token_ids = token_id_list
             , weights = token_weight_list
@@ -246,21 +248,23 @@ def group_tokens_and_weights(token_ids: list, weights: list, pad_last_block=Fals
 def get_weighted_text_embeddings_sdxl(
     pipe: StableDiffusionXLPipeline,
     prompt: str = "",
-    prompt_2: str = None,
+    prompt_2: Optional[str] = None,
     neg_prompt: str = "",
-    neg_prompt_2: str = None,
+    neg_prompt_2: Optional[str] = None,
 ):
-    """
-    This function can process long prompt with weights, no length limitation
+    """This function can process long prompt with weights, no length limitation
     for Stable Diffusion XL
 
     Args:
+    ----
         pipe (StableDiffusionPipeline)
         prompt (str)
         prompt_2 (str)
         neg_prompt (str)
         neg_prompt_2 (str)
+
     Returns:
+    -------
         prompt_embeds (torch.Tensor)
         neg_prompt_embeds (torch.Tensor)
     """
@@ -390,21 +394,22 @@ def get_weighted_text_embeddings_sdxl2(
     neg_prompt_list: List[str] = [],
     device: str = "",
 ):
-    """
-    This function can process long prompt with weights, no length limitation
+    """This function can process long prompt with weights, no length limitation
     for Stable Diffusion XL
 
     Args:
+    ----
         pipe (StableDiffusionPipeline)
         prompt (str)
         prompt_2 (str)
         neg_prompt (str)
         neg_prompt_2 (str)
+
     Returns:
+    -------
         prompt_embeds (torch.Tensor)
         neg_prompt_embeds (torch.Tensor)
     """
-
     if len(neg_prompt_list) == 1:
         neg_prompt_list = neg_prompt_list * len(prompt_list)
 
@@ -612,8 +617,7 @@ EXAMPLE_DOC_STRING = """
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
 def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
-    """
-    Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
+    """Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
     Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
     """
     std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
@@ -626,8 +630,8 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
 
 
 class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion XL.
+
+    r"""Pipeline for text-to-image generation using Stable Diffusion XL.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -640,6 +644,7 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
         - *LoRA*: [`loaders.StableDiffusionXLPipeline.save_lora_weights`]
 
     Args:
+    ----
         vae ([`AutoencoderKL`]):
             Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
         text_encoder ([`CLIPTextModel`]):
@@ -701,24 +706,21 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_slicing
     def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding. When this option is enabled, the VAE will split the input tensor in slices to
+        r"""Enable sliced VAE decoding. When this option is enabled, the VAE will split the input tensor in slices to
         compute decoding in several steps. This is useful to save some memory and allow larger batch sizes.
         """
         self.vae.enable_slicing()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_slicing
     def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously enabled, this method will go back to
+        r"""Disable sliced VAE decoding. If `enable_vae_slicing` was previously enabled, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_slicing()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_tiling
     def enable_vae_tiling(self):
-        r"""
-        Enable tiled VAE decoding. When this option is enabled, the VAE will split the input tensor into tiles to
+        r"""Enable tiled VAE decoding. When this option is enabled, the VAE will split the input tensor into tiles to
         compute decoding and encoding in several steps. This is useful for saving a large amount of memory and to allow
         processing larger images.
         """
@@ -726,15 +728,13 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_tiling
     def disable_vae_tiling(self):
-        r"""
-        Disable tiled VAE decoding. If `enable_vae_tiling` was previously enabled, this method will go back to
+        r"""Disable tiled VAE decoding. If `enable_vae_tiling` was previously enabled, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_tiling()
 
     def enable_model_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+        r"""Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
         to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
         method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
         `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
@@ -777,10 +777,10 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
         negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
         lora_scale: Optional[float] = None,
     ):
-        r"""
-        Encodes the prompt into text encoder hidden states.
+        r"""Encodes the prompt into text encoder hidden states.
 
         Args:
+        ----
             prompt (`str` or `List[str]`, *optional*):
                 prompt to be encoded
             prompt_2 (`str` or `List[str]`, *optional*):
@@ -1102,7 +1102,7 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
-        prompt: str = None,
+        prompt: Optional[str] = None,
         prompt_2: Optional[str] = None,
         height: Optional[int] = None,
         width: Optional[int] = None,
@@ -1129,10 +1129,10 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
         crops_coords_top_left: Tuple[int, int] = (0, 0),
         target_size: Optional[Tuple[int, int]] = None,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
+        r"""Function invoked when calling the pipeline for generation.
 
         Args:
+        ----
             prompt (`str`):
                 The prompt  to guide the image generation. If not defined, one has to pass `prompt_embeds`.
                 instead.
@@ -1229,8 +1229,10 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
                 section 2.2 of [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952).
 
         Examples:
+        --------
 
         Returns:
+        -------
             [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] or `tuple`:
             [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] if `return_dict` is True, otherwise a
             `tuple`. When returning a tuple, the first element is a list with the generated images.
@@ -1439,12 +1441,12 @@ class SDXLLongPromptWeightingPipeline(DiffusionPipeline, FromSingleFileMixin, Lo
     def save_lora_weights(
         self,
         save_directory: Union[str, os.PathLike],
-        unet_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
-        text_encoder_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
-        text_encoder_2_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
+        unet_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_2_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
         is_main_process: bool = True,
-        weight_name: str = None,
-        save_function: Callable = None,
+        weight_name: Optional[str] = None,
+        save_function: Optional[Callable] = None,
         safe_serialization: bool = False,
     ):
         state_dict = {}

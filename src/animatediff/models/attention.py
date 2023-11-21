@@ -89,7 +89,7 @@ class Transformer3DModel(ModelMixin, ConfigMixin):
         hidden_states: torch.Tensor,
         encoder_hidden_states: Optional[torch.Tensor] = None,
         timestep: Optional[torch.LongTensor] = None,
-        cross_attention_kwargs: Dict[str, Any] = None,
+        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         attention_mask: Optional[torch.Tensor] = None,
         encoder_attention_mask: Optional[torch.Tensor] = None,
         return_dict: bool = True,
@@ -265,7 +265,7 @@ class BasicTransformerBlock(nn.Module):
         encoder_hidden_states: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
         timestep: Optional[torch.LongTensor] = None,
-        cross_attention_kwargs: Dict[str, Any] = None,
+        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         video_length=None,
     ):
         # SparseCausal-Attention

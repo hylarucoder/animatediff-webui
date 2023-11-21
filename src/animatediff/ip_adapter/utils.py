@@ -19,14 +19,16 @@ def is_torch2_available():
 @torch.no_grad()
 def generate(
     self,
-    prompt: Union[str, List[str]] = None,
-    image: Union[
-        torch.FloatTensor,
-        PIL.Image.Image,
-        np.ndarray,
-        List[torch.FloatTensor],
-        List[PIL.Image.Image],
-        List[np.ndarray],
+    prompt: Optional[Union[str, List[str]]] = None,
+    image: Optional[
+        Union[
+            torch.FloatTensor,
+            PIL.Image.Image,
+            np.ndarray,
+            List[torch.FloatTensor],
+            List[PIL.Image.Image],
+            List[np.ndarray],
+        ]
     ] = None,
     height: Optional[int] = None,
     width: Optional[int] = None,
@@ -49,10 +51,10 @@ def generate(
     control_guidance_start: Union[float, List[float]] = 0.0,
     control_guidance_end: Union[float, List[float]] = 1.0,
 ):
-    r"""
-    Function invoked when calling the pipeline for generation.
+    r"""Function invoked when calling the pipeline for generation.
 
     Args:
+    ----
         prompt (`str` or `List[str]`, *optional*):
             The prompt or prompts to guide the image generation. If not defined, one has to pass `prompt_embeds`.
             instead.
@@ -129,8 +131,10 @@ def generate(
             The percentage of total steps at which the controlnet stops applying.
 
     Examples:
+    --------
 
     Returns:
+    -------
         [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
         [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
         When returning a tuple, the first element is a list with the generated images, and the second element is a

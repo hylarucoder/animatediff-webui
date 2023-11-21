@@ -244,7 +244,7 @@ class PositionalEncoding(nn.Module):
 class VersatileAttention(Attention):
     def __init__(
         self,
-        attention_mode: str = None,
+        attention_mode: Optional[str] = None,
         cross_frame_attention_mode: Optional[str] = None,
         temporal_position_encoding: bool = False,
         temporal_position_encoding_max_len: int = 24,

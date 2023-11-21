@@ -6,7 +6,7 @@ from functools import partial
 from itertools import chain
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -401,9 +401,9 @@ def get_preprocessed_img(type_str, img, use_preprocessor, device_str, preprocess
 
 
 def create_pipeline_sdxl(
-    base_model: Union[str, PathLike] = default_base_path,
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
+    base_model: Union[str, PathLike],
+    model_config: ModelConfig,
+    infer_config: InferenceConfig,
     use_xformers: bool = True,
     video_length: int = 16,
     motion_module_path=...,
@@ -546,9 +546,9 @@ def create_pipeline_sdxl(
 
 
 def create_pipeline(
-    base_model: Union[str, PathLike] = default_base_path,
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
+    base_model: Union[str, PathLike],
+    model_config: ModelConfig,
+    infer_config: InferenceConfig,
     use_xformers: bool = True,
     video_length: int = 16,
     is_sdxl: bool = False,
@@ -848,12 +848,12 @@ def seed_everything(seed):
 def controlnet_preprocess(
     project_dir: Path,
     # TODO: validator, not dict
-    controlnet_map: Dict[str, Any] = None,
+    controlnet_map: Optional[Dict[str, Any]] = None,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
     out_dir: PathLike = ...,
-    device_str: str = None,
+    device_str: Optional[str] = None,
     is_sdxl: bool = False,
 ):
     if not controlnet_map:
@@ -984,7 +984,7 @@ def controlnet_preprocess(
 
 def ip_adapter_preprocess(
     project_dir: Path,
-    ip_adapter_config_map: Dict[str, Any] = None,
+    ip_adapter_config_map: Optional[Dict[str, Any]] = None,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
@@ -1213,7 +1213,7 @@ def region_preprocess(
 
 def img2img_preprocess(
     project_dir: Path,
-    img2img_config_map: Dict[str, Any] = None,
+    img2img_config_map: Optional[Dict[str, Any]] = None,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
@@ -1248,7 +1248,7 @@ def img2img_preprocess(
 
 def mask_preprocess(
     project_dir: Path,
-    region_config_map: Dict[str, Any] = None,
+    region_config_map: Optional[Dict[str, Any]] = None,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
@@ -1406,16 +1406,16 @@ def run_inference(
     context_overlap: int = 4,
     context_schedule: str = "uniform",
     clip_skip: int = 1,
-    controlnet_map: Dict[str, Any] = None,
-    controlnet_image_map: Dict[str, Any] = None,
-    controlnet_type_map: Dict[str, Any] = None,
-    controlnet_ref_map: Dict[str, Any] = None,
+    controlnet_map: Optional[Dict[str, Any]] = None,
+    controlnet_image_map: Optional[Dict[str, Any]] = None,
+    controlnet_type_map: Optional[Dict[str, Any]] = None,
+    controlnet_ref_map: Optional[Dict[str, Any]] = None,
     no_frames: bool = False,
-    img2img_map: Dict[str, Any] = None,
-    ip_adapter_config_map: Dict[str, Any] = None,
-    region_list: List[Any] = None,
-    region_condi_list: List[Any] = None,
-    output_map: Dict[str, Any] = None,
+    img2img_map: Optional[Dict[str, Any]] = None,
+    ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+    region_list: Optional[List[Any]] = None,
+    region_condi_list: Optional[List[Any]] = None,
+    output_map: Optional[Dict[str, Any]] = None,
     is_single_prompt_mode: bool = False,
     is_sdxl: bool = False,
     apply_lcm_lora: bool = False,
@@ -1496,7 +1496,7 @@ def run_upscale(
     project_dir: Path,
     org_imgs: List[str],
     pipeline: DiffusionPipeline,
-    prompt_map: Dict[int, str] = None,
+    prompt_map: Optional[Dict[int, str]] = None,
     n_prompt: str = ...,
     seed: int = -1,
     steps: int = 25,
@@ -1507,13 +1507,13 @@ def run_upscale(
     us_height: int = 512,
     idx: int = 0,
     out_dir: PathLike = ...,
-    upscale_config: Dict[str, Any] = None,
+    upscale_config: Optional[Dict[str, Any]] = None,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
     use_controlnet_line_anime: bool = False,
     use_controlnet_ip2p: bool = False,
     no_frames: bool = False,
-    output_map: Dict[str, Any] = None,
+    output_map: Optional[Dict[str, Any]] = None,
 ):
     from animatediff.utils.lpw_stable_diffusion import lpw_encode_prompt
 

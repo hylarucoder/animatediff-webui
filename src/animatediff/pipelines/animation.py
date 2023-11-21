@@ -269,7 +269,7 @@ class PromptEncoder:
 
         return outputs
 
-    def get_current_prompt_embeds_single(self, context: List[int] = None, video_length: int = 0):
+    def get_current_prompt_embeds_single(self, context: Optional[List[int]] = None, video_length: int = 0):
         center_frame = context[len(context) // 2]
         text_emb = self.get_current_prompt_embeds_from_text(center_frame, video_length)
         text_emb = torch.cat(text_emb)
@@ -280,7 +280,7 @@ class PromptEncoder:
         else:
             return text_emb
 
-    def get_current_prompt_embeds_multi(self, context: List[int] = None, video_length: int = 0):
+    def get_current_prompt_embeds_multi(self, context: Optional[List[int]] = None, video_length: int = 0):
         emb_list = []
         for c in context:
             t = self.get_current_prompt_embeds_from_text(c, video_length)
@@ -314,7 +314,7 @@ class PromptEncoder:
 
         return torch.cat([text_emb, image_emb], dim=1)
 
-    def get_current_prompt_embeds(self, context: List[int] = None, video_length: int = 0):
+    def get_current_prompt_embeds(self, context: Optional[List[int]] = None, video_length: int = 0):
         return (
             self.get_current_prompt_embeds_single(context, video_length)
             if self.is_single_prompt_mode
@@ -529,7 +529,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             DPMSolverMultistepScheduler,
         ],
         feature_extractor: CLIPImageProcessor,
-        controlnet_map: Dict[str, ControlNetModel] = None,
+        controlnet_map: Optional[Dict[str, ControlNetModel]] = None,
     ):
         super().__init__()
 
@@ -1197,7 +1197,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
             timestep: Optional[torch.LongTensor] = None,
-            cross_attention_kwargs: Dict[str, Any] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
             video_length=None,
         ):
             if self.use_ada_layer_norm:
@@ -1723,7 +1723,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
             timestep: Optional[torch.LongTensor] = None,
-            cross_attention_kwargs: Dict[str, Any] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
             video_length=None,
         ):
             if self.use_ada_layer_norm:
@@ -2282,16 +2282,16 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         context_overlap: int = 4,
         context_schedule: str = "uniform",
         clip_skip: int = 1,
-        controlnet_type_map: Dict[str, Dict[str, float]] = None,
-        controlnet_image_map: Dict[int, Dict[str, Any]] = None,
-        controlnet_ref_map: Dict[str, Any] = None,
+        controlnet_type_map: Optional[Dict[str, Dict[str, float]]] = None,
+        controlnet_image_map: Optional[Dict[int, Dict[str, Any]]] = None,
+        controlnet_ref_map: Optional[Dict[str, Any]] = None,
         controlnet_max_samples_on_vram: int = 999,
         controlnet_max_models_on_vram: int = 99,
         controlnet_is_loop: bool = True,
-        img2img_map: Dict[str, Any] = None,
-        ip_adapter_config_map: Dict[str, Any] = None,
-        region_list: List[Any] = None,
-        region_condi_list: List[Any] = None,
+        img2img_map: Optional[Dict[str, Any]] = None,
+        ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+        region_list: Optional[List[Any]] = None,
+        region_condi_list: Optional[List[Any]] = None,
         interpolation_factor=1,
         is_single_prompt_mode=False,
         apply_lcm_lora=False,
@@ -2634,7 +2634,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                 # { "0_type_str" : (down_samples, mid_sample)  }
                 controlnet_result = {}
 
-                def get_controlnet_result(context: List[int] = None):
+                def get_controlnet_result(context: Optional[List[int]] = None):
                     # logger.info(f"get_controlnet_result called {context=}")
 
                     if controlnet_image_map is None:
@@ -2718,7 +2718,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
                     return _down_block_res_samples, _mid_block_res_samples
 
-                def process_controlnet(target_frames: List[int] = None):
+                def process_controlnet(target_frames: Optional[List[int]] = None):
                     # logger.info(f"process_controlnet called {target_frames=}")
                     nonlocal controlnet_result
 

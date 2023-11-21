@@ -2,6 +2,7 @@ import glob
 import logging
 import os.path
 from datetime import datetime
+from importlib.metadata import version as meta_version
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -9,6 +10,7 @@ import torch
 import typer
 from diffusers import DiffusionPipeline
 from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosity_error
+from packaging import version
 from rich.logging import RichHandler
 
 from animatediff import __version__, console, get_dir
@@ -78,10 +80,6 @@ else:
     )
 
 logger = logging.getLogger(__name__)
-
-from importlib.metadata import version as meta_version
-
-from packaging import version
 
 diffuser_ver = meta_version("diffusers")
 
@@ -472,7 +470,7 @@ def tile_upscale(
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
     ] = ...,
     config_path: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--config-path",
             "-c",
@@ -784,7 +782,7 @@ def convert(
             exists=True,
             help="Path to a model checkpoint file",
         ),
-    ] = ...,
+    ],
     out_dir: Annotated[
         Optional[Path],
         typer.Option(
@@ -794,7 +792,7 @@ def convert(
             file_okay=False,
             help="Target directory for converted model",
         ),
-    ] = None,
+    ],
 ):
     """Convert a StableDiffusion checkpoint into a Diffusers pipeline"""
     logger.info(f"Converting checkpoint: {checkpoint}")
@@ -837,7 +835,7 @@ def merge(
             exists=True,
             help="Path to a model checkpoint file",
         ),
-    ] = ...,
+    ],
     out_dir: Annotated[
         Optional[Path],
         typer.Option(
@@ -847,7 +845,7 @@ def merge(
             file_okay=False,
             help="Target directory for converted model",
         ),
-    ] = None,
+    ],
 ):
     """Convert a StableDiffusion checkpoint into an AnimationPipeline"""
     raise NotImplementedError("Sorry, haven't implemented this yet!")
@@ -875,7 +873,7 @@ def refine(
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
     ] = ...,
     config_path: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--config-path",
             "-c",

@@ -44,16 +44,15 @@ re_attention = re.compile(
 
 
 def parse_prompt_attention(text):
-    """
-    Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
       [abc] - decreases attention to abc by a multiplier of 1.1
-      \( - literal character '('
-      \[ - literal character '['
-      \) - literal character ')'
-      \] - literal character ']'
+      \\( - literal character '('
+      \\[ - literal character '['
+      \\) - literal character ')'
+      \\] - literal character ']'
       \\ - literal character '\'
       anything else - just text
     >>> parse_prompt_attention('normal text')
@@ -62,7 +61,7 @@ def parse_prompt_attention(text):
     [['an ', 1.0], ['important', 1.1], [' word', 1.0]]
     >>> parse_prompt_attention('(unbalanced')
     [['unbalanced', 1.1]]
-    >>> parse_prompt_attention('\(literal\]')
+    >>> parse_prompt_attention('\\(literal\\]')
     [['(literal]', 1.0]]
     >>> parse_prompt_attention('(unnecessary)(parens)')
     [['unnecessaryparens', 1.1]]
@@ -77,7 +76,6 @@ def parse_prompt_attention(text):
      ['sky', 1.4641000000000006],
      ['.', 1.1]]
     """
-
     res = []
     round_brackets = []
     square_brackets = []
@@ -130,8 +128,7 @@ def parse_prompt_attention(text):
 
 
 def get_prompts_with_weights(pipe: DiffusionPipeline, prompt: List[str], max_length: int):
-    r"""
-    Tokenize a list of prompts and return its tokens with weights of each token.
+    r"""Tokenize a list of prompts and return its tokens with weights of each token.
 
     No padding, starting or ending token is included.
     """
@@ -165,9 +162,7 @@ def get_prompts_with_weights(pipe: DiffusionPipeline, prompt: List[str], max_len
 
 
 def pad_tokens_and_weights(tokens, weights, max_length, bos, eos, pad, no_boseos_middle=True, chunk_length=77):
-    r"""
-    Pad the tokens (with starting and ending tokens) and weights (with 1.0) to max_length.
-    """
+    r"""Pad the tokens (with starting and ending tokens) and weights (with 1.0) to max_length."""
     max_embeddings_multiples = (max_length - 2) // (chunk_length - 2)
     weights_length = max_length if no_boseos_middle else max_embeddings_multiples * chunk_length
     for i in range(len(tokens)):
@@ -196,8 +191,7 @@ def get_unweighted_text_embeddings(
     no_boseos_middle: Optional[bool] = True,
     clip_skip: int = 1,
 ):
-    """
-    When the length of tokens is a multiple of the capacity of the text encoder,
+    """When the length of tokens is a multiple of the capacity of the text encoder,
     it should be split into chunks and sent to the text encoder individually.
     """
     from ..models.clip import CLIPSkipTextModel
@@ -248,14 +242,14 @@ def get_weighted_text_embeddings(
     skip_weighting: Optional[bool] = False,
     clip_skip: int = 1,
 ):
-    r"""
-    Prompts can be assigned with local weights using brackets. For example,
+    r"""Prompts can be assigned with local weights using brackets. For example,
     prompt 'A (very beautiful) masterpiece' highlights the words 'very beautiful',
     and the embedding tokens corresponding to the words get multiplied by a constant, 1.1.
 
     Also, to regularize of the embedding, the weighted embedding would be scaled to preserve the original mean.
 
     Args:
+    ----
         pipe (`DiffusionPipeline`):
             Pipe to provide access to the tokenizer and the text encoder.
         prompt (`str` or `List[str]`):
@@ -372,10 +366,10 @@ def lpw_encode_prompt(
     negative_prompt: Optional[str] = None,
     max_embeddings_multiples: Optional[int] = 3,
 ):
-    r"""
-    Encodes the prompt into text encoder hidden states.
+    r"""Encodes the prompt into text encoder hidden states.
 
     Args:
+    ----
         prompt (`str` or `list(int)`):
             prompt to be encoded
         do_classifier_free_guidance (`bool`):
@@ -386,7 +380,6 @@ def lpw_encode_prompt(
         max_embeddings_multiples (`int`, *optional*, defaults to `3`):
             The max multiple length of prompt embeddings compared to the max output length of text encoder.
     """
-
     if negative_prompt is None:
         negative_prompt = [""]
     elif isinstance(negative_prompt, str):
@@ -451,14 +444,15 @@ def preprocess_mask(mask, batch_size, scale_factor=8):
 class StableDiffusionLongPromptWeightingPipeline(
     DiffusionPipeline, TextualInversionLoaderMixin, LoraLoaderMixin, FromSingleFileMixin
 ):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
+
+    r"""Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
     weighting in prompt.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
 
     Args:
+    ----
         vae ([`AutoencoderKL`]):
             Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
         text_encoder ([`CLIPTextModel`]):
@@ -574,8 +568,7 @@ class StableDiffusionLongPromptWeightingPipeline(
         )
 
     def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding.
+        r"""Enable sliced VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor in slices to compute decoding in several
         steps. This is useful to save some memory and allow larger batch sizes.
@@ -583,15 +576,13 @@ class StableDiffusionLongPromptWeightingPipeline(
         self.vae.enable_slicing()
 
     def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
+        r"""Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_slicing()
 
     def enable_vae_tiling(self):
-        r"""
-        Enable tiled VAE decoding.
+        r"""Enable tiled VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor into tiles to compute decoding and encoding in
         several steps. This is useful to save a large amount of memory and to allow the processing of larger images.
@@ -599,16 +590,14 @@ class StableDiffusionLongPromptWeightingPipeline(
         self.vae.enable_tiling()
 
     def disable_vae_tiling(self):
-        r"""
-        Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
+        r"""Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_tiling()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_sequential_cpu_offload
     def enable_sequential_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
+        r"""Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
         text_encoder, vae and safety checker have their state dicts saved to CPU and then are moved to a
         `torch.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
         Note that offloading happens on a submodule basis. Memory savings are higher than with
@@ -633,8 +622,7 @@ class StableDiffusionLongPromptWeightingPipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_model_cpu_offload
     def enable_model_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+        r"""Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
         to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
         method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
         `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
@@ -663,8 +651,7 @@ class StableDiffusionLongPromptWeightingPipeline(
     @property
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
     def _execution_device(self):
-        r"""
-        Returns the device on which the pipeline's models will be executed. After calling
+        r"""Returns the device on which the pipeline's models will be executed. After calling
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
@@ -690,10 +677,10 @@ class StableDiffusionLongPromptWeightingPipeline(
         prompt_embeds: Optional[torch.FloatTensor] = None,
         negative_prompt_embeds: Optional[torch.FloatTensor] = None,
     ):
-        r"""
-        Encodes the prompt into text encoder hidden states.
+        r"""Encodes the prompt into text encoder hidden states.
 
         Args:
+        ----
             prompt (`str` or `list(int)`):
                 prompt to be encoded
             device: (`torch.device`):
@@ -906,8 +893,8 @@ class StableDiffusionLongPromptWeightingPipeline(
         self,
         prompt: Union[str, List[str]],
         negative_prompt: Optional[Union[str, List[str]]] = None,
-        image: Union[torch.FloatTensor, PIL.Image.Image] = None,
-        mask_image: Union[torch.FloatTensor, PIL.Image.Image] = None,
+        image: Optional[Union[torch.FloatTensor, PIL.Image.Image]] = None,
+        mask_image: Optional[Union[torch.FloatTensor, PIL.Image.Image]] = None,
         height: int = 512,
         width: int = 512,
         num_inference_steps: int = 50,
@@ -928,10 +915,10 @@ class StableDiffusionLongPromptWeightingPipeline(
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
+        r"""Function invoked when calling the pipeline for generation.
 
         Args:
+        ----
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation.
             negative_prompt (`str` or `List[str]`, *optional*):
@@ -1009,6 +996,7 @@ class StableDiffusionLongPromptWeightingPipeline(
                 [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
 
         Returns:
+        -------
             `None` if cancelled by `is_cancelled_callback`,
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
@@ -1181,9 +1169,10 @@ class StableDiffusionLongPromptWeightingPipeline(
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        r"""
-        Function for text-to-image generation.
+        r"""Function for text-to-image generation.
+
         Args:
+        ----
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation.
             negative_prompt (`str` or `List[str]`, *optional*):
@@ -1244,6 +1233,7 @@ class StableDiffusionLongPromptWeightingPipeline(
                 [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
 
         Returns:
+        -------
             `None` if cancelled by `is_cancelled_callback`,
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
@@ -1294,9 +1284,10 @@ class StableDiffusionLongPromptWeightingPipeline(
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        r"""
-        Function for image-to-image generation.
+        r"""Function for image-to-image generation.
+
         Args:
+        ----
             image (`torch.FloatTensor` or `PIL.Image.Image`):
                 `Image`, or tensor representing an image batch, that will be used as the starting point for the
                 process.
@@ -1358,6 +1349,7 @@ class StableDiffusionLongPromptWeightingPipeline(
                 [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
 
         Returns:
+        -------
             `None` if cancelled by `is_cancelled_callback`,
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
@@ -1408,9 +1400,10 @@ class StableDiffusionLongPromptWeightingPipeline(
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        r"""
-        Function for inpaint.
+        r"""Function for inpaint.
+
         Args:
+        ----
             image (`torch.FloatTensor` or `PIL.Image.Image`):
                 `Image`, or tensor representing an image batch, that will be used as the starting point for the
                 process. This is the image whose masked region will be inpainted.
@@ -1479,6 +1472,7 @@ class StableDiffusionLongPromptWeightingPipeline(
                 [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
 
         Returns:
+        -------
             `None` if cancelled by `is_cancelled_callback`,
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a

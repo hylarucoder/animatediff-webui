@@ -133,8 +133,8 @@ def torch_dfs(model: torch.nn.Module):
 class StableDiffusionControlNetImg2ImgReferencePipeline(
     DiffusionPipeline, TextualInversionLoaderMixin, LoraLoaderMixin
 ):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion with ControlNet guidance.
+
+    r"""Pipeline for text-to-image generation using Stable Diffusion with ControlNet guidance.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -143,6 +143,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
         - *Textual-Inversion*: [`loaders.TextualInversionLoaderMixin.load_textual_inversion`]
 
     Args:
+    ----
         vae ([`AutoencoderKL`]):
             Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
         text_encoder ([`CLIPTextModel`]):
@@ -251,8 +252,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_slicing
     def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding.
+        r"""Enable sliced VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor in slices to compute decoding in several
         steps. This is useful to save some memory and allow larger batch sizes.
@@ -261,16 +261,14 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_slicing
     def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
+        r"""Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_slicing()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_tiling
     def enable_vae_tiling(self):
-        r"""
-        Enable tiled VAE decoding.
+        r"""Enable tiled VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor into tiles to compute decoding and encoding in
         several steps. This is useful to save a large amount of memory and to allow the processing of larger images.
@@ -279,15 +277,13 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_tiling
     def disable_vae_tiling(self):
-        r"""
-        Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
+        r"""Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_tiling()
 
     def enable_sequential_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
+        r"""Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
         text_encoder, vae, controlnet, and safety checker have their state dicts saved to CPU and then are moved to a
         `torch.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
         Note that offloading happens on a submodule basis. Memory savings are higher than with
@@ -307,8 +303,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
             cpu_offload(self.safety_checker, execution_device=device, offload_buffers=True)
 
     def enable_model_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+        r"""Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
         to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
         method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
         `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
@@ -337,8 +332,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
     @property
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
     def _execution_device(self):
-        r"""
-        Returns the device on which the pipeline's models will be executed. After calling
+        r"""Returns the device on which the pipeline's models will be executed. After calling
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
@@ -365,10 +359,10 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
         negative_prompt_embeds: Optional[torch.FloatTensor] = None,
         lora_scale: Optional[float] = None,
     ):
-        r"""
-        Encodes the prompt into text encoder hidden states.
+        r"""Encodes the prompt into text encoder hidden states.
 
         Args:
+        ----
              prompt (`str` or `List[str]`, *optional*):
                 prompt to be encoded
             device: (`torch.device`):
@@ -837,24 +831,28 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
-        prompt: Union[str, List[str]] = None,
-        image: Union[
-            torch.FloatTensor,
-            PIL.Image.Image,
-            np.ndarray,
-            List[torch.FloatTensor],
-            List[PIL.Image.Image],
-            List[np.ndarray],
+        prompt: Optional[Union[str, List[str]]] = None,
+        image: Optional[
+            Union[
+                torch.FloatTensor,
+                PIL.Image.Image,
+                np.ndarray,
+                List[torch.FloatTensor],
+                List[PIL.Image.Image],
+                List[np.ndarray],
+            ]
         ] = None,
-        control_image: Union[
-            torch.FloatTensor,
-            PIL.Image.Image,
-            np.ndarray,
-            List[torch.FloatTensor],
-            List[PIL.Image.Image],
-            List[np.ndarray],
+        control_image: Optional[
+            Union[
+                torch.FloatTensor,
+                PIL.Image.Image,
+                np.ndarray,
+                List[torch.FloatTensor],
+                List[PIL.Image.Image],
+                List[np.ndarray],
+            ]
         ] = None,
-        ref_image: Union[torch.FloatTensor, PIL.Image.Image] = None,
+        ref_image: Optional[Union[torch.FloatTensor, PIL.Image.Image]] = None,
         height: Optional[int] = None,
         width: Optional[int] = None,
         strength: float = 0.8,
@@ -880,10 +878,10 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
         reference_attn: bool = True,
         reference_adain: bool = True,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
+        r"""Function invoked when calling the pipeline for generation.
 
         Args:
+        ----
             prompt (`str` or `List[str]`, *optional*):
                 The prompt or prompts to guide the image generation. If not defined, one has to pass `prompt_embeds`.
                 instead.
@@ -977,8 +975,10 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
                 Whether to use reference adain.
 
         Examples:
+        --------
 
         Returns:
+        -------
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
@@ -1138,7 +1138,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
             timestep: Optional[torch.LongTensor] = None,
-            cross_attention_kwargs: Dict[str, Any] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
             class_labels: Optional[torch.LongTensor] = None,
         ):
             if self.use_ada_layer_norm:

@@ -833,7 +833,7 @@ def create_mask(
         typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
     ] = ...,
     frame_dir: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--frame_dir",
             "-f",
@@ -1428,7 +1428,7 @@ def create_region(
         typer.Argument(path_type=Path, file_okay=False, dir_okay=True, exists=True, help="Path to stylize dir"),
     ] = ...,
     frame_dir: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--frame_dir",
             "-f",
