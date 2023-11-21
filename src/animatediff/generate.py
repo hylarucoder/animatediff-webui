@@ -817,7 +817,7 @@ def create_us_pipeline(
         pipeline.enable_xformers_memory_efficient_attention()
 
     # lora
-    for l in tqdm(model_config.lora_map):
+    for l in model_config.lora_map:
         lora_path = path_mgr.loras / l
         if lora_path.is_file():
             alpha = model_config.lora_map[l]
@@ -1334,13 +1334,11 @@ def save_output(
     pipeline_output,
     frame_dir: str,
     out_file: str,
-    output_map=None,
+    output_map: Dict[str, Any] = {},
     no_frames: bool = False,
     save_frames=save_frames,
     save_video=None,
 ):
-    if output_map is None:
-        output_map = {}
     output_format = "gif"
     output_fps = 8
     if output_map:
