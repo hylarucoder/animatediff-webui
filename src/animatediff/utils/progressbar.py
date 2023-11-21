@@ -14,7 +14,8 @@ class ProgressBar:
         ...
 
     def set_pgr(self, _pgr: gr.Progress):
-        self.main_pgr = _pgr
+        # self.main_pgr = _pgr
+        ...
 
     def tqdm(self, *args, **kwargs):
         if self.main_pgr is None:

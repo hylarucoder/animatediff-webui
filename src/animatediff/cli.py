@@ -32,7 +32,6 @@ from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
 from animatediff.utils.progressbar import pgr
-from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
     is_sdxl_checkpoint,
     is_v2_motion_module,
@@ -415,7 +414,7 @@ def generate(
 
             logger.info(f"Generation seed: {seed}")
 
-            pgr.update_phrase(1, "Step 05/08: Run Interference...")
+            # pgr.update_phrase(1, "Step 05/08: Run Interference...")
             output = run_inference(
                 pipeline=g_pipeline,
                 n_prompt=n_prompt,

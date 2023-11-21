@@ -3141,9 +3141,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             )
 
         if iterable is not None:
-            return tqdm(iterable, **self._progress_bar_config, desc="Step 08/10 Animating")
+            return tqdm(iterable, **self._progress_bar_config, desc="Step 07/08 Animating")
         elif total is not None:
-            return tqdm(total=total, **self._progress_bar_config, desc="Step 08/10 Animating")
+            return tqdm(total=total, **self._progress_bar_config, desc="Step 07/08 Animating")
         else:
             raise ValueError("Either `total` or `iterable` has to be defined.")
 
