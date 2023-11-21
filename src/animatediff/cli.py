@@ -32,6 +32,7 @@ from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
 from animatediff.utils.progressbar import pgr
+from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
     is_sdxl_checkpoint,
     is_v2_motion_module,
@@ -326,19 +327,22 @@ def generate(
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     # make the output directory
-    save_dir = out_dir.joinpath(f"{time_str}-{model_config.save_name}")
+    save_dir = out_dir.joinpath(f"{time_str}")
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
-    # pgr.update_phrase(20, "Preprocessing controlnet images...")
+    pgr.update_phrase(1, "Step 02/08: Preprocessing Images Controlnet & IPAdapter")
+
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
         project_dir, model_config.controlnet_map, width, height, length, save_dir, device, is_sdxl
     )
+    pgr.update_phrase(1, "Step 03/08: Preprocessing Img 2 Img")
     img2img_map = img2img_preprocess(project_dir, model_config.img2img_map, width, height, length, save_dir)
 
     # beware the pipeline
     global g_pipeline
     global last_model_path
+    pgr.update_phrase(1, "Step 04/08: Load Models: Ckpt, tokenizer, text encoder, vae, unet, Controlnet")
     if g_pipeline is None or last_model_path != model_config.checkpoint.resolve():
         g_pipeline = create_pipeline(
             base_model=base_model_path,
@@ -355,7 +359,6 @@ def generate(
         # since load time if we're being called from another package
         load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
-    # pgr.update_phrase(22, "Loading controlnet ...")
     load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config, is_sdxl=is_sdxl)
 
     if g_pipeline.device == device:
@@ -412,7 +415,7 @@ def generate(
 
             logger.info(f"Generation seed: {seed}")
 
-            # pgr.update_phrase(25, "Run Interference...")
+            pgr.update_phrase(1, "Step 05/08: Run Interference...")
             output = run_inference(
                 pipeline=g_pipeline,
                 n_prompt=n_prompt,
@@ -449,11 +452,11 @@ def generate(
             # increment the generation number
             gen_num += 1
 
-    # pgr.update_phrase(95, "unload_controlnet_models...")
+    pgr.update_phrase(95, "unload_controlnet_models...")
     unload_controlnet_models(pipe=g_pipeline)
 
     logger.info("Generation complete!")
-    # pgr.update_phrase(99, "generate videos...")
+    pgr.update_phrase(99, "generate videos...")
     if save_merged:
         logger.info("Output merged output video...")
         merged_output = torch.concat(outputs, dim=0)

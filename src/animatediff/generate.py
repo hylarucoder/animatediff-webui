@@ -581,7 +581,6 @@ def create_pipeline(
             motion_module_path=motion_module,
         )
 
-    # pgr.update_phrase(15, "Loading tokenizer, text encoder, VAE, UNet")
     logger.info("Loading tokenizer...")
     logger.info("Loading text encoder...")
     logger.info("Loading VAE...")
@@ -651,7 +650,6 @@ def create_pipeline(
         logger.info("Enabling xformers memory-efficient attention")
         unet.enable_xformers_memory_efficient_attention()
 
-    # pgr.update_phrase(5, "Loading controlnet models...")
     # motion lora
     for l in model_config.motion_lora_map:
         lora_path = path_mgr.loras / l
@@ -663,7 +661,7 @@ def create_pipeline(
         else:
             raise ValueError(f"{lora_path=} not found")
 
-    # pgr.update_phrase(10, "Creating AnimationPipeline")
+    pgr.update_phrase(10, "Creating AnimationPipeline")
     pipeline = AnimationPipeline(
         vae=vae,
         text_encoder=text_encoder,
@@ -849,6 +847,7 @@ def seed_everything(seed):
 
 def controlnet_preprocess(
     project_dir: Path,
+    # TODO: validator, not dict
     controlnet_map: Dict[str, Any] = None,
     width: int = 512,
     height: int = 512,
@@ -872,6 +871,8 @@ def controlnet_preprocess(
 
     preprocess_on_gpu = controlnet_map["preprocess_on_gpu"] if "preprocess_on_gpu" in controlnet_map else True
     device_str = device_str if preprocess_on_gpu else None
+    cache_dir = path_mgr.projects / project_dir / "cache"
+    cache_dir.mkdir(exist_ok=True)
 
     for c in controlnet_map:
         if c == "controlnet_ref":
@@ -880,8 +881,6 @@ def controlnet_preprocess(
         item = controlnet_map[c]
 
         processed = False
-        cache_dir = path_mgr.projects / project_dir / "cache"
-        cache_dir.mkdir(exist_ok=True)
 
         if type(item) is dict:
             if item["enable"]:
@@ -903,7 +902,7 @@ def controlnet_preprocess(
 
                         use_preprocessor = item.get("use_preprocessor", True)
 
-                        for img_path in tqdm(cond_imgs, desc=f"Preprocessing Images ({c})"):
+                        for img_path in cond_imgs:
                             frame_no = int(Path(img_path).stem)
                             if frame_no < duration:
                                 if frame_no not in controlnet_image_map:
@@ -945,7 +944,7 @@ def controlnet_preprocess(
             det_dir = out_dir.joinpath(f"{0:02d}_detectmap/{c}")
             det_dir.mkdir(parents=True, exist_ok=True)
 
-            for frame_no in tqdm(controlnet_image_map, desc=f"Saving Preprocessed images ({c})"):
+            for frame_no in controlnet_image_map:
                 save_path = det_dir.joinpath(f"{frame_no:08d}.png")
                 if c in controlnet_image_map[frame_no]:
                     controlnet_image_map[frame_no][c].save(save_path)
@@ -1393,7 +1392,7 @@ def save_output(
 
 
 def run_inference(
-    pipeline: DiffusionPipeline,
+    pipeline: AnimationPipeline,
     n_prompt: str = ...,
     seed: int = -1,
     steps: int = 25,
