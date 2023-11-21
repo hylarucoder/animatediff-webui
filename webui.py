@@ -15,7 +15,7 @@ from animatediff.utils.util import read_json
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 BLANK_PLACEHOLDER = "---"
@@ -363,23 +363,23 @@ def render_ui():
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
     def fn_generate(
-        project,
-        performance,
-        aspect_radio,
-        head_prompt,
-        tail_prompt,
-        negative_prompt,
-        fps,
-        duration,
-        seed,
-        checkpoint,
-        motion,
-        motion_loras,
-        *lora_items,
-        data=None,
-        progress=gr.Progress(
-            track_tqdm=True,
-        ),
+            project,
+            performance,
+            aspect_radio,
+            head_prompt,
+            tail_prompt,
+            negative_prompt,
+            fps,
+            duration,
+            seed,
+            checkpoint,
+            motion,
+            motion_loras,
+            *lora_items,
+            data=None,
+            progress=gr.Progress(
+                track_tqdm=True,
+            ),
     ):
         project_dir = path_mgr.projects / project
         global_config = ModelConfig(**read_json(path_mgr.demo_prompt_json))
@@ -415,7 +415,16 @@ def render_ui():
         global_config.checkpoint = checkpoint
         global_config.motion = motion
         global_config.motion_lora_map = {}
-        global_config.prompt_map = {}
+        global_config.prompt_map = {
+            "0": global_config.head_prompt,
+        }
+        global_config.output = {
+            "format": "mp4",
+            "fps": 8,
+            "encode_param": {
+                "crf": 10
+            }
+        }
         open(project_dir / "prompts.json", "wt", encoding="utf-8").write(
             global_config.model_dump_json(
                 indent=2,
@@ -478,7 +487,7 @@ def render_ui():
     )
 
     def apply_preset(
-        preset_name,
+            preset_name,
     ):
         preset = next((_ for _ in presets if _.name == preset_name), None)
         loras_gr = []
@@ -545,16 +554,16 @@ def render_ui():
 
 
 with gr.Blocks(
-    title="Animatediff WebUI",
-    css="""
+        title="Animatediff WebUI",
+        css="""
         video {
             height: 504px !important;
         }
         """,
-    theme=gr.themes.Default(
-        spacing_size="sm",
-        text_size="sm",
-    ),
+        theme=gr.themes.Default(
+            spacing_size="sm",
+            text_size="sm",
+        ),
 ) as demo:
     render_ui()
 
