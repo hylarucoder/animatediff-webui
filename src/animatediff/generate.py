@@ -2,6 +2,7 @@ import glob
 import logging
 import os
 import re
+from collections import defaultdict
 from functools import partial
 from itertools import chain
 from os import PathLike
@@ -53,6 +54,18 @@ from animatediff.pipelines.pipeline_controlnet_img2img_reference import (
     StableDiffusionControlNetImg2ImgReferencePipeline,
 )
 from animatediff.schedulers import get_scheduler
+from animatediff.schema import (
+    TAnyControlnet,
+    TControlnetMap,
+    TControlnetRef,
+    TControlnetTile,
+    TImg2imgMap,
+    TIPAdapterMap,
+    TOutput,
+    TPreprocessor,
+    TProjectSetting,
+    TUpscaleConfig,
+)
 from animatediff.settings import InferenceConfig, ModelConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights, get_checkpoint_weights_sdxl
@@ -286,7 +299,7 @@ controlnet_address_table_sdxl = {
 }
 
 
-def is_valid_controlnet_type(type_str, is_sdxl):
+def is_valid_controlnet_type(type_str: str, is_sdxl: bool):
     if not is_sdxl:
         return type_str in controlnet_address_table
     else:
@@ -360,20 +373,21 @@ def create_default_preprocessor(type_str):
 
 
 def get_preprocessor(type_str, device_str, preprocessor_map):
+    if type_str in controlnet_preprocessor:
+        return controlnet_preprocessor[type_str]
+    if preprocessor_map:
+        controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map["type"])
+
     if type_str not in controlnet_preprocessor:
-        if preprocessor_map:
-            controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map["type"])
+        controlnet_preprocessor[type_str] = create_default_preprocessor(type_str)
 
-        if type_str not in controlnet_preprocessor:
-            controlnet_preprocessor[type_str] = create_default_preprocessor(type_str)
-
-        if hasattr(controlnet_preprocessor[type_str], "processor"):
-            if hasattr(controlnet_preprocessor[type_str].processor, "to"):
-                if device_str:
-                    controlnet_preprocessor[type_str].processor.to(device_str)
-        elif hasattr(controlnet_preprocessor[type_str], "to"):
+    if hasattr(controlnet_preprocessor[type_str], "processor"):
+        if hasattr(controlnet_preprocessor[type_str].processor, "to"):
             if device_str:
-                controlnet_preprocessor[type_str].to(device_str)
+                controlnet_preprocessor[type_str].processor.to(device_str)
+    elif hasattr(controlnet_preprocessor[type_str], "to"):
+        if device_str:
+            controlnet_preprocessor[type_str].to(device_str)
 
     return controlnet_preprocessor[type_str]
 
@@ -390,16 +404,6 @@ def clear_controlnet_preprocessor(type_str=None):
         torch.cuda.empty_cache()
 
 
-def get_preprocessed_img(type_str, img, use_preprocessor, device_str, preprocessor_map):
-    if use_preprocessor:
-        param = {}
-        if preprocessor_map:
-            param = preprocessor_map["param"] if "param" in preprocessor_map else {}
-        return get_preprocessor(type_str, device_str, preprocessor_map)(img, **param)
-    else:
-        return img
-
-
 def create_pipeline_sdxl(
     base_model: Union[str, PathLike],
     model_config: ModelConfig,
@@ -407,7 +411,8 @@ def create_pipeline_sdxl(
     use_xformers: bool = True,
     video_length: int = 16,
     motion_module_path=...,
-):
+) -> AnimationPipeline:
+    # TODO: cast bug, remove this when fixed
     from animatediff.pipelines.sdxl_animation import AnimationPipeline
     from animatediff.sdxl_models.unet import UNet3DConditionModel
 
@@ -476,8 +481,8 @@ def create_pipeline_sdxl(
     else:
         logger.info("Using base model weights (no checkpoint/LoRA)")
 
-    if model_config.vae_path:
-        vae_path = path_mgr.vaes / model_config.vae_path
+    if model_config.vae:
+        vae_path = path_mgr.vaes / model_config.vae
         logger.info(f"Loading vae from {vae_path}")
 
         if vae_path.is_dir():
@@ -547,18 +552,18 @@ def create_pipeline_sdxl(
 
 def create_pipeline(
     base_model: Union[str, PathLike],
-    model_config: ModelConfig,
+    project_setting: TProjectSetting,
     infer_config: InferenceConfig,
     use_xformers: bool = True,
     video_length: int = 16,
     is_sdxl: bool = False,
-) -> DiffusionPipeline:
+) -> AnimationPipeline:
     """Create an AnimationPipeline from a pretrained model.
     Uses the base_model argument to load or download the pretrained reference pipeline model.
     """
     # make sure motion_module is a Path and exists
     logger.info("Checking motion module...")
-    motion_module = path_mgr.motions / model_config.motion
+    motion_module = path_mgr.motions / project_setting.motion
     if not (motion_module.exists() and motion_module.is_file()):
         prepare_motion_module()
         if not (motion_module.exists() and motion_module.is_file()):
@@ -574,7 +579,7 @@ def create_pipeline(
     if is_sdxl:
         return create_pipeline_sdxl(
             base_model=base_model,
-            model_config=model_config,
+            model_config=project_setting,
             infer_config=infer_config,
             use_xformers=use_xformers,
             video_length=video_length,
@@ -598,44 +603,41 @@ def create_pipeline(
 
     # set up scheduler
     sched_kwargs = infer_config.noise_scheduler_kwargs
-    scheduler = get_scheduler(model_config.scheduler, sched_kwargs)
-    logger.info(f'Using scheduler "{model_config.scheduler}" ({scheduler.__class__.__name__})')
+    scheduler = get_scheduler(project_setting.scheduler, sched_kwargs)
+    logger.info(f'Using scheduler "{project_setting.scheduler}" ({scheduler.__class__.__name__})')
 
     # Load the checkpoint weights into the pipeline
-    if model_config.checkpoint is not None:
-        model_path = path_mgr.checkpoints.joinpath(model_config.checkpoint)
-        logger.info(f"Loading weights from {model_path}")
-        if model_path.is_file():
-            logger.debug("Loading from single checkpoint file")
-            unet_state_dict, tenc_state_dict, vae_state_dict = get_checkpoint_weights(model_path)
-        elif model_path.is_dir():
-            logger.debug("Loading from Diffusers model directory")
-            temp_pipeline = StableDiffusionPipeline.from_pretrained(model_path)
-            unet_state_dict, tenc_state_dict, vae_state_dict = (
-                temp_pipeline.unet.state_dict(),
-                temp_pipeline.text_encoder.state_dict(),
-                temp_pipeline.vae.state_dict(),
-            )
-            del temp_pipeline
-        else:
-            raise FileNotFoundError(f"model_path {model_path} is not a file or directory")
-
-        # Load into the unet, TE, and VAE
-        logger.info("Merging weights into UNet...")
-        _, unet_unex = unet.load_state_dict(unet_state_dict, strict=False)
-        if len(unet_unex) > 0:
-            raise ValueError(f"UNet has unexpected keys: {unet_unex}")
-        tenc_missing, _ = text_encoder.load_state_dict(tenc_state_dict, strict=False)
-        if len(tenc_missing) > 0:
-            raise ValueError(f"TextEncoder has missing keys: {tenc_missing}")
-        vae_missing, _ = vae.load_state_dict(vae_state_dict, strict=False)
-        if len(vae_missing) > 0:
-            raise ValueError(f"VAE has missing keys: {vae_missing}")
+    model_path = path_mgr.checkpoints / project_setting.checkpoint
+    logger.info(f"Loading weights from {model_path}")
+    if model_path.is_file():
+        logger.debug("Loading from single checkpoint file")
+        unet_state_dict, tenc_state_dict, vae_state_dict = get_checkpoint_weights(model_path)
+    elif model_path.is_dir():
+        logger.debug("Loading from Diffusers model directory")
+        temp_pipeline = StableDiffusionPipeline.from_pretrained(model_path)
+        unet_state_dict, tenc_state_dict, vae_state_dict = (
+            temp_pipeline.unet.state_dict(),
+            temp_pipeline.text_encoder.state_dict(),
+            temp_pipeline.vae.state_dict(),
+        )
+        del temp_pipeline
     else:
-        logger.info("Using base model weights (no checkpoint/LoRA)")
+        raise FileNotFoundError(f"model_path {model_path} is not a file or directory")
 
-    if model_config.vae_path:
-        vae_path = path_mgr.vaes / model_config.vae_path
+    # Load into the unet, TE, and VAE
+    logger.info("Merging weights into UNet...")
+    _, unet_unex = unet.load_state_dict(unet_state_dict, strict=False)
+    if len(unet_unex) > 0:
+        raise ValueError(f"UNet has unexpected keys: {unet_unex}")
+    tenc_missing, _ = text_encoder.load_state_dict(tenc_state_dict, strict=False)
+    if len(tenc_missing) > 0:
+        raise ValueError(f"TextEncoder has missing keys: {tenc_missing}")
+    vae_missing, _ = vae.load_state_dict(vae_state_dict, strict=False)
+    if len(vae_missing) > 0:
+        raise ValueError(f"VAE has missing keys: {vae_missing}")
+
+    if project_setting.vae:
+        vae_path = path_mgr.vaes / project_setting.vae
         logger.info(f"Loading vae from {vae_path}")
 
         if vae_path.is_dir():
@@ -651,13 +653,13 @@ def create_pipeline(
         unet.enable_xformers_memory_efficient_attention()
 
     # motion lora
-    for l in model_config.motion_lora_map:
+    for l in project_setting.motion_lora_map:
         lora_path = path_mgr.loras / l
         logger.info(f"loading motion lora {lora_path=}")
         if lora_path.is_file():
             logger.info(f"Loading motion lora {lora_path}")
-            logger.info(f"alpha = {model_config.motion_lora_map[l]}")
-            load_motion_lora(unet, lora_path, alpha=model_config.motion_lora_map[l])
+            logger.info(f"alpha = {project_setting.motion_lora_map[l]}")
+            load_motion_lora(unet, lora_path, alpha=project_setting.motion_lora_map[l])
         else:
             raise ValueError(f"{lora_path=} not found")
 
@@ -672,11 +674,11 @@ def create_pipeline(
         controlnet_map=None,
     )
 
-    if model_config.apply_lcm_lora:
+    if project_setting.apply_lcm_lora:
         prepare_lcm_lora()
-        load_lcm_lora(pipeline, model_config.lcm_lora_scale, is_sdxl=False)
+        load_lcm_lora(pipeline, project_setting.lcm_lora_scale, is_sdxl=False)
 
-    load_lora_map(pipeline, model_config.lora_map, video_length)
+    load_lora_map(pipeline, project_setting.lora_map, video_length)
 
     # Load TI embeddings
     load_text_embeddings(pipeline)
@@ -685,25 +687,22 @@ def create_pipeline(
 
 
 def load_controlnet_models(
-    project_dir: Path, pipe: DiffusionPipeline, model_config: ModelConfig = ..., is_sdxl: bool = False
+    project_dir: Path, pipe: AnimationPipeline, project_setting: TProjectSetting, is_sdxl: bool = False
 ):
     # controlnet
     controlnet_map = {}
-    if model_config.controlnet_map:
-        c_image_dir = project_dir.joinpath(model_config.controlnet_map["input_image_dir"])
-
-        for c in model_config.controlnet_map:
-            item = model_config.controlnet_map[c]
-            if type(item) is dict:
-                if item["enable"] == True:
-                    if is_valid_controlnet_type(c, is_sdxl):
-                        img_dir = c_image_dir.joinpath(c)
-                        cond_imgs = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
-                        if len(cond_imgs) > 0:
-                            logger.info(f"loading {c=} model")
-                            controlnet_map[c] = create_controlnet_model(c, is_sdxl)
-                    else:
-                        logger.info(f"invalid controlnet type for {'sdxl' if is_sdxl else 'sd15'} : {c}")
+    c_image_dir = project_dir / project_setting.controlnet_map.input_image_dir
+    for c, cn in project_setting.controlnet_map.controlnets:
+        if not cn.enable:
+            continue
+        if not is_valid_controlnet_type(c, is_sdxl):
+            continue
+        img_dir = c_image_dir.joinpath(c)
+        cond_imgs = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
+        if not cond_imgs:
+            continue
+        logger.info(f"loading {c=} model")
+        controlnet_map[c] = create_controlnet_model(c, is_sdxl)
 
     if not controlnet_map:
         controlnet_map = None
@@ -719,8 +718,8 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 
 
 def create_us_pipeline(
-    model_config: ModelConfig = ...,
-    infer_config: InferenceConfig = ...,
+    model_config: ModelConfig,
+    infer_config: InferenceConfig,
     use_xformers: bool = True,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
@@ -847,198 +846,181 @@ def seed_everything(seed):
 
 def controlnet_preprocess(
     project_dir: Path,
-    # TODO: validator, not dict
-    controlnet_map: Optional[Dict[str, Any]] = None,
+    out_dir: Path,
+    controlnet_map: TControlnetMap,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
-    out_dir: PathLike = ...,
     device_str: Optional[str] = None,
     is_sdxl: bool = False,
 ):
-    if not controlnet_map:
-        return None, None, None
-
-    out_dir = Path(out_dir)  # ensure out_dir is a Path
-
-    # { 0 : { "type_str" : IMAGE, "type_str2" : IMAGE }  }
-    controlnet_image_map = {}
+    controlnet_image_map = defaultdict(dict)
 
     controlnet_type_map = {}
 
-    c_image_dir = project_dir.joinpath(controlnet_map["input_image_dir"])
-    save_detectmap = controlnet_map["save_detectmap"] if "save_detectmap" in controlnet_map else True
+    c_image_dir = project_dir / controlnet_map.input_image_dir
+    save_detectmap = controlnet_map.save_detectmap
 
-    preprocess_on_gpu = controlnet_map["preprocess_on_gpu"] if "preprocess_on_gpu" in controlnet_map else True
+    preprocess_on_gpu = controlnet_map.preprocess_on_gpu
     device_str = device_str if preprocess_on_gpu else None
     cache_dir = path_mgr.projects / project_dir / "cache"
     cache_dir.mkdir(exist_ok=True)
 
-    for c in controlnet_map:
-        if c == "controlnet_ref":
-            continue
-
-        item = controlnet_map[c]
-
+    def processing_controlnet_images(cn_name, cn: TAnyControlnet):
         processed = False
+        if isinstance(cn, TControlnetRef):
+            return
+        if not cn.enable:
+            return
+        if not is_valid_controlnet_type(cn_name, is_sdxl):
+            return
+        img_dir = c_image_dir / controlnet_name
+        images_to_be_processing = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
+        if not images_to_be_processing:
+            return
+        preprocessor_map = controlnet.preprocessor
 
-        if type(item) is dict:
-            if item["enable"]:
-                # 定义缓存文件的路径
+        for img_path in images_to_be_processing:
+            frame_no = int(Path(img_path).stem)
+            cache_image_path = os.path.join(cache_dir, f"{frame_no:08d}_{cn_name}.png")
 
-                if is_valid_controlnet_type(c, is_sdxl):
-                    preprocessor_map = item.get("preprocessor", {})
+            def has_cache():
+                if not os.path.exists(cache_image_path):
+                    return False
+                original_img_mtime = os.path.getmtime(img_path)
+                preprocessed_img_mtime = os.path.getmtime(cache_image_path)
+                if original_img_mtime > preprocessed_img_mtime:
+                    # If the original image isn't newer than the preprocessed one, use the preprocessed image
+                    return False
+                return True
 
-                    img_dir = c_image_dir.joinpath(c)
-                    cond_imgs = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
-                    if len(cond_imgs) > 0:
-                        controlnet_type_map[c] = {
-                            "controlnet_conditioning_scale": item["controlnet_conditioning_scale"],
-                            "control_guidance_start": item["control_guidance_start"],
-                            "control_guidance_end": item["control_guidance_end"],
-                            "control_scale_list": item["control_scale_list"],
-                            "guess_mode": item.get("guess_mode", False),
-                        }
-
-                        use_preprocessor = item.get("use_preprocessor", True)
-
-                        for img_path in cond_imgs:
-                            frame_no = int(Path(img_path).stem)
-                            if frame_no < duration:
-                                if frame_no not in controlnet_image_map:
-                                    controlnet_image_map[frame_no] = {}
-
-                                # 检查缓存文件是否存在
-                                cache_path = os.path.join(cache_dir, f"{frame_no:08d}_{c}.png")
-                                if os.path.exists(cache_path):
-                                    # 检查原始图片和预处理图片的修改时间
-                                    original_img_mtime = os.path.getmtime(img_path)
-                                    preprocessed_img_mtime = os.path.getmtime(cache_path)
-                                    if original_img_mtime <= preprocessed_img_mtime:
-                                        # 如果原始图片不比预处理图片新，直接用预处理图片
-                                        controlnet_image_map[frame_no][c] = Image.open(cache_path)
-                                    else:
-                                        preprocessed_img = get_preprocessed_img(
-                                            c,
-                                            get_resized_image2(img_path, 512),
-                                            use_preprocessor,
-                                            device_str,
-                                            preprocessor_map,
-                                        )
-                                        controlnet_image_map[frame_no][c] = preprocessed_img
-                                        preprocessed_img.save(cache_path)
-                                else:
-                                    preprocessed_img = get_preprocessed_img(
-                                        c,
-                                        get_resized_image2(img_path, 512),
-                                        use_preprocessor,
-                                        device_str,
-                                        preprocessor_map,
-                                    )
-                                    controlnet_image_map[frame_no][c] = preprocessed_img
-                                    preprocessed_img.save(cache_path)
+            if frame_no > duration:
+                continue
+            if not cn.use_preprocessor:
+                # TODO: fix
+                # read cache if cache exists, use cache
+                # if not, create cache
+                if not has_cache():
+                    controlnet_image_map[frame_no][cn_name] = get_resized_image2(img_path, 512)
                 else:
-                    logger.info(f"invalid controlnet type for {'sdxl' if is_sdxl else 'sd15'} : {c}")
+                    controlnet_image_map[frame_no][cn_name] = Image.open(cache_image_path)
+
+                controlnet_image_map[frame_no][cn_name].save(cache_image_path)
+                continue
+
+            # 检查缓存文件是否存在
+            if has_cache():
+                controlnet_image_map[frame_no][cn_name] = Image.open(cache_image_path)
+                continue
+            img = get_resized_image2(img_path, 512)
+            param = preprocessor_map.param
+            preprocessed_img = get_preprocessor(cn_name, device_str, preprocessor_map)(img, **param)
+            raise
+            controlnet_image_map[frame_no][cn_name] = preprocessed_img
+            preprocessed_img.save(cache_image_path)
+
+        controlnet_type_map[cn_name] = {
+            "controlnet_conditioning_scale": cn.controlnet_conditioning_scale,
+            "control_guidance_start": cn.control_guidance_start,
+            "control_guidance_end": cn.control_guidance_end,
+            "control_scale_list": cn.control_scale_list,
+            "guess_mode": cn.guess_mode,
+        }
 
         if save_detectmap and processed:
-            det_dir = out_dir.joinpath(f"{0:02d}_detectmap/{c}")
+            det_dir = out_dir.joinpath(f"{0:02d}_detectmap/{cn_name}")
             det_dir.mkdir(parents=True, exist_ok=True)
 
             for frame_no in controlnet_image_map:
                 save_path = det_dir.joinpath(f"{frame_no:08d}.png")
-                if c in controlnet_image_map[frame_no]:
-                    controlnet_image_map[frame_no][c].save(save_path)
+                if cn_name in controlnet_image_map[frame_no]:
+                    controlnet_image_map[frame_no][cn_name].save(save_path)
 
-        clear_controlnet_preprocessor(c)
+        clear_controlnet_preprocessor(cn_name)
+
+    for controlnet_name, controlnet in controlnet_map.controlnets:
+        processing_controlnet_images(controlnet_name, controlnet)
 
     clear_controlnet_preprocessor()
 
     controlnet_ref_map = None
 
-    if "controlnet_ref" in controlnet_map:
-        r = controlnet_map["controlnet_ref"]
-        if r["enable"]:
-            org_name = project_dir.joinpath(r["ref_image"]).stem
-            #            ref_image = get_resized_image( data_dir.joinpath( r["ref_image"] ) , width, height)
-            ref_image = get_resized_image2(str(project_dir.joinpath(r["ref_image"])), 512)
+    r = controlnet_map.controlnet_ref
+    if r.enable:
+        org_name = project_dir.joinpath(r.ref_image).stem
+        ref_image = get_resized_image2(str(project_dir.joinpath(r.ref_image)), 512)
 
-            if ref_image is not None:
-                controlnet_ref_map = {
-                    "ref_image": ref_image,
-                    "style_fidelity": r["style_fidelity"],
-                    "attention_auto_machine_weight": r["attention_auto_machine_weight"],
-                    "gn_auto_machine_weight": r["gn_auto_machine_weight"],
-                    "reference_attn": r["reference_attn"],
-                    "reference_adain": r["reference_adain"],
-                    "scale_pattern": r["scale_pattern"],
-                }
+        if ref_image is not None:
+            controlnet_ref_map = {
+                "ref_image": ref_image,
+                "style_fidelity": r["style_fidelity"],
+                "attention_auto_machine_weight": r["attention_auto_machine_weight"],
+                "gn_auto_machine_weight": r["gn_auto_machine_weight"],
+                "reference_attn": r["reference_attn"],
+                "reference_adain": r["reference_adain"],
+                "scale_pattern": r["scale_pattern"],
+            }
 
-                if save_detectmap:
-                    det_dir = out_dir.joinpath(f"{0:02d}_detectmap/controlnet_ref")
-                    det_dir.mkdir(parents=True, exist_ok=True)
-                    save_path = det_dir.joinpath(f"{org_name}.png")
-                    ref_image.save(save_path)
+            if save_detectmap:
+                det_dir = out_dir.joinpath(f"{0:02d}_detectmap/controlnet_ref")
+                det_dir.mkdir(parents=True, exist_ok=True)
+                save_path = det_dir.joinpath(f"{org_name}.png")
+                ref_image.save(save_path)
 
     return controlnet_image_map, controlnet_type_map, controlnet_ref_map
 
 
 def ip_adapter_preprocess(
     project_dir: Path,
-    ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+    out_dir: Path,
+    ip_adapter_config_map: TIPAdapterMap,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
-    out_dir: PathLike = ...,
     is_sdxl: bool = False,
 ):
     ip_adapter_map = {}
+    if not ip_adapter_config_map.enable:
+        return ip_adapter_map
 
     processed = False
 
-    if ip_adapter_config_map:
-        if ip_adapter_config_map["enable"]:
-            resized_to_square = (
-                ip_adapter_config_map["resized_to_square"] if "resized_to_square" in ip_adapter_config_map else False
-            )
-            image_dir = project_dir.joinpath(ip_adapter_config_map["input_image_dir"])
-            imgs = sorted(
-                chain.from_iterable([glob.glob(os.path.join(image_dir, f"[0-9]*{ext}")) for ext in IMG_EXTENSIONS])
-            )
-            if len(imgs) > 0:
-                prepare_ip_adapter_sdxl() if is_sdxl else prepare_ip_adapter()
-                ip_adapter_map["images"] = {}
-                for img_path in tqdm(imgs, desc="Preprocessing images (ip_adapter)"):
-                    frame_no = int(Path(img_path).stem)
-                    if frame_no < duration:
-                        if resized_to_square:
-                            ip_adapter_map["images"][frame_no] = get_resized_image(img_path, 256, 256)
-                        else:
-                            ip_adapter_map["images"][frame_no] = get_resized_image2(img_path, 256)
-                        processed = True
+    resized_to_square = ip_adapter_config_map.resized_to_square
+    image_dir = project_dir.joinpath(ip_adapter_config_map.input_image_dir)
+    imgs = sorted(chain.from_iterable([glob.glob(os.path.join(image_dir, f"[0-9]*{ext}")) for ext in IMG_EXTENSIONS]))
+    if len(imgs) > 0:
+        prepare_ip_adapter_sdxl() if is_sdxl else prepare_ip_adapter()
+        ip_adapter_map["images"] = {}
+        for img_path in tqdm(imgs, desc="Preprocessing images (ip_adapter)"):
+            frame_no = int(Path(img_path).stem)
+            if frame_no < duration:
+                if resized_to_square:
+                    ip_adapter_map["images"][frame_no] = get_resized_image(img_path, 256, 256)
+                else:
+                    ip_adapter_map["images"][frame_no] = get_resized_image2(img_path, 256)
+                processed = True
 
-            if processed:
-                ip_adapter_config_map["prompt_fixed_ratio"] = max(
-                    min(1.0, ip_adapter_config_map["prompt_fixed_ratio"]), 0
-                )
+    if processed:
+        ip_adapter_config_map.prompt_fixed_ratio = max(min(1.0, ip_adapter_config_map.prompt_fixed_ratio), 0)
 
-                prompt_fixed_ratio = ip_adapter_config_map["prompt_fixed_ratio"]
-                prompt_map = ip_adapter_map["images"]
-                prompt_map = dict(sorted(prompt_map.items()))
-                key_list = list(prompt_map.keys())
-                for k0, k1 in zip(key_list, key_list[1:] + [duration]):
-                    k05 = k0 + round((k1 - k0) * prompt_fixed_ratio)
-                    if k05 == k1:
-                        k05 -= 1
-                    if k05 != k0:
-                        prompt_map[k05] = prompt_map[k0]
-                ip_adapter_map["images"] = prompt_map
+        prompt_fixed_ratio = ip_adapter_config_map.prompt_fixed_ratio
+        prompt_map = ip_adapter_map["images"]
+        prompt_map = dict(sorted(prompt_map.items()))
+        key_list = list(prompt_map.keys())
+        for k0, k1 in zip(key_list, key_list[1:] + [duration]):
+            k05 = k0 + round((k1 - k0) * prompt_fixed_ratio)
+            if k05 == k1:
+                k05 -= 1
+            if k05 != k0:
+                prompt_map[k05] = prompt_map[k0]
+        ip_adapter_map["images"] = prompt_map
 
-            if (ip_adapter_config_map["save_input_image"] == True) and processed:
-                det_dir = out_dir.joinpath(f"{0:02d}_ip_adapter/")
-                det_dir.mkdir(parents=True, exist_ok=True)
-                for frame_no in tqdm(ip_adapter_map["images"], desc="Saving Preprocessed images (ip_adapter)"):
-                    save_path = det_dir.joinpath(f"{frame_no:08d}.png")
-                    ip_adapter_map["images"][frame_no].save(save_path)
+    if ip_adapter_config_map.save_input_image and processed:
+        det_dir = out_dir.joinpath(f"{0:02d}_ip_adapter/")
+        det_dir.mkdir(parents=True, exist_ok=True)
+        for frame_no in tqdm(ip_adapter_map["images"], desc="Saving Preprocessed images (ip_adapter)"):
+            save_path = det_dir.joinpath(f"{frame_no:08d}.png")
+            ip_adapter_map["images"][frame_no].save(save_path)
 
     return ip_adapter_map if processed else None
 
@@ -1075,19 +1057,19 @@ def prompt_preprocess(
 
 def region_preprocess(
     project_dir: Path,
-    model_config: ModelConfig = ...,
+    out_dir: Path,
+    project_setting: TProjectSetting,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
-    out_dir: PathLike = ...,
     is_init_img_exist: bool = False,
     is_sdxl: bool = False,
 ):
     is_bg_init_img = False
     if is_init_img_exist:
-        if model_config.region_map:
-            if "background" in model_config.region_map:
-                is_bg_init_img = model_config.region_map["background"]["is_init_img"]
+        if project_setting.region_map:
+            if "background" in project_setting.region_map:
+                is_bg_init_img = project_setting.region_map["background"]["is_init_img"]
 
     region_condi_list = []
 
@@ -1097,7 +1079,7 @@ def region_preprocess(
 
     if not is_bg_init_img:
         ip_map = ip_adapter_preprocess(
-            project_dir, model_config.ip_adapter_map, width, height, duration, out_dir, is_sdxl
+            project_dir, out_dir, project_setting.ip_adapter_map, width, height, duration, is_sdxl
         )
 
         if ip_map:
@@ -1105,10 +1087,10 @@ def region_preprocess(
 
         condition_map = {
             "prompt_map": prompt_preprocess(
-                model_config.prompt_map,
-                model_config.head_prompt,
-                model_config.tail_prompt,
-                model_config.prompt_fixed_ratio,
+                project_setting.prompt_map,
+                project_setting.head_prompt,
+                project_setting.tail_prompt,
+                project_setting.prompt_fixed_ratio,
                 duration,
             ),
             "ip_adapter_map": ip_map,
@@ -1123,28 +1105,28 @@ def region_preprocess(
 
     region_list = [{"mask_images": None, "src": bg_src, "crop_generation_rate": 0}]
 
-    if model_config.region_map:
-        for r in model_config.region_map:
+    if project_setting.region_map:
+        for r in project_setting.region_map:
             if r == "background":
                 continue
-            if model_config.region_map[r]["enable"] != True:
+            if project_setting.region_map[r]["enable"] != True:
                 continue
             region_dir = out_dir.joinpath(f"region_{int(r):05d}/")
             region_dir.mkdir(parents=True, exist_ok=True)
 
-            mask_map = mask_preprocess(project_dir, model_config.region_map[r], width, height, duration, region_dir)
+            mask_map = mask_preprocess(project_dir, project_setting.region_map[r], width, height, duration, region_dir)
 
             if not mask_map:
                 continue
 
-            if model_config.region_map[r]["is_init_img"] == False:
+            if project_setting.region_map[r]["is_init_img"] == False:
                 ip_map = ip_adapter_preprocess(
                     project_dir,
-                    model_config.region_map[r]["condition"]["ip_adapter_map"],
+                    region_dir,
+                    project_setting.region_map[r]["condition"]["ip_adapter_map"],
                     width,
                     height,
                     duration,
-                    region_dir,
                     is_sdxl,
                 )
 
@@ -1153,10 +1135,10 @@ def region_preprocess(
 
                 condition_map = {
                     "prompt_map": prompt_preprocess(
-                        model_config.region_map[r]["condition"]["prompt_map"],
-                        model_config.region_map[r]["condition"]["head_prompt"],
-                        model_config.region_map[r]["condition"]["tail_prompt"],
-                        model_config.region_map[r]["condition"]["prompt_fixed_ratio"],
+                        project_setting.region_map[r]["condition"]["prompt_map"],
+                        project_setting.region_map[r]["condition"]["head_prompt"],
+                        project_setting.region_map[r]["condition"]["tail_prompt"],
+                        project_setting.region_map[r]["condition"]["prompt_fixed_ratio"],
                         duration,
                     ),
                     "ip_adapter_map": ip_map,
@@ -1176,8 +1158,8 @@ def region_preprocess(
                 {
                     "mask_images": mask_map,
                     "src": src,
-                    "crop_generation_rate": model_config.region_map[r]["crop_generation_rate"]
-                    if "crop_generation_rate" in model_config.region_map[r]
+                    "crop_generation_rate": project_setting.region_map[r]["crop_generation_rate"]
+                    if "crop_generation_rate" in project_setting.region_map[r]
                     else 0,
                 }
             )
@@ -1186,16 +1168,20 @@ def region_preprocess(
 
     if prev_ip_map is not None:
         ip_adapter_config_map = {}
-        ip_adapter_config_map["scale"] = model_config.ip_adapter_map["scale"]
-        ip_adapter_config_map["is_plus"] = model_config.ip_adapter_map["is_plus"]
+        ip_adapter_config_map["scale"] = project_setting.ip_adapter_map["scale"]
+        ip_adapter_config_map["is_plus"] = project_setting.ip_adapter_map["is_plus"]
         ip_adapter_config_map["is_plus_face"] = (
-            model_config.ip_adapter_map["is_plus_face"] if "is_plus_face" in model_config.ip_adapter_map else False
+            project_setting.ip_adapter_map["is_plus_face"]
+            if "is_plus_face" in project_setting.ip_adapter_map
+            else False
         )
         ip_adapter_config_map["is_light"] = (
-            model_config.ip_adapter_map["is_light"] if "is_light" in model_config.ip_adapter_map else False
+            project_setting.ip_adapter_map["is_light"] if "is_light" in project_setting.ip_adapter_map else False
         )
         ip_adapter_config_map["is_full_face"] = (
-            model_config.ip_adapter_map["is_full_face"] if "is_full_face" in model_config.ip_adapter_map else False
+            project_setting.ip_adapter_map["is_full_face"]
+            if "is_full_face" in project_setting.ip_adapter_map
+            else False
         )
         for c in region_condi_list:
             if c["ip_adapter_map"] == None:
@@ -1213,35 +1199,37 @@ def region_preprocess(
 
 def img2img_preprocess(
     project_dir: Path,
-    img2img_config_map: Optional[Dict[str, Any]] = None,
+    out_dir: Path,
+    img2img_config_map: TImg2imgMap,
     width: int = 512,
     height: int = 512,
     duration: int = 16,
-    out_dir: PathLike = ...,
 ):
     img2img_map = {}
 
     processed = False
 
-    if img2img_config_map:
-        if img2img_config_map["enable"] == True:
-            image_dir = project_dir.joinpath(img2img_config_map["init_img_dir"])
-            imgs = sorted(glob.glob(os.path.join(image_dir, "[0-9]*.png"), recursive=False))
-            if len(imgs) > 0:
-                img2img_map["images"] = {}
-                img2img_map["denoising_strength"] = img2img_config_map["denoising_strength"]
-                for img_path in tqdm(imgs, desc="Preprocessing images (img2img)"):
-                    frame_no = int(Path(img_path).stem)
-                    if frame_no < duration:
-                        img2img_map["images"][frame_no] = get_resized_image(img_path, width, height)
-                        processed = True
+    if not img2img_config_map:
+        return None
+    if img2img_config_map.enable:
+        image_dir = project_dir / img2img_config_map.init_img_dir
+        imgs = sorted(glob.glob(os.path.join(image_dir, "[0-9]*.png"), recursive=False))
+        if not imgs:
+            return None
+        img2img_map["images"] = {}
+        img2img_map["denoising_strength"] = img2img_config_map["denoising_strength"]
+        for img_path in tqdm(imgs, desc="Preprocessing images (img2img)"):
+            frame_no = int(Path(img_path).stem)
+            if frame_no < duration:
+                img2img_map["images"][frame_no] = get_resized_image(img_path, width, height)
+                processed = True
 
-            if (img2img_config_map["save_init_image"] == True) and processed:
-                det_dir = out_dir.joinpath(f"{0:02d}_img2img_init_img/")
-                det_dir.mkdir(parents=True, exist_ok=True)
-                for frame_no in tqdm(img2img_map["images"], desc="Saving Preprocessed images (img2img)"):
-                    save_path = det_dir.joinpath(f"{frame_no:08d}.png")
-                    img2img_map["images"][frame_no].save(save_path)
+        if (img2img_config_map["save_init_image"] == True) and processed:
+            det_dir = out_dir.joinpath(f"{0:02d}_img2img_init_img/")
+            det_dir.mkdir(parents=True, exist_ok=True)
+            for frame_no in tqdm(img2img_map["images"], desc="Saving Preprocessed images (img2img)"):
+                save_path = det_dir.joinpath(f"{frame_no:08d}.png")
+                img2img_map["images"][frame_no].save(save_path)
 
     return img2img_map if processed else None
 
@@ -1286,7 +1274,7 @@ def mask_preprocess(
                 else:
                     mask_map[i] = prev_img
 
-        if (region_config_map["save_mask"] == True) and processed:
+        if (region_config_map["save_mask"] is True) and processed:
             det_dir = out_dir.joinpath("mask/")
             det_dir.mkdir(parents=True, exist_ok=True)
             for frame_no in tqdm(mask_map, desc="Saving Preprocessed images (mask)"):
@@ -1297,7 +1285,7 @@ def mask_preprocess(
 
 
 def wild_card_conversion(
-    model_config: ModelConfig = ...,
+    model_config: ModelConfig,
 ):
     from animatediff.utils.wild_card import replace_wild_card
 
@@ -1332,13 +1320,15 @@ def wild_card_conversion(
 
 def save_output(
     pipeline_output,
-    frame_dir: str,
-    out_file: str,
-    output_map: Dict[str, Any] = {},
+    frame_dir: PathLike,
+    out_file: PathLike,
+    output_map=None,
     no_frames: bool = False,
     save_frames=save_frames,
     save_video=None,
 ):
+    if output_map is None:
+        output_map = {}
     output_format = "gif"
     output_fps = 8
     if output_map:
@@ -1406,7 +1396,7 @@ def run_inference(
     context_overlap: int = 4,
     context_schedule: str = "uniform",
     clip_skip: int = 1,
-    controlnet_map: Optional[Dict[str, Any]] = None,
+    controlnet_map: TControlnetMap = None,
     controlnet_image_map: Optional[Dict[str, Any]] = None,
     controlnet_type_map: Optional[Dict[str, Any]] = None,
     controlnet_ref_map: Optional[Dict[str, Any]] = None,
@@ -1415,7 +1405,7 @@ def run_inference(
     ip_adapter_config_map: Optional[Dict[str, Any]] = None,
     region_list: Optional[List[Any]] = None,
     region_condi_list: Optional[List[Any]] = None,
-    output_map: Optional[Dict[str, Any]] = None,
+    output_map: TOutput = None,
     is_single_prompt_mode: bool = False,
     is_sdxl: bool = False,
     apply_lcm_lora: bool = False,
@@ -1428,7 +1418,6 @@ def run_inference(
         re_clean_prompt.sub("", tag).strip().replace(" ", "-")
         for tag in prompt_map[list(prompt_map.keys())[0]].split(",")
     ]
-    prompt_str = "_".join((prompt_tags[:6]))[:50]
     frame_dir = out_dir.joinpath(f"{idx:02d}-frames")
     out_file = out_dir.joinpath("video")
 
@@ -1467,13 +1456,9 @@ def run_inference(
         controlnet_type_map=controlnet_type_map,
         controlnet_image_map=controlnet_image_map,
         controlnet_ref_map=controlnet_ref_map,
-        controlnet_max_samples_on_vram=controlnet_map["max_samples_on_vram"]
-        if "max_samples_on_vram" in controlnet_map
-        else 999,
-        controlnet_max_models_on_vram=controlnet_map["max_models_on_vram"]
-        if "max_models_on_vram" in controlnet_map
-        else 99,
-        controlnet_is_loop=controlnet_map["is_loop"] if "is_loop" in controlnet_map else True,
+        controlnet_max_samples_on_vram=controlnet_map.max_samples_on_vram,
+        controlnet_max_models_on_vram=controlnet_map.max_models_on_vram,
+        controlnet_is_loop=controlnet_map.is_loop,
         img2img_map=img2img_map,
         ip_adapter_config_map=ip_adapter_config_map,
         region_list=region_list,
@@ -1494,8 +1479,9 @@ def run_inference(
 
 def run_upscale(
     project_dir: Path,
+    project_setting: TProjectSetting,
     org_imgs: List[str],
-    pipeline: DiffusionPipeline,
+    pipeline: AnimationPipeline,
     prompt_map: Optional[Dict[int, str]] = None,
     n_prompt: str = ...,
     seed: int = -1,
@@ -1506,26 +1492,26 @@ def run_upscale(
     us_width: int = 512,
     us_height: int = 512,
     idx: int = 0,
-    out_dir: PathLike = ...,
-    upscale_config: Optional[Dict[str, Any]] = None,
+    out_dir: Path = ...,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
     use_controlnet_line_anime: bool = False,
     use_controlnet_ip2p: bool = False,
     no_frames: bool = False,
-    output_map: Optional[Dict[str, Any]] = None,
 ):
+    upscale_config: TUpscaleConfig = project_setting.upscale_config
+    output_map = project_setting.output
     from animatediff.utils.lpw_stable_diffusion import lpw_encode_prompt
 
     pipeline.set_progress_bar_config(disable=True)
 
     images = get_resized_images(org_imgs, us_width, us_height)
 
-    steps = steps if "steps" not in upscale_config else upscale_config["steps"]
-    scheduler = scheduler if "scheduler" not in upscale_config else upscale_config["scheduler"]
-    guidance_scale = guidance_scale if "guidance_scale" not in upscale_config else upscale_config["guidance_scale"]
-    clip_skip = clip_skip if "clip_skip" not in upscale_config else upscale_config["clip_skip"]
-    strength = strength if "strength" not in upscale_config else upscale_config["strength"]
+    steps = upscale_config.steps
+    scheduler = upscale_config.scheduler
+    guidance_scale = upscale_config.guidance_scale
+    clip_skip = upscale_config.clip_skip
+    strength = upscale_config.strength
 
     controlnet_conditioning_scale = []
     guess_mode = []
@@ -1534,34 +1520,34 @@ def run_upscale(
 
     # for controlnet tile
     if use_controlnet_tile:
-        controlnet_conditioning_scale.append(upscale_config["controlnet_tile"]["controlnet_conditioning_scale"])
-        guess_mode.append(upscale_config["controlnet_tile"]["guess_mode"])
-        control_guidance_start.append(upscale_config["controlnet_tile"]["control_guidance_start"])
-        control_guidance_end.append(upscale_config["controlnet_tile"]["control_guidance_end"])
+        controlnet_conditioning_scale.append(upscale_config.controlnet_tile.controlnet_conditioning_scale)
+        guess_mode.append(upscale_config.controlnet_tile.guess_mode)
+        control_guidance_start.append(upscale_config.controlnet_tile.control_guidance_start)
+        control_guidance_end.append(upscale_config.controlnet_tile.control_guidance_end)
 
     # for controlnet line_anime
     if use_controlnet_line_anime:
-        controlnet_conditioning_scale.append(upscale_config["controlnet_line_anime"]["controlnet_conditioning_scale"])
-        guess_mode.append(upscale_config["controlnet_line_anime"]["guess_mode"])
-        control_guidance_start.append(upscale_config["controlnet_line_anime"]["control_guidance_start"])
-        control_guidance_end.append(upscale_config["controlnet_line_anime"]["control_guidance_end"])
+        controlnet_conditioning_scale.append(upscale_config.controlnet_line_anime.controlnet_conditioning_scale)
+        guess_mode.append(upscale_config.controlnet_line_anime.guess_mode)
+        control_guidance_start.append(upscale_config.controlnet_line_anime.control_guidance_start)
+        control_guidance_end.append(upscale_config.controlnet_line_anime.control_guidance_end)
 
     # for controlnet ip2p
     if use_controlnet_ip2p:
-        controlnet_conditioning_scale.append(upscale_config["controlnet_ip2p"]["controlnet_conditioning_scale"])
-        guess_mode.append(upscale_config["controlnet_ip2p"]["guess_mode"])
-        control_guidance_start.append(upscale_config["controlnet_ip2p"]["control_guidance_start"])
-        control_guidance_end.append(upscale_config["controlnet_ip2p"]["control_guidance_end"])
+        controlnet_conditioning_scale.append(upscale_config.controlnet_ip2p.controlnet_conditioning_scale)
+        guess_mode.append(upscale_config.controlnet_ip2p.guess_mode)
+        control_guidance_start.append(upscale_config.controlnet_ip2p.control_guidance_start)
+        control_guidance_end.append(upscale_config.controlnet_ip2p.control_guidance_end)
 
     # for controlnet ref
     ref_image = None
     if use_controlnet_ref:
         if (
-            not upscale_config["controlnet_ref"]["use_frame_as_ref_image"]
-            and not upscale_config["controlnet_ref"]["use_1st_frame_as_ref_image"]
+            not upscale_config.controlnet_ref.use_frame_as_ref_image
+            and not upscale_config.controlnet_ref.use_1st_frame_as_ref_image
         ):
             ref_image = get_resized_images(
-                [project_dir.joinpath(upscale_config["controlnet_ref"]["ref_image"])], us_width, us_height
+                [project_dir / upscale_config.controlnet_ref.ref_image], us_width, us_height
             )[0]
 
     generator = torch.manual_seed(seed)

@@ -80,7 +80,7 @@ def resize_for_condition_image(input_image: Image, us_width: int, us_height: int
     return img
 
 
-def get_resized_images(org_images_path: List[str], us_width: int, us_height: int):
+def get_resized_images(org_images_path: list[Path], us_width: int, us_height: int):
     images = [Image.open(p) for p in org_images_path]
 
     W, H = images[0].size

@@ -14,7 +14,8 @@ from tqdm.rich import tqdm
 
 from animatediff import __version__, get_dir
 from animatediff.consts import path_mgr
-from animatediff.settings import ModelConfig, get_model_config
+from animatediff.schema import TIPAdapterMap
+from animatediff.settings import ModelConfig, get_project_setting
 from animatediff.utils.tagger import get_labels
 from animatediff.utils.util import (
     extract_frames,
@@ -45,7 +46,7 @@ def create_config(
     org_movie: Annotated[
         Path,
         typer.Argument(path_type=Path, file_okay=True, dir_okay=False, exists=True, help="Path to movie file"),
-    ] = ...,
+    ],
     config_org: Annotated[
         Path,
         typer.Option(
@@ -215,12 +216,12 @@ def create_config(
     logger.info(f"{is_img2img=}")
     logger.info(f"{low_vram=}")
 
-    model_config: ModelConfig = get_model_config(config_org)
+    project_setting = get_project_setting(config_org)
 
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     # make the output directory
-    save_dir = out_dir.joinpath(f"{time_str}-{model_config.save_name}")
+    save_dir = out_dir.joinpath(f"{time_str}")
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
@@ -261,7 +262,7 @@ def create_config(
         with open(ignore_list) as f:
             black_list = [s.strip() for s in f.readlines()]
 
-    model_config.prompt_map = get_labels(
+    project_setting.prompt_map = get_labels(
         frame_dir=img2img_dir,
         interval=predicte_interval,
         general_threshold=general_threshold,
@@ -272,80 +273,59 @@ def create_config(
         is_cpu=False,
     )
 
-    model_config.head_prompt = ""
-    model_config.tail_prompt = ""
-    model_config.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
-    model_config.controlnet_map["is_loop"] = False
+    project_setting.head_prompt = ""
+    project_setting.tail_prompt = ""
+    project_setting.controlnet_map.input_image_dir = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
+    project_setting.controlnet_map.is_loop = False
 
-    model_config.lora_map = {}
-    model_config.motion_lora_map = {}
+    project_setting.lora_map = {}
+    project_setting.motion_lora_map = {}
 
     if low_vram:
-        model_config.controlnet_map["max_samples_on_vram"] = 0
-        model_config.controlnet_map["max_models_on_vram"] = 0
+        project_setting.controlnet_map.max_samples_on_vram = 0
+        project_setting.controlnet_map.max_models_on_vram = 0
 
     if not is_img2img:
-        model_config.controlnet_map["controlnet_tile"] = {
-            "enable": True,
-            "use_preprocessor": True,
-            "guess_mode": False,
-            "controlnet_conditioning_scale": 1.0,
-            "control_guidance_start": 0.0,
-            "control_guidance_end": 1.0,
-            "control_scale_list": [],
-        }
+        project_setting.controlnet_map.controlnet_tile.control_scale_list = []
     else:
-        model_config.controlnet_map["controlnet_openpose"] = {
-            "enable": True,
-            "use_preprocessor": True,
-            "guess_mode": False,
-            "controlnet_conditioning_scale": 1.0,
-            "control_guidance_start": 0.0,
-            "control_guidance_end": 1.0,
-            "control_scale_list": [],
-        }
+        project_setting.controlnet_map.controlnet_openpose.control_scale_list = []
+    project_setting.controlnet_map.controlnet_ip2p.controlnet_conditioning_scale = 0.5
+    project_setting.controlnet_map.controlnet_ip2p.control_scale_list = []
 
-    model_config.controlnet_map["controlnet_ip2p"] = {
-        "enable": True,
-        "use_preprocessor": True,
-        "guess_mode": False,
-        "controlnet_conditioning_scale": 0.5,
-        "control_guidance_start": 0.0,
-        "control_guidance_end": 1.0,
-        "control_scale_list": [],
-    }
+    for m in project_setting.controlnet_map:
+        # TODO: set all control_scale_list to []
+        if isinstance(project_setting.controlnet_map[m], dict):
+            if "control_scale_list" in project_setting.controlnet_map[m]:
+                project_setting.controlnet_map[m]["control_scale_list"] = []
 
-    for m in model_config.controlnet_map:
-        if isinstance(model_config.controlnet_map[m], dict):
-            if "control_scale_list" in model_config.controlnet_map[m]:
-                model_config.controlnet_map[m]["control_scale_list"] = []
-
-    ip_adapter_dir = save_dir.joinpath("00_ipadapter")
+    ip_adapter_dir = save_dir.joinpath("00_ip_adapter")
     ip_adapter_dir.mkdir(parents=True, exist_ok=True)
 
-    model_config.ip_adapter_map = {
-        "enable": True,
-        "input_image_dir": os.path.relpath(ip_adapter_dir.absolute(), data_dir),
-        "prompt_fixed_ratio": 0.5,
-        "save_input_image": True,
-        "resized_to_square": False,
-        "scale": 0.5,
-        "is_full_face": False,
-        "is_plus_face": False,
-        "is_plus": True,
-        "is_light": False,
-    }
+    project_setting.ip_adapter_map = TIPAdapterMap(
+        **{
+            "enable": True,
+            "input_image_dir": os.path.relpath(ip_adapter_dir.absolute(), data_dir),
+            "prompt_fixed_ratio": 0.5,
+            "save_input_image": True,
+            "resized_to_square": False,
+            "scale": 0.5,
+            "is_full_face": False,
+            "is_plus_face": False,
+            "is_plus": True,
+            "is_light": False,
+        }
+    )
 
-    model_config.img2img_map = {
+    project_setting.img2img_map = {
         "enable": is_img2img,
         "init_img_dir": os.path.relpath(img2img_dir.absolute(), data_dir),
         "save_init_image": True,
         "denoising_strength": 0.7,
     }
 
-    model_config.region_map = {}
+    project_setting.region_map = {}
 
-    model_config.output = {"format": "mp4", "fps": fps, "encode_param": {"crf": 10}}
+    project_setting.output = {"format": "mp4", "fps": fps, "encode_param": {"crf": 10}}
 
     img = Image.open(img2img_dir.joinpath("00000000.png"))
     W, H = img.size
@@ -362,7 +342,7 @@ def create_config(
 
     length = len(glob.glob(os.path.join(img2img_dir, "[0-9]*.png"), recursive=False))
 
-    model_config.stylize_config = {
+    project_setting.stylize_config = {
         "original_video": {
             "path": org_movie,
             "aspect_ratio": aspect_ratio,
@@ -394,8 +374,8 @@ def create_config(
             "stride": 0,
         },
         "1": {
-            "steps": model_config.steps,
-            "guidance_scale": model_config.guidance_scale,
+            "steps": project_setting.steps,
+            "guidance_scale": project_setting.guidance_scale,
             "width": int(width * 1.5 // 8 * 8),
             "height": int(height * 1.5 // 8 * 8),
             "length": length,
@@ -428,7 +408,7 @@ def create_config(
     }
 
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+    save_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
     logger.info(f"config = {save_config_path}")
     logger.info(f"stylize_dir = {save_dir}")
@@ -490,20 +470,22 @@ def generate(
     config_org = stylize_dir.joinpath("prompt.json")
     project_dir = config_org.parent
 
-    model_config: ModelConfig = get_model_config(config_org)
+    project_setting: ModelConfig = get_project_setting(config_org)
 
     if length == -1:
-        length = model_config.stylize_config["0"]["length"]
+        length = project_setting.stylize_config["0"]["length"]
 
-    model_config.stylize_config["0"]["length"] = min(model_config.stylize_config["0"]["length"] - frame_offset, length)
-    if "1" in model_config.stylize_config:
-        model_config.stylize_config["1"]["length"] = min(
-            model_config.stylize_config["1"]["length"] - frame_offset, length
+    project_setting.stylize_config["0"]["length"] = min(
+        project_setting.stylize_config["0"]["length"] - frame_offset, length
+    )
+    if "1" in project_setting.stylize_config:
+        project_setting.stylize_config["1"]["length"] = min(
+            project_setting.stylize_config["1"]["length"] - frame_offset, length
         )
 
     if frame_offset > 0:
         # controlnet
-        org_controlnet_img_dir = data_dir.joinpath(model_config.controlnet_map["input_image_dir"])
+        org_controlnet_img_dir = data_dir.joinpath(project_setting.controlnet_map["input_image_dir"])
         new_controlnet_img_dir = org_controlnet_img_dir.parent / "00_tmp_controlnet_image"
         if new_controlnet_img_dir.is_dir():
             shutil.rmtree(new_controlnet_img_dir)
@@ -530,7 +512,7 @@ def generate(
             if src_dir.is_dir():
                 dst_dir.mkdir(parents=True, exist_ok=True)
 
-                frame_length = model_config.stylize_config["0"]["length"]
+                frame_length = project_setting.stylize_config["0"]["length"]
 
                 src_imgs = sorted(glob.glob(os.path.join(src_dir, "[0-9]*.png"), recursive=False))
                 for img in src_imgs:
@@ -539,7 +521,7 @@ def generate(
                         dst_img_path = dst_dir.joinpath(f"{n - frame_offset:08d}.png")
                         shutil.copy(img, dst_img_path)
         # img2img
-        org_img2img_img_dir = data_dir.joinpath(model_config.img2img_map["init_img_dir"])
+        org_img2img_img_dir = data_dir.joinpath(project_setting.img2img_map["init_img_dir"])
         new_img2img_img_dir = org_img2img_img_dir.parent / "00_tmp_init_img_dir"
         if new_img2img_img_dir.is_dir():
             shutil.rmtree(new_img2img_img_dir)
@@ -550,7 +532,7 @@ def generate(
         if src_dir.is_dir():
             dst_dir.mkdir(parents=True, exist_ok=True)
 
-            frame_length = model_config.stylize_config["0"]["length"]
+            frame_length = project_setting.stylize_config["0"]["length"]
 
             src_imgs = sorted(glob.glob(os.path.join(src_dir, "[0-9]*.png"), recursive=False))
             for img in src_imgs:
@@ -560,28 +542,28 @@ def generate(
                     shutil.copy(img, dst_img_path)
 
         new_prompt_map = {}
-        for p in model_config.prompt_map:
+        for p in project_setting.prompt_map:
             n = int(p)
             if n in range(frame_offset, frame_offset + frame_length):
-                new_prompt_map[str(n - frame_offset)] = model_config.prompt_map[p]
+                new_prompt_map[str(n - frame_offset)] = project_setting.prompt_map[p]
 
-        model_config.prompt_map = new_prompt_map
+        project_setting.prompt_map = new_prompt_map
 
-        model_config.controlnet_map["input_image_dir"] = os.path.relpath(new_controlnet_img_dir.absolute(), data_dir)
-        model_config.img2img_map["init_img_dir"] = os.path.relpath(new_img2img_img_dir.absolute(), data_dir)
+        project_setting.controlnet_map["input_image_dir"] = os.path.relpath(new_controlnet_img_dir.absolute(), data_dir)
+        project_setting.img2img_map["init_img_dir"] = os.path.relpath(new_img2img_img_dir.absolute(), data_dir)
 
         tmp_config_path = project_dir.joinpath("prompt_tmp.json")
-        tmp_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+        tmp_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
         config_org = tmp_config_path
 
     output_0_dir = generate(
         config_path=config_org,
-        width=model_config.stylize_config["0"]["width"],
-        height=model_config.stylize_config["0"]["height"],
-        length=model_config.stylize_config["0"]["length"],
-        context=model_config.stylize_config["0"]["context"],
-        overlap=model_config.stylize_config["0"]["overlap"],
-        stride=model_config.stylize_config["0"]["stride"],
+        width=project_setting.stylize_config["0"]["width"],
+        height=project_setting.stylize_config["0"]["height"],
+        length=project_setting.stylize_config["0"]["length"],
+        context=project_setting.stylize_config["0"]["context"],
+        overlap=project_setting.stylize_config["0"]["overlap"],
+        stride=project_setting.stylize_config["0"]["stride"],
         out_dir=project_dir / "draft",
     )
 
@@ -589,7 +571,7 @@ def generate(
 
     # output_0_dir = output_0_dir.rename(output_0_dir.parent / f"{time_str}_{0:02d}")
 
-    if "1" not in model_config.stylize_config:
+    if "1" not in project_setting.stylize_config:
         logger.info(f"Stylized results are output to {output_0_dir}")
         return
 
@@ -598,8 +580,8 @@ def generate(
     output_0_img_dir = glob.glob(os.path.join(output_0_dir, "00-frames"), recursive=False)[0]
 
     interpolation_multiplier = 1
-    if "interpolation_multiplier" in model_config.stylize_config["1"]:
-        interpolation_multiplier = model_config.stylize_config["1"]["interpolation_multiplier"]
+    if "interpolation_multiplier" in project_setting.stylize_config["1"]:
+        interpolation_multiplier = project_setting.stylize_config["1"]["interpolation_multiplier"]
 
     if interpolation_multiplier > 1:
         from animatediff.rife.rife import rife_interpolate
@@ -610,13 +592,14 @@ def generate(
         rife_img_dir.mkdir(parents=True, exist_ok=True)
 
         rife_interpolate(output_0_img_dir, rife_img_dir, interpolation_multiplier)
-        model_config.stylize_config["1"]["length"] *= interpolation_multiplier
+        project_setting.stylize_config["1"]["length"] *= interpolation_multiplier
 
-        if model_config.output:
-            model_config.output["fps"] *= interpolation_multiplier
-        if model_config.prompt_map:
-            model_config.prompt_map = {
-                str(int(i) * interpolation_multiplier): model_config.prompt_map[i] for i in model_config.prompt_map
+        if project_setting.output:
+            project_setting.output["fps"] *= interpolation_multiplier
+        if project_setting.prompt_map:
+            project_setting.prompt_map = {
+                str(int(i) * interpolation_multiplier): project_setting.prompt_map[i]
+                for i in project_setting.prompt_map
             }
 
         output_0_img_dir = rife_img_dir
@@ -644,9 +627,9 @@ def generate(
         c_dir = controlnet_img_dir.joinpath(c)
         c_dir.mkdir(parents=True, exist_ok=True)
 
-    ip2p_for_upscale = model_config.stylize_config["1"]["controlnet_ip2p"]["enable"]
-    ip_adapter_for_upscale = model_config.stylize_config["1"]["ip_adapter"]
-    ref_for_upscale = model_config.stylize_config["1"]["reference"]
+    ip2p_for_upscale = project_setting.stylize_config["1"]["controlnet_ip2p"]["enable"]
+    ip_adapter_for_upscale = project_setting.stylize_config["1"]["ip_adapter"]
+    ref_for_upscale = project_setting.stylize_config["1"]["reference"]
 
     shutil.copytree(output_0_img_dir, controlnet_img_dir.joinpath("controlnet_tile"), dirs_exist_ok=True)
     if ip2p_for_upscale:
@@ -658,46 +641,48 @@ def generate(
 
     shutil.copytree(controlnet_img_dir.joinpath("controlnet_tile"), img2img_dir, dirs_exist_ok=True)
 
-    model_config.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
+    project_setting.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
 
-    model_config.controlnet_map["controlnet_tile"] = model_config.stylize_config["1"]["controlnet_tile"]
-    model_config.controlnet_map["controlnet_ip2p"] = model_config.stylize_config["1"]["controlnet_ip2p"]
+    project_setting.controlnet_map["controlnet_tile"] = project_setting.stylize_config["1"]["controlnet_tile"]
+    project_setting.controlnet_map["controlnet_ip2p"] = project_setting.stylize_config["1"]["controlnet_ip2p"]
 
-    if "controlnet_ref" in model_config.controlnet_map:
-        model_config.controlnet_map["controlnet_ref"]["enable"] = ref_for_upscale
+    if "controlnet_ref" in project_setting.controlnet_map:
+        project_setting.controlnet_map["controlnet_ref"]["enable"] = ref_for_upscale
 
-    model_config.ip_adapter_map["enable"] = ip_adapter_for_upscale
-    for r in model_config.region_map:
-        reg = model_config.region_map[r]
+    project_setting.ip_adapter_map["enable"] = ip_adapter_for_upscale
+    for r in project_setting.region_map:
+        reg = project_setting.region_map[r]
         if "condition" in reg:
             if "ip_adapter_map" in reg["condition"]:
                 reg["condition"]["ip_adapter_map"]["enable"] = ip_adapter_for_upscale
 
-    model_config.steps = (
-        model_config.stylize_config["1"]["steps"] if "steps" in model_config.stylize_config["1"] else model_config.steps
+    project_setting.steps = (
+        project_setting.stylize_config["1"]["steps"]
+        if "steps" in project_setting.stylize_config["1"]
+        else project_setting.steps
     )
-    model_config.guidance_scale = (
-        model_config.stylize_config["1"]["guidance_scale"]
-        if "guidance_scale" in model_config.stylize_config["1"]
-        else model_config.guidance_scale
+    project_setting.guidance_scale = (
+        project_setting.stylize_config["1"]["guidance_scale"]
+        if "guidance_scale" in project_setting.stylize_config["1"]
+        else project_setting.guidance_scale
     )
 
-    model_config.img2img_map["enable"] = model_config.stylize_config["1"]["img2img"]
+    project_setting.img2img_map["enable"] = project_setting.stylize_config["1"]["img2img"]
 
-    if model_config.img2img_map["enable"]:
-        model_config.img2img_map["init_img_dir"] = os.path.relpath(Path(output_0_img_dir).absolute(), data_dir)
+    if project_setting.img2img_map["enable"]:
+        project_setting.img2img_map["init_img_dir"] = os.path.relpath(Path(output_0_img_dir).absolute(), data_dir)
 
     save_config_path = stylize_dir.joinpath("prompt_01.json")
-    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+    save_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
     output_1_dir = generate(
         config_path=save_config_path,
-        width=model_config.stylize_config["1"]["width"],
-        height=model_config.stylize_config["1"]["height"],
-        length=model_config.stylize_config["1"]["length"],
-        context=model_config.stylize_config["1"]["context"],
-        overlap=model_config.stylize_config["1"]["overlap"],
-        stride=model_config.stylize_config["1"]["stride"],
+        width=project_setting.stylize_config["1"]["width"],
+        height=project_setting.stylize_config["1"]["height"],
+        length=project_setting.stylize_config["1"]["length"],
+        context=project_setting.stylize_config["1"]["context"],
+        overlap=project_setting.stylize_config["1"]["overlap"],
+        stride=project_setting.stylize_config["1"]["stride"],
         out_dir=stylize_dir,
     )
 
@@ -741,7 +726,7 @@ def interpolate(
 
     config_org = frame_dir.parent.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_model_config(config_org)
+    model_config: ModelConfig = get_project_setting(config_org)
 
     if "original_video" in model_config.stylize_config:
         org_video = Path(model_config.stylize_config["original_video"]["path"])
@@ -1013,7 +998,7 @@ def create_mask(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_model_config(config_org)
+    model_config: ModelConfig = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"
@@ -1311,7 +1296,7 @@ def composite(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_model_config(config_org)
+    model_config: ModelConfig = get_project_setting(config_org)
 
     composite_config = {}
     if "composite" in model_config.stylize_config:
@@ -1588,7 +1573,7 @@ def create_region(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_model_config(config_org)
+    model_config: ModelConfig = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"
