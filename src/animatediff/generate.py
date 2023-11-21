@@ -372,11 +372,11 @@ def create_default_preprocessor(type_str):
     return create_preprocessor_from_name(pre_type)
 
 
-def get_preprocessor(type_str, device_str, preprocessor_map):
+def get_preprocessor(type_str, device_str, preprocessor_map: TPreprocessor):
     if type_str in controlnet_preprocessor:
         return controlnet_preprocessor[type_str]
     if preprocessor_map:
-        controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map["type"])
+        controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map.type)
 
     if type_str not in controlnet_preprocessor:
         controlnet_preprocessor[type_str] = create_default_preprocessor(type_str)
@@ -394,7 +394,7 @@ def get_preprocessor(type_str, device_str, preprocessor_map):
 
 def clear_controlnet_preprocessor(type_str=None):
     global controlnet_preprocessor
-    if type_str == None:
+    if type_str is None:
         for t in controlnet_preprocessor:
             controlnet_preprocessor[t] = None
         controlnet_preprocessor = {}
@@ -405,12 +405,12 @@ def clear_controlnet_preprocessor(type_str=None):
 
 
 def create_pipeline_sdxl(
-    base_model: Union[str, PathLike],
-    model_config: ModelConfig,
-    infer_config: InferenceConfig,
-    use_xformers: bool = True,
-    video_length: int = 16,
-    motion_module_path=...,
+        base_model: Union[str, PathLike],
+        model_config: ModelConfig,
+        infer_config: InferenceConfig,
+        use_xformers: bool = True,
+        video_length: int = 16,
+        motion_module_path=...,
 ) -> AnimationPipeline:
     # TODO: cast bug, remove this when fixed
     from animatediff.pipelines.sdxl_animation import AnimationPipeline
@@ -551,12 +551,12 @@ def create_pipeline_sdxl(
 
 
 def create_pipeline(
-    base_model: Union[str, PathLike],
-    project_setting: TProjectSetting,
-    infer_config: InferenceConfig,
-    use_xformers: bool = True,
-    video_length: int = 16,
-    is_sdxl: bool = False,
+        base_model: Union[str, PathLike],
+        project_setting: TProjectSetting,
+        infer_config: InferenceConfig,
+        use_xformers: bool = True,
+        video_length: int = 16,
+        is_sdxl: bool = False,
 ) -> AnimationPipeline:
     """Create an AnimationPipeline from a pretrained model.
     Uses the base_model argument to load or download the pretrained reference pipeline model.
@@ -687,17 +687,17 @@ def create_pipeline(
 
 
 def load_controlnet_models(
-    project_dir: Path, pipe: AnimationPipeline, project_setting: TProjectSetting, is_sdxl: bool = False
+        project_dir: Path, pipe: AnimationPipeline, project_setting: TProjectSetting, is_sdxl: bool = False
 ):
-    # controlnet
     controlnet_map = {}
     c_image_dir = project_dir / project_setting.controlnet_map.input_image_dir
+    print("--->", c_image_dir)
     for c, cn in project_setting.controlnet_map.controlnets:
         if not cn.enable:
             continue
         if not is_valid_controlnet_type(c, is_sdxl):
             continue
-        img_dir = c_image_dir.joinpath(c)
+        img_dir = c_image_dir / c
         cond_imgs = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
         if not cond_imgs:
             continue
@@ -718,13 +718,13 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 
 
 def create_us_pipeline(
-    model_config: ModelConfig,
-    infer_config: InferenceConfig,
-    use_xformers: bool = True,
-    use_controlnet_ref: bool = False,
-    use_controlnet_tile: bool = False,
-    use_controlnet_line_anime: bool = False,
-    use_controlnet_ip2p: bool = False,
+        model_config: ModelConfig,
+        infer_config: InferenceConfig,
+        use_xformers: bool = True,
+        use_controlnet_ref: bool = False,
+        use_controlnet_tile: bool = False,
+        use_controlnet_line_anime: bool = False,
+        use_controlnet_ip2p: bool = False,
 ) -> DiffusionPipeline:
     # set up scheduler
     sched_kwargs = infer_config.noise_scheduler_kwargs
@@ -840,19 +840,19 @@ def seed_everything(seed):
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed % (2**32))
+    np.random.seed(seed % (2 ** 32))
     random.seed(seed)
 
 
 def controlnet_preprocess(
-    project_dir: Path,
-    out_dir: Path,
-    controlnet_map: TControlnetMap,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    device_str: Optional[str] = None,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        out_dir: Path,
+        controlnet_map: TControlnetMap,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        device_str: Optional[str] = None,
+        is_sdxl: bool = False,
 ):
     controlnet_image_map = defaultdict(dict)
 
@@ -915,7 +915,6 @@ def controlnet_preprocess(
             img = get_resized_image2(img_path, 512)
             param = preprocessor_map.param
             preprocessed_img = get_preprocessor(cn_name, device_str, preprocessor_map)(img, **param)
-            raise
             controlnet_image_map[frame_no][cn_name] = preprocessed_img
             preprocessed_img.save(cache_image_path)
 
@@ -971,13 +970,13 @@ def controlnet_preprocess(
 
 
 def ip_adapter_preprocess(
-    project_dir: Path,
-    out_dir: Path,
-    ip_adapter_config_map: TIPAdapterMap,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        out_dir: Path,
+        ip_adapter_config_map: TIPAdapterMap,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        is_sdxl: bool = False,
 ):
     ip_adapter_map = {}
     if not ip_adapter_config_map.enable:
@@ -1026,11 +1025,11 @@ def ip_adapter_preprocess(
 
 
 def prompt_preprocess(
-    prompt_config_map: Dict[str, Any],
-    head_prompt: str,
-    tail_prompt: str,
-    prompt_fixed_ratio: float,
-    video_length: int,
+        prompt_config_map: Dict[str, Any],
+        head_prompt: str,
+        tail_prompt: str,
+        prompt_fixed_ratio: float,
+        video_length: int,
 ):
     prompt_map = {}
     for k in prompt_config_map.keys():
@@ -1056,14 +1055,14 @@ def prompt_preprocess(
 
 
 def region_preprocess(
-    project_dir: Path,
-    out_dir: Path,
-    project_setting: TProjectSetting,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    is_init_img_exist: bool = False,
-    is_sdxl: bool = False,
+        project_dir: Path,
+        out_dir: Path,
+        project_setting: TProjectSetting,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        is_init_img_exist: bool = False,
+        is_sdxl: bool = False,
 ):
     is_bg_init_img = False
     if is_init_img_exist:
@@ -1168,21 +1167,11 @@ def region_preprocess(
 
     if prev_ip_map is not None:
         ip_adapter_config_map = {}
-        ip_adapter_config_map["scale"] = project_setting.ip_adapter_map["scale"]
-        ip_adapter_config_map["is_plus"] = project_setting.ip_adapter_map["is_plus"]
-        ip_adapter_config_map["is_plus_face"] = (
-            project_setting.ip_adapter_map["is_plus_face"]
-            if "is_plus_face" in project_setting.ip_adapter_map
-            else False
-        )
-        ip_adapter_config_map["is_light"] = (
-            project_setting.ip_adapter_map["is_light"] if "is_light" in project_setting.ip_adapter_map else False
-        )
-        ip_adapter_config_map["is_full_face"] = (
-            project_setting.ip_adapter_map["is_full_face"]
-            if "is_full_face" in project_setting.ip_adapter_map
-            else False
-        )
+        ip_adapter_config_map["scale"] = project_setting.ip_adapter_map.scale
+        ip_adapter_config_map["is_plus"] = project_setting.ip_adapter_map.is_plus
+        ip_adapter_config_map["is_plus_face"] = project_setting.ip_adapter_map.is_plus_face
+        ip_adapter_config_map["is_light"] = project_setting.ip_adapter_map.is_light
+        ip_adapter_config_map["is_full_face"] = project_setting.ip_adapter_map.is_full_face
         for c in region_condi_list:
             if c["ip_adapter_map"] == None:
                 logger.info("fill map")
@@ -1198,12 +1187,12 @@ def region_preprocess(
 
 
 def img2img_preprocess(
-    project_dir: Path,
-    out_dir: Path,
-    img2img_config_map: TImg2imgMap,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
+        project_dir: Path,
+        out_dir: Path,
+        img2img_config_map: TImg2imgMap,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
 ):
     img2img_map = {}
 
@@ -1235,12 +1224,12 @@ def img2img_preprocess(
 
 
 def mask_preprocess(
-    project_dir: Path,
-    region_config_map: Optional[Dict[str, Any]] = None,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    out_dir: PathLike = ...,
+        project_dir: Path,
+        region_config_map: Optional[Dict[str, Any]] = None,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        out_dir: PathLike = ...,
 ):
     mask_map = {}
 
@@ -1285,7 +1274,7 @@ def mask_preprocess(
 
 
 def wild_card_conversion(
-    model_config: ModelConfig,
+        model_config: ModelConfig,
 ):
     from animatediff.utils.wild_card import replace_wild_card
 
@@ -1319,96 +1308,68 @@ def wild_card_conversion(
 
 
 def save_output(
-    pipeline_output,
-    frame_dir: PathLike,
-    out_file: PathLike,
-    output_map=None,
-    no_frames: bool = False,
-    save_frames=save_frames,
-    save_video=None,
+        pipeline_output,
+        frame_dir: Path,
+        out_file: Path,
+        output_map: TOutput,
+        no_frames: bool = False,
+        save_frames=save_frames,
+        save_video=None,
 ):
-    if output_map is None:
-        output_map = {}
-    output_format = "gif"
-    output_fps = 8
-    if output_map:
-        output_format = output_map["format"] if "format" in output_map else output_format
-        output_fps = output_map["fps"] if "fps" in output_map else output_fps
-        if output_format == "mp4":
-            output_format = "h264"
+    output_format = "h264" if output_map.format == "mp4" else "h2654"
+    output_fps = output_map.fps
+    if save_frames:
+        save_frames(pipeline_output, frame_dir)
 
-    if output_format == "gif":
-        out_file = out_file.with_suffix(".gif")
-        if no_frames is not True:
-            if save_frames:
-                save_frames(pipeline_output, frame_dir)
+    from animatediff.rife.ffmpeg import FfmpegEncoder, codec_extn
 
-            # generate the output filename and save the video
-            if save_video:
-                save_video(pipeline_output, out_file, output_fps)
-            else:
-                pipeline_output[0].save(
-                    fp=out_file,
-                    format="GIF",
-                    append_images=pipeline_output[1:],
-                    save_all=True,
-                    duration=(1 / output_fps * 1000),
-                    loop=0,
-                )
+    out_file = out_file.with_suffix(f".{codec_extn(output_format)}")
 
-    else:
-        if save_frames:
-            save_frames(pipeline_output, frame_dir)
-
-        from animatediff.rife.ffmpeg import FfmpegEncoder, codec_extn
-
-        out_file = out_file.with_suffix(f".{codec_extn(output_format)}")
-
-        logger.info("Creating ffmpeg encoder...")
-        encoder = FfmpegEncoder(
-            frames_dir=frame_dir,
-            out_file=out_file,
-            codec=output_format,
-            in_fps=output_fps,
-            out_fps=output_fps,
-            lossless=False,
-            param=output_map["encode_param"] if "encode_param" in output_map else {},
-        )
-        logger.info("Encoding interpolated frames with ffmpeg...")
-        result = encoder.encode()
-        logger.debug(f"ffmpeg result: {result}")
+    logger.info("Creating ffmpeg encoder...")
+    encoder = FfmpegEncoder(
+        frames_dir=frame_dir,
+        out_file=out_file,
+        codec=output_format,
+        in_fps=output_fps,
+        out_fps=output_fps,
+        lossless=False,
+        param=output_map.encode_param.model_dump(),
+    )
+    logger.info("Encoding interpolated frames with ffmpeg...")
+    result = encoder.encode()
+    logger.debug(f"ffmpeg result: {result}")
 
 
 def run_inference(
-    pipeline: AnimationPipeline,
-    n_prompt: str = ...,
-    seed: int = -1,
-    steps: int = 25,
-    guidance_scale: float = 7.5,
-    unet_batch_size: int = 1,
-    width: int = 512,
-    height: int = 512,
-    duration: int = 16,
-    idx: int = 0,
-    out_dir: PathLike = ...,
-    context_frames: int = -1,
-    context_stride: int = 3,
-    context_overlap: int = 4,
-    context_schedule: str = "uniform",
-    clip_skip: int = 1,
-    controlnet_map: TControlnetMap = None,
-    controlnet_image_map: Optional[Dict[str, Any]] = None,
-    controlnet_type_map: Optional[Dict[str, Any]] = None,
-    controlnet_ref_map: Optional[Dict[str, Any]] = None,
-    no_frames: bool = False,
-    img2img_map: Optional[Dict[str, Any]] = None,
-    ip_adapter_config_map: Optional[Dict[str, Any]] = None,
-    region_list: Optional[List[Any]] = None,
-    region_condi_list: Optional[List[Any]] = None,
-    output_map: TOutput = None,
-    is_single_prompt_mode: bool = False,
-    is_sdxl: bool = False,
-    apply_lcm_lora: bool = False,
+        pipeline: AnimationPipeline,
+        n_prompt: str = ...,
+        seed: int = -1,
+        steps: int = 25,
+        guidance_scale: float = 7.5,
+        unet_batch_size: int = 1,
+        width: int = 512,
+        height: int = 512,
+        duration: int = 16,
+        idx: int = 0,
+        out_dir: PathLike = ...,
+        context_frames: int = -1,
+        context_stride: int = 3,
+        context_overlap: int = 4,
+        context_schedule: str = "uniform",
+        clip_skip: int = 1,
+        controlnet_map: TControlnetMap = None,
+        controlnet_image_map: Optional[Dict[str, Any]] = None,
+        controlnet_type_map: Optional[Dict[str, Any]] = None,
+        controlnet_ref_map: Optional[Dict[str, Any]] = None,
+        no_frames: bool = False,
+        img2img_map: Optional[Dict[str, Any]] = None,
+        ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+        region_list: Optional[List[Any]] = None,
+        region_condi_list: Optional[List[Any]] = None,
+        output_map: TOutput = None,
+        is_single_prompt_mode: bool = False,
+        is_sdxl: bool = False,
+        apply_lcm_lora: bool = False,
 ):
     out_dir = Path(out_dir)  # ensure out_dir is a Path
 
@@ -1467,7 +1428,7 @@ def run_inference(
         is_single_prompt_mode=is_single_prompt_mode,
         apply_lcm_lora=apply_lcm_lora,
         callback=callback,
-        callback_steps=output_map.get("preview_steps"),
+        callback_steps=output_map.preview_steps,
     )
     logger.info("Generation complete, saving...")
 
@@ -1478,26 +1439,26 @@ def run_inference(
 
 
 def run_upscale(
-    project_dir: Path,
-    project_setting: TProjectSetting,
-    org_imgs: List[str],
-    pipeline: AnimationPipeline,
-    prompt_map: Optional[Dict[int, str]] = None,
-    n_prompt: str = ...,
-    seed: int = -1,
-    steps: int = 25,
-    strength: float = 0.5,
-    guidance_scale: float = 7.5,
-    clip_skip: int = 1,
-    us_width: int = 512,
-    us_height: int = 512,
-    idx: int = 0,
-    out_dir: Path = ...,
-    use_controlnet_ref: bool = False,
-    use_controlnet_tile: bool = False,
-    use_controlnet_line_anime: bool = False,
-    use_controlnet_ip2p: bool = False,
-    no_frames: bool = False,
+        project_dir: Path,
+        project_setting: TProjectSetting,
+        org_imgs: List[str],
+        pipeline: AnimationPipeline,
+        prompt_map: Optional[Dict[int, str]] = None,
+        n_prompt: str = ...,
+        seed: int = -1,
+        steps: int = 25,
+        strength: float = 0.5,
+        guidance_scale: float = 7.5,
+        clip_skip: int = 1,
+        us_width: int = 512,
+        us_height: int = 512,
+        idx: int = 0,
+        out_dir: Path = ...,
+        use_controlnet_ref: bool = False,
+        use_controlnet_tile: bool = False,
+        use_controlnet_line_anime: bool = False,
+        use_controlnet_ip2p: bool = False,
+        no_frames: bool = False,
 ):
     upscale_config: TUpscaleConfig = project_setting.upscale_config
     output_map = project_setting.output
@@ -1543,8 +1504,8 @@ def run_upscale(
     ref_image = None
     if use_controlnet_ref:
         if (
-            not upscale_config.controlnet_ref.use_frame_as_ref_image
-            and not upscale_config.controlnet_ref.use_1st_frame_as_ref_image
+                not upscale_config.controlnet_ref.use_frame_as_ref_image
+                and not upscale_config.controlnet_ref.use_1st_frame_as_ref_image
         ):
             ref_image = get_resized_images(
                 [project_dir / upscale_config.controlnet_ref.ref_image], us_width, us_height

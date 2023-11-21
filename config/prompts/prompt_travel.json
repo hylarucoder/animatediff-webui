@@ -30,7 +30,7 @@
   },
   "ip_adapter_map": {
     "enable": true,
-    "input_image_dir": "ip_adapter_image/test",
+    "input_image_dir": "./00_ip_adapter",
     "prompt_fixed_ratio": 0.5,
     "save_input_image": true,
     "resized_to_square": false,
@@ -40,7 +40,7 @@
     "is_light": false
   },
   "controlnet_map": {
-    "input_image_dir": "controlnet_image/test",
+    "input_image_dir": "./00_controlnet",
     "max_samples_on_vram": 200,
     "max_models_on_vram": 3,
     "save_detectmap": true,
@@ -363,7 +363,7 @@
     }
   },
   "output": {
-    "format": "gif",
+    "format": "mp4",
     "fps": 8,
     "encode_param": {
       "crf": 10

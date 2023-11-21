@@ -314,6 +314,7 @@ class TEncodeParam(BaseModel):
 
 
 class TOutput(BaseModel):
+    preview_steps: list[int] = pt.Field(default_factory=lambda: [10])
     format: str = "mp4"
     fps: int = 8
     encode_param: TEncodeParam = pt.Field(default_factory=lambda: TEncodeParam())
