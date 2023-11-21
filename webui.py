@@ -1,3 +1,4 @@
+import json
 import os
 
 import gradio as gr
@@ -14,7 +15,7 @@ from animatediff.utils.util import read_json
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 BLANK_PLACEHOLDER = "---"
@@ -46,12 +47,13 @@ class Preset(pt.BaseModel):
     checkpoint: str = "majicmixRealistic_v7.safetensors"
     loras: list[list] = pt.Field(default_factory=lambda: lora_arr)
     motion: str = "mm_sd_v15_v2.ckpt"
-    motion_lora: list = pt.Field(default_factory=list)
+    motion_lora: str | None = None
 
     fps: int = 8
     duration: int = 4
     seed: int = -1
 
+    lcm: bool = False
     sampler: str = "k_dpmpp_sde"
     step: int = 20
     cfg: float = 7
@@ -66,9 +68,19 @@ preset_lcm = Preset(
     aspect_radio="768x432 | 16:9",
 )
 
+preset_color = Preset(
+    name="lcm + motion-lora + color fashion",
+    performance="Extreme Speed",
+    head_prompt="masterpiece,best quality, 1girl, walk,",
+    tail_prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
+    lcm=True,
+)
+preset_color.loras[0] = ["釉彩·麻袋调色盘_v1.0.safetensors", 0.8]
+
 presets = [
     preset_default,
     preset_lcm,
+    preset_color,
 ]
 
 
@@ -97,11 +109,9 @@ controlnets = [
     # "controlnet_ref",
 ]
 
+
 # open(project_setting.project_dir / "prompts.json", "wt").write(json.dumps(prompt_tmpl, indent=2))
 # subprocess.Popen(f'start cmd /k call {project_dir}/gen_preview.bat', shell=True)
-
-
-global_config = ModelConfig(**read_json(path_mgr.demo_prompt_json))
 
 
 def render_ui():
@@ -267,7 +277,7 @@ def render_ui():
                         autofocus=True,
                         lines=3,
                     )
-                    ip_head_prompt = gr.Textbox(
+                    ip_tail_prompt = gr.Textbox(
                         label="Tail Prompt",
                         placeholder="Type prompt here.",
                         autofocus=True,
@@ -327,7 +337,7 @@ def render_ui():
                     )
                 with gr.Row():
                     with gr.Group():
-                        lora_ctrls = []
+                        ip_lora_items = []
                         # TODO: refresh state
                         for i in range(5):
                             with gr.Row():
@@ -347,31 +357,37 @@ def render_ui():
                                     value=0.7,
                                 )
 
-                                lora_ctrls += [lora_model, lora_weight]
-
-                with gr.Row():
-                    model_refresh = gr.Button(
-                        value="\U0001f504 Refresh All Files",
-                        variant="secondary",
-                    )
+                                ip_lora_items += [lora_model, lora_weight]
 
             with gr.Tab(label="Setting"):
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
-    def track_tqdm(
-        project,
-        performance,
-        seed,
-        checkpoint,
-        motion,
-        data=None,
-        progress=gr.Progress(
-            track_tqdm=True,
-        ),
+    def fn_generate(
+            project,
+            performance,
+            aspect_radio,
+            head_prompt,
+            tail_prompt,
+            negative_prompt,
+            fps,
+            duration,
+            seed,
+            checkpoint,
+            motion,
+            motion_loras,
+            *lora_items,
+            data=None,
+            progress=gr.Progress(
+                track_tqdm=True,
+            ),
     ):
+        project_dir = path_mgr.projects / project
+        global_config = ModelConfig(**read_json(path_mgr.demo_prompt_json))
+        project_dir.mkdir(exist_ok=True)
         pgr.set_pgr(progress)
         pgr(1, desc="Step 01/08: Apply Configuration...")
         if performance == "Speed":
+            # 感觉要重写
             global_config.lcm_lora_scale = 1
             global_config.apply_lcm_lora = False
             global_config.steps = 20
@@ -387,19 +403,27 @@ def render_ui():
             global_config.steps = 8
             global_config.guidance_scale = 1.8
 
-        # global_config.lora_map = {lora[0]: lora[1] for lora in group_by_n(loras, 2) if lora[0] != BLANK_PLACEHOLDER}
+        global_config.head_prompt = head_prompt
+        global_config.tail_prompt = tail_prompt
+        global_config.n_prompt = [negative_prompt]
 
-        global_config.seed = seed
+        global_config.lora_map = {lora[0]: lora[1] for lora in group_by_n(lora_items, 2) if
+                                  lora[0] != BLANK_PLACEHOLDER}
+
+        global_config.seed = [seed]
         global_config.checkpoint = checkpoint
         global_config.motion = motion
+        global_config.motion_lora_map = {}
+        open(project_dir / "prompts.json", "wt").write(global_config.model_dump_json(indent=2))
+
         from animatediff.cli import generate
 
         save_dir = generate(
-            config_path=path_mgr.projects / project / "prompts.json",
+            config_path=project_dir / "prompts.json",
             width=432,
             height=768,
-            # TODO: length
-            length=64,
+            length=fps * duration,
+            # TODO: check something
             context=16,
             overlap=16 // 4,
             stride=0,
@@ -407,7 +431,7 @@ def render_ui():
             device=get_torch_device(),
             use_xformers=False,
             force_half_vae=False,
-            out_dir=path_mgr.projects / project / "draft",
+            out_dir=project_dir / "draft",
             no_frames=False,
             save_merged=False,
         )
@@ -421,14 +445,21 @@ def render_ui():
             generate_button,
         ],
     ).then(
-        track_tqdm,
+        fn_generate,
         inputs=[
             ip_project,
             ip_performance,
+            ip_aspect_radio,
+            ip_head_prompt,
+            ip_tail_prompt,
+            ip_negative_prompt,
+            ip_fps,
+            ip_duration,
             ip_seed,
             ip_checkpoint,
             ip_motion,
-            # *lora_ctrls,
+            ip_motion_loras,
+            *ip_lora_items,
         ],
         outputs=[preview_video],
     ).then(
@@ -441,50 +472,52 @@ def render_ui():
     )
 
     def apply_preset(
-        preset_name,
+            preset_name,
     ):
         preset = next((_ for _ in presets if _.name == preset_name), None)
+        loras_gr = []
+        for lora in preset.loras:
+            loras_gr.append(
+                gr.update(value=lora[0])
+            )
+            loras_gr.append(
+                gr.update(value=lora[1])
+            )
         return (
             gr.update(
                 value=preset.performance,
-                interactive=True,
             ),
             gr.update(
                 value=preset.aspect_radio,
-                interactive=True,
             ),
             gr.update(
                 value=preset.head_prompt,
-                interactive=True,
+            ),
+            gr.update(
+                value=preset.tail_prompt,
             ),
             gr.update(
                 value=preset.negative_prompt,
-                interactive=True,
             ),
             gr.update(
                 value=preset.fps,
-                interactive=True,
             ),
             gr.update(
                 value=preset.duration,
-                interactive=True,
             ),
             gr.update(
                 value=preset.seed,
-                interactive=True,
             ),
             gr.update(
                 value=preset.checkpoint,
-                interactive=True,
             ),
             gr.update(
                 value=preset.motion,
-                interactive=True,
             ),
             gr.update(
                 value=preset.motion_lora,
-                interactive=True,
             ),
+            *loras_gr
         )
 
     ip_preset.change(
@@ -496,6 +529,7 @@ def render_ui():
             ip_performance,
             ip_aspect_radio,
             ip_head_prompt,
+            ip_tail_prompt,
             ip_negative_prompt,
             ip_fps,
             ip_duration,
@@ -503,21 +537,22 @@ def render_ui():
             ip_checkpoint,
             ip_motion,
             ip_motion_loras,
+            *ip_lora_items,
         ],
     )
 
 
 with gr.Blocks(
-    title="Animatediff WebUI",
-    css="""
+        title="Animatediff WebUI",
+        css="""
         video {
             height: 504px !important;
         }
         """,
-    theme=gr.themes.Default(
-        spacing_size="sm",
-        text_size="sm",
-    ),
+        theme=gr.themes.Default(
+            spacing_size="sm",
+            text_size="sm",
+        ),
 ) as demo:
     render_ui()
 
