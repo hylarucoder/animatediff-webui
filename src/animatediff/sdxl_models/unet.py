@@ -50,10 +50,11 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 @dataclass
 class UNet3DConditionOutput(BaseOutput):
-    """
-    The output of [`UNet3DConditionModel`].
+
+    """The output of [`UNet3DConditionModel`].
 
     Args:
+    ----
         sample (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
             The hidden states output conditioned on `encoder_hidden_states` input. Output of last layer of model.
     """
@@ -62,14 +63,15 @@ class UNet3DConditionOutput(BaseOutput):
 
 
 class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin):
-    r"""
-    A conditional 3D UNet model that takes a noisy sample, conditional state, and a timestep and returns a sample
+
+    r"""A conditional 3D UNet model that takes a noisy sample, conditional state, and a timestep and returns a sample
     shaped output.
 
     This model inherits from [`ModelMixin`]. Check the superclass documentation for it's generic methods implemented
     for all models (such as downloading or saving).
 
-    Parameters:
+    Parameters
+    ----------
         sample_size (`int` or `Tuple[int, int]`, *optional*, defaults to `None`):
             Height and width of input/output sample.
         in_channels (`int`, *optional*, defaults to 4): Number of channels in the input sample.
@@ -610,17 +612,16 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
     @property
     def attn_processors(self) -> Dict[str, AttentionProcessor]:
-        r"""
-        Returns:
-            `dict` of attention processors: A dictionary containing all attention processors used in the model with
-            indexed by its weight name.
+        r"""Returns
+        `dict` of attention processors: A dictionary containing all attention processors used in the model with
+        indexed by its weight name.
         """
         # set recursively
         processors = {}
 
         def fn_recursive_add_processors(name: str, module: torch.nn.Module, processors: Dict[str, AttentionProcessor]):
             if hasattr(module, "set_processor"):
-                if not "motion_modules." in name:
+                if "motion_modules." not in name:
                     processors[f"{name}.processor"] = module.processor
 
             for sub_name, child in module.named_children():
@@ -636,10 +637,10 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
     def set_attn_processor(
         self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]], is_motion_module=False
     ):
-        r"""
-        Sets the attention processor to use to compute attention.
+        r"""Sets the attention processor to use to compute attention.
 
-        Parameters:
+        Parameters
+        ----------
             processor (`dict` of `AttentionProcessor` or only `AttentionProcessor`):
                 The instantiated processor class or a dictionary of processor classes that will be set as the processor
                 for **all** `Attention` layers.
@@ -660,7 +661,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         def fn_recursive_attn_processor(name: str, module: torch.nn.Module, processor):
             if hasattr(module, "set_processor"):
-                if ((not is_motion_module) and (not "motion_modules." in name)) or (
+                if ((not is_motion_module) and ("motion_modules." not in name)) or (
                     is_motion_module and ("motion_modules." in name)
                 ):
                     if not isinstance(processor, dict):
@@ -675,9 +676,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             fn_recursive_attn_processor(name, module, processor)
 
     def set_default_attn_processor(self):
-        """
-        Disables custom attention processors and sets the default attention implementation.
-        """
+        """Disables custom attention processors and sets the default attention implementation."""
         self.set_attn_processor(AttnProcessor())
 
     @property
@@ -717,7 +716,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             # prefix = '.'.join(name.split('.')[:2])
             # if prefix not in motion_name:
             #    continue
-            print(f"(add motion lora) {name}")
+            logger.debug(f"(add motion lora) {name}")
 
             if name.startswith("mid_block"):
                 hidden_size = self.config.block_out_channels[-1]
@@ -736,17 +735,17 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         self.set_attn_processor(lora_attn_procs, is_motion_module=True)
 
         lora_layers = AttnProcsLayers(self.motion_module_attn_processors)
-        print(f"(motion lora parameters): {sum(p.numel() for p in lora_layers.parameters()) / 1e6:.3f} M")
+        logger.debug(f"(motion lora parameters): {sum(p.numel() for p in lora_layers.parameters()) / 1e6:.3f} M")
         del lora_layers
 
     def set_attention_slice(self, slice_size):
-        r"""
-        Enable sliced attention computation.
+        r"""Enable sliced attention computation.
 
         When this option is enabled, the attention module splits the input tensor in slices to compute attention in
         several steps. This is useful for saving some memory in exchange for a small decrease in speed.
 
         Args:
+        ----
             slice_size (`str` or `int` or `list(int)`, *optional*, defaults to `"auto"`):
                 When `"auto"`, input to the attention heads is halved, so attention is computed in two steps. If
                 `"max"`, maximum amount of memory is saved by running only one slice at a time. If a number is
@@ -823,10 +822,10 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         encoder_attention_mask: Optional[torch.Tensor] = None,
         return_dict: bool = True,
     ) -> Union[UNet3DConditionOutput, Tuple]:
-        r"""
-        The [`UNet2DConditionModel`] forward method.
+        r"""The [`UNet2DConditionModel`] forward method.
 
         Args:
+        ----
             sample (`torch.FloatTensor`):
                 The noisy input tensor with the following shape `(batch, channel, height, width)`.
             timestep (`torch.FloatTensor` or `float` or `int`): The number of timesteps to denoise an input.
@@ -846,11 +845,11 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 are passed along to the UNet blocks.
 
         Returns:
+        -------
             [`~models.unet_2d_condition.UNet2DConditionOutput`] or `tuple`:
                 If `return_dict` is True, an [`~models.unet_2d_condition.UNet2DConditionOutput`] is returned, otherwise
                 a `tuple` is returned where the first element is the sample tensor.
         """
-
         # By default samples have to be AT least a multiple of the overall upsampling factor.
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
@@ -1217,7 +1216,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
     def from_pretrained_2d_org(cls, pretrained_model_path, subfolder=None, unet_additional_kwargs=None):
         if subfolder is not None:
             pretrained_model_path = os.path.join(pretrained_model_path, subfolder)
-        print(f"loaded temporal unet's pretrained weights from {pretrained_model_path} ...")
+        logger.debug(f"loaded temporal unet's pretrained weights from {pretrained_model_path} ...")
 
         config_file = os.path.join(pretrained_model_path, "config.json")
         if not os.path.isfile(config_file):
@@ -1252,12 +1251,12 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 state_dict[k] = f.get_tensor(k)
 
         m, u = model.load_state_dict(state_dict, strict=False)
-        print(f"### missing keys: {len(m)}; \n### unexpected keys: {len(u)};")
+        logger.debug(f"### missing keys: {len(m)}; \n### unexpected keys: {len(u)};")
         # print(f"### missing keys:\n{m}\n### unexpected keys:\n{u}\n")
 
         del state_dict
 
         params = [p.numel() if "temporal" in n else 0 for n, p in model.named_parameters()]
-        print(f"### Temporal Module Parameters: {sum(params) / 1e6} M")
+        logger.debug(f"### Temporal Module Parameters: {sum(params) / 1e6} M")
 
         return model

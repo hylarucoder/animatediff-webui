@@ -18,11 +18,11 @@ def merge_safetensors_lora(text_encoder, unet, lora_path, alpha=0.75, is_animate
     if False:
         dump(sd)
 
-    print(f"create LoRA network")
+    logger.debug("create LoRA network")
     lora_network: LoRANetwork = create_network_from_weights(
         text_encoder, unet, sd, multiplier=alpha, is_animatediff=is_animatediff
     )
-    print(f"load LoRA network weights")
+    logger.debug("load LoRA network weights")
     lora_network.load_state_dict(sd, False)
     lora_network.merge_to(alpha)
 
@@ -140,15 +140,13 @@ class LoraMap:
         cond_nums,
         frame_no,
     ):
-        """
-        neg 0 (bg)
+        """Neg 0 (bg)
         neg 1
         neg 2
         pos 0 (bg)
         pos 1
         pos 2
         """
-
         region_index = cond_index if cond_index < cond_nums // 2 else cond_index - cond_nums // 2
         #        logger.info(f"{cond_index=}")
         #        logger.info(f"{cond_nums=}")

@@ -87,8 +87,10 @@ class FfmpegEncoder:
         in_fps: int = 60,
         out_fps: int = 60,
         lossless: bool = False,
-        param={},
+        param=None,
     ):
+        if param is None:
+            param = {}
         self.frames_dir = frames_dir
         self.out_file = out_file
         self.codec = codec

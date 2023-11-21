@@ -26,23 +26,19 @@ from animatediff.generate import (
     unload_controlnet_models,
     wild_card_conversion,
 )
-from animatediff.pipelines import AnimationPipeline, load_text_embeddings
+from animatediff.pipelines import load_text_embeddings
 from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, get_infer_config, get_model_config
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
+from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import (
-    extract_frames,
     is_sdxl_checkpoint,
     is_v2_motion_module,
     path_from_cwd,
-    save_frames,
-    save_imgs,
     save_video,
     set_tensor_interpolation_method,
-    show_gpu,
 )
-from animatediff.utils.wild_card import replace_wild_card
 
 cli: typer.Typer = typer.Typer(
     context_settings=dict(help_option_names=["-h", "--help"]),
@@ -334,6 +330,7 @@ def generate(
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
+    # pgr.update_phrase(20, "Preprocessing controlnet images...")
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
         project_dir, model_config.controlnet_map, width, height, length, save_dir, device, is_sdxl
     )
@@ -358,6 +355,7 @@ def generate(
         # since load time if we're being called from another package
         load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
+    # pgr.update_phrase(22, "Loading controlnet ...")
     load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config, is_sdxl=is_sdxl)
 
     if g_pipeline.device == device:
@@ -414,6 +412,7 @@ def generate(
 
             logger.info(f"Generation seed: {seed}")
 
+            # pgr.update_phrase(25, "Run Interference...")
             output = run_inference(
                 pipeline=g_pipeline,
                 n_prompt=n_prompt,
@@ -450,9 +449,11 @@ def generate(
             # increment the generation number
             gen_num += 1
 
+    # pgr.update_phrase(95, "unload_controlnet_models...")
     unload_controlnet_models(pipe=g_pipeline)
 
     logger.info("Generation complete!")
+    # pgr.update_phrase(99, "generate videos...")
     if save_merged:
         logger.info("Output merged output video...")
         merged_output = torch.concat(outputs, dim=0)
@@ -1173,10 +1174,3 @@ def refine(
         save_output(out_images, rife_img_dir, out_file, model_config.output, True, save_frames=None, save_video=None)
 
     logger.info(f"Refined results are output to {generated_dir}")
-
-
-@cli.command()
-def webui():
-    from animatediff.webui.project import project_app
-
-    project_app.launch(server_name="0.0.0.0")

@@ -4,6 +4,7 @@
 # LoRA module for Diffusers. This file works independently.
 
 import bisect
+import logging
 import math
 import random
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -11,8 +12,10 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 import numpy as np
 import torch
 from diffusers import UNet2DConditionModel
-from tqdm import tqdm
+from tqdm.rich import tqdm
 from transformers import CLIPTextModel
+
+logger = logging.getLogger(__name__)
 
 
 def make_unet_conversion_map() -> Dict[str, str]:
@@ -23,36 +26,36 @@ def make_unet_conversion_map() -> Dict[str, str]:
         for j in range(2):
             # loop over resnets/attentions for downblocks
             hf_down_res_prefix = f"down_blocks.{i}.resnets.{j}."
-            sd_down_res_prefix = f"input_blocks.{3*i + j + 1}.0."
+            sd_down_res_prefix = f"input_blocks.{3 * i + j + 1}.0."
             unet_conversion_map_layer.append((sd_down_res_prefix, hf_down_res_prefix))
 
             if i < 3:
                 # no attention layers in down_blocks.3
                 hf_down_atn_prefix = f"down_blocks.{i}.attentions.{j}."
-                sd_down_atn_prefix = f"input_blocks.{3*i + j + 1}.1."
+                sd_down_atn_prefix = f"input_blocks.{3 * i + j + 1}.1."
                 unet_conversion_map_layer.append((sd_down_atn_prefix, hf_down_atn_prefix))
 
         for j in range(3):
             # loop over resnets/attentions for upblocks
             hf_up_res_prefix = f"up_blocks.{i}.resnets.{j}."
-            sd_up_res_prefix = f"output_blocks.{3*i + j}.0."
+            sd_up_res_prefix = f"output_blocks.{3 * i + j}.0."
             unet_conversion_map_layer.append((sd_up_res_prefix, hf_up_res_prefix))
 
             # if i > 0: commentout for sdxl
             # no attention layers in up_blocks.0
             hf_up_atn_prefix = f"up_blocks.{i}.attentions.{j}."
-            sd_up_atn_prefix = f"output_blocks.{3*i + j}.1."
+            sd_up_atn_prefix = f"output_blocks.{3 * i + j}.1."
             unet_conversion_map_layer.append((sd_up_atn_prefix, hf_up_atn_prefix))
 
         if i < 3:
             # no downsample in down_blocks.3
             hf_downsample_prefix = f"down_blocks.{i}.downsamplers.0.conv."
-            sd_downsample_prefix = f"input_blocks.{3*(i+1)}.0.op."
+            sd_downsample_prefix = f"input_blocks.{3 * (i + 1)}.0.op."
             unet_conversion_map_layer.append((sd_downsample_prefix, hf_downsample_prefix))
 
             # no upsample in up_blocks.3
             hf_upsample_prefix = f"up_blocks.{i}.upsamplers.0."
-            sd_upsample_prefix = f"output_blocks.{3*i + 2}.{2}."  # change for sdxl
+            sd_upsample_prefix = f"output_blocks.{3 * i + 2}.{2}."  # change for sdxl
             unet_conversion_map_layer.append((sd_upsample_prefix, hf_upsample_prefix))
 
     hf_mid_atn_prefix = "mid_block.attentions.0."
@@ -61,7 +64,7 @@ def make_unet_conversion_map() -> Dict[str, str]:
 
     for j in range(2):
         hf_mid_res_prefix = f"mid_block.resnets.{j}."
-        sd_mid_res_prefix = f"middle_block.{2*j}."
+        sd_mid_res_prefix = f"middle_block.{2 * j}."
         unet_conversion_map_layer.append((sd_mid_res_prefix, hf_mid_res_prefix))
 
     unet_conversion_map_resnet = [
@@ -83,13 +86,13 @@ def make_unet_conversion_map() -> Dict[str, str]:
             unet_conversion_map.append((sd, hf))
 
     for j in range(2):
-        hf_time_embed_prefix = f"time_embedding.linear_{j+1}."
-        sd_time_embed_prefix = f"time_embed.{j*2}."
+        hf_time_embed_prefix = f"time_embedding.linear_{j + 1}."
+        sd_time_embed_prefix = f"time_embed.{j * 2}."
         unet_conversion_map.append((sd_time_embed_prefix, hf_time_embed_prefix))
 
     for j in range(2):
-        hf_label_embed_prefix = f"add_embedding.linear_{j+1}."
-        sd_label_embed_prefix = f"label_emb.0.{j*2}."
+        hf_label_embed_prefix = f"add_embedding.linear_{j + 1}."
+        sd_label_embed_prefix = f"label_emb.0.{j * 2}."
         unet_conversion_map.append((sd_label_embed_prefix, hf_label_embed_prefix))
 
     unet_conversion_map.append(("input_blocks.0.0.", "conv_in."))
@@ -104,9 +107,8 @@ UNET_CONVERSION_MAP = make_unet_conversion_map()
 
 
 class LoRAModule(torch.nn.Module):
-    """
-    replaces forward method of the original Linear, instead of replacing the original Linear module.
-    """
+
+    """replaces forward method of the original Linear, instead of replacing the original Linear module."""
 
     def __init__(
         self,
@@ -116,7 +118,7 @@ class LoRAModule(torch.nn.Module):
         lora_dim=4,
         alpha=1,
     ):
-        """if alpha == 0 or None, alpha is rank (no scaling)."""
+        """If alpha == 0 or None, alpha is rank (no scaling)."""
         super().__init__()
         self.lora_name = lora_name
 
@@ -320,12 +322,12 @@ class LoRANetwork(torch.nn.Module):
         super().__init__()
         self.multiplier = multiplier
 
-        print(f"create LoRA network from weights")
+        logger.debug("create LoRA network from weights")
 
         # convert SDXL Stability AI's U-Net modules to Diffusers
         converted = self.convert_unet_modules(modules_dim, modules_alpha)
         if converted:
-            print(f"converted {converted} Stability AI's U-Net LoRA modules to Diffusers (SDXL)")
+            logger.debug(f"converted {converted} Stability AI's U-Net LoRA modules to Diffusers (SDXL)")
 
         # create module instances
         def create_modules(
@@ -364,7 +366,7 @@ class LoRANetwork(torch.nn.Module):
                             lora_name = lora_name.replace(".", "_")
 
                             if lora_name not in modules_dim:
-                                print(f"skipped {lora_name} (not found in modules_dim)")
+                                logger.debug(f"skipped {lora_name} (not found in modules_dim)")
                                 skipped.append(lora_name)
                                 continue
 
@@ -398,9 +400,9 @@ class LoRANetwork(torch.nn.Module):
             )
             self.text_encoder_loras.extend(text_encoder_loras)
             skipped_te += skipped
-        print(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
+        logger.debug(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
         if len(skipped_te) > 0:
-            print(f"skipped {len(skipped_te)} modules because of missing weight for text encoder.")
+            logger.debug(f"skipped {len(skipped_te)} modules because of missing weight for text encoder.")
 
         # extend U-Net target modules to include Conv2d 3x3
         if is_animatediff:
@@ -414,9 +416,9 @@ class LoRANetwork(torch.nn.Module):
 
         self.unet_loras: List[LoRAModule]
         self.unet_loras, skipped_un = create_modules(True, None, unet, target_modules)
-        print(f"create LoRA for U-Net: {len(self.unet_loras)} modules.")
+        logger.debug(f"create LoRA for U-Net: {len(self.unet_loras)} modules.")
         if len(skipped_un) > 0:
-            print(f"skipped {len(skipped_un)} modules because of missing weight for U-Net.")
+            logger.debug(f"skipped {len(skipped_un)} modules because of missing weight for U-Net.")
 
         # assertion
         names = set()
@@ -473,11 +475,11 @@ class LoRANetwork(torch.nn.Module):
 
     def apply_to(self, multiplier=1.0, apply_text_encoder=True, apply_unet=True):
         if apply_text_encoder:
-            print("enable LoRA for text encoder")
+            logger.debug("enable LoRA for text encoder")
             for lora in self.text_encoder_loras:
                 lora.apply_to(multiplier)
         if apply_unet:
-            print("enable LoRA for U-Net")
+            logger.debug("enable LoRA for U-Net")
             for lora in self.unet_loras:
                 lora.apply_to(multiplier)
 
@@ -486,16 +488,16 @@ class LoRANetwork(torch.nn.Module):
             lora.unapply_to()
 
     def merge_to(self, multiplier=1.0):
-        print("merge LoRA weights to original weights")
-        for lora in tqdm(self.text_encoder_loras + self.unet_loras):
+        logger.debug("merge LoRA weights to original weights")
+        for lora in self.text_encoder_loras + self.unet_loras:
             lora.merge_to(multiplier)
-        print(f"weights are merged")
+        logger.debug("weights are merged")
 
     def restore_from(self, multiplier=1.0):
-        print("restore LoRA weights from original weights")
-        for lora in tqdm(self.text_encoder_loras + self.unet_loras):
+        logger.debug("restore LoRA weights from original weights")
+        for lora in self.text_encoder_loras + self.unet_loras:
             lora.restore_from(multiplier)
-        print(f"weights are restored")
+        logger.debug("weights are restored")
 
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         # convert SDXL Stability AI's state dict to Diffusers' based state dict
@@ -566,10 +568,10 @@ if __name__ == "__main__":
         lora_sd = torch.load(args.lora_weights)
 
     # create by LoRA weights and load weights
-    print(f"create LoRA network")
+    print("create LoRA network")
     lora_network: LoRANetwork = create_network_from_weights(text_encoders, pipe.unet, lora_sd, multiplier=1.0)
 
-    print(f"load LoRA network weights")
+    print("load LoRA network weights")
     lora_network.load_state_dict(lora_sd)
 
     lora_network.to(device, dtype=pipe.unet.dtype)  # required to apply_to. merge_to works without this
@@ -598,34 +600,34 @@ if __name__ == "__main__":
         random.seed(seed)
 
     # create image with original weights
-    print(f"create image with original weights")
+    print("create image with original weights")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "original.png")
 
     # apply LoRA network to the model: slower than merge_to, but can be reverted easily
-    print(f"apply LoRA network to the model")
+    print("apply LoRA network to the model")
     lora_network.apply_to(multiplier=1.0)
 
-    print(f"create image with applied LoRA")
+    print("create image with applied LoRA")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "applied_lora.png")
 
     # unapply LoRA network to the model
-    print(f"unapply LoRA network to the model")
+    print("unapply LoRA network to the model")
     lora_network.unapply_to()
 
-    print(f"create image with unapplied LoRA")
+    print("create image with unapplied LoRA")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "unapplied_lora.png")
 
     # merge LoRA network to the model: faster than apply_to, but requires back-up of original weights (or unmerge_to)
-    print(f"merge LoRA network to the model")
+    print("merge LoRA network to the model")
     lora_network.merge_to(multiplier=1.0)
 
-    print(f"create image with LoRA")
+    print("create image with LoRA")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "merged_lora.png")
@@ -633,31 +635,31 @@ if __name__ == "__main__":
     # restore (unmerge) LoRA weights: numerically unstable
     # マージされた重みを元に戻す。計算誤差のため、元の重みと完全に一致しないことがあるかもしれない
     # 保存した state_dict から元の重みを復元するのが確実
-    print(f"restore (unmerge) LoRA weights")
+    print("restore (unmerge) LoRA weights")
     lora_network.restore_from(multiplier=1.0)
 
-    print(f"create image without LoRA")
+    print("create image without LoRA")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "unmerged_lora.png")
 
     # restore original weights
-    print(f"restore original weights")
+    print("restore original weights")
     pipe.unet.load_state_dict(org_unet_sd)
     pipe.text_encoder.load_state_dict(org_text_encoder_sd)
     if args.sdxl:
         pipe.text_encoder_2.load_state_dict(org_text_encoder_2_sd)
 
-    print(f"create image with restored original weights")
+    print("create image with restored original weights")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "restore_original.png")
 
     # use convenience function to merge LoRA weights
-    print(f"merge LoRA weights with convenience function")
+    print("merge LoRA weights with convenience function")
     merge_lora_weights(pipe, lora_sd, multiplier=1.0)
 
-    print(f"create image with merged LoRA weights")
+    print("create image with merged LoRA weights")
     seed_everything(args.seed)
     image = pipe(args.prompt, negative_prompt=args.negative_prompt).images[0]
     image.save(image_prefix + "convenience_merged_lora.png")

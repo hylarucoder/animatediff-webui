@@ -24,18 +24,18 @@ from diffusers import (
     AutoencoderKL,
     ControlNetModel,
     DiffusionPipeline,
-    EulerDiscreteScheduler,
     StableDiffusionControlNetImg2ImgPipeline,
     StableDiffusionPipeline,
     StableDiffusionXLPipeline,
 )
 from PIL import Image
 from torchvision.datasets.folder import IMG_EXTENSIONS
+
+# from tqdm.rich import tqdm
 from tqdm.rich import tqdm
 from transformers import (
     AutoImageProcessor,
     CLIPImageProcessor,
-    CLIPTextConfig,
     CLIPTextModel,
     CLIPTextModelWithProjection,
     CLIPTokenizer,
@@ -55,8 +55,8 @@ from animatediff.pipelines.pipeline_controlnet_img2img_reference import (
 from animatediff.schedulers import get_scheduler
 from animatediff.settings import InferenceConfig, ModelConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
-from animatediff.utils.convert_lora_safetensor_to_diffusers import convert_lora
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights, get_checkpoint_weights_sdxl
+from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import (
     get_resized_image,
     get_resized_image2,
@@ -95,11 +95,11 @@ def load_safetensors_lora(text_encoder, unet, lora_path, alpha=0.75, is_animated
 
     sd = load_file(lora_path)
 
-    print("create LoRA network")
+    logger.debug("create LoRA network")
     lora_network: LoRANetwork = create_network_from_weights(
         text_encoder, unet, sd, multiplier=alpha, is_animatediff=is_animatediff
     )
-    print("load LoRA network weights")
+    logger.debug("load LoRA network weights")
     lora_network.load_state_dict(sd, False)
     # lora_network.merge_to(alpha)
     lora_network.apply_to(alpha)
@@ -113,11 +113,11 @@ def load_safetensors_lora2(text_encoder, unet, lora_path, alpha=0.75, is_animate
 
     sd = load_file(lora_path)
 
-    print("create LoRA network")
+    logger.debug("create LoRA network")
     lora_network: LoRANetwork = create_network_from_weights(
         text_encoder, unet, sd, multiplier=alpha, is_animatediff=is_animatediff
     )
-    print("load LoRA network weights")
+    logger.debug("load LoRA network weights")
     lora_network.load_state_dict(sd, False)
     lora_network.merge_to(alpha)
 
@@ -581,13 +581,14 @@ def create_pipeline(
             motion_module_path=motion_module,
         )
 
+    # pgr.update_phrase(15, "Loading tokenizer, text encoder, VAE, UNet")
     logger.info("Loading tokenizer...")
-    tokenizer: CLIPTokenizer = CLIPTokenizer.from_pretrained(base_model, subfolder="tokenizer")
     logger.info("Loading text encoder...")
-    text_encoder: CLIPSkipTextModel = CLIPSkipTextModel.from_pretrained(base_model, subfolder="text_encoder")
     logger.info("Loading VAE...")
-    vae: AutoencoderKL = AutoencoderKL.from_pretrained(base_model, subfolder="vae")
     logger.info("Loading UNet...")
+    tokenizer: CLIPTokenizer = CLIPTokenizer.from_pretrained(base_model, subfolder="tokenizer")
+    text_encoder: CLIPSkipTextModel = CLIPSkipTextModel.from_pretrained(base_model, subfolder="text_encoder")
+    vae: AutoencoderKL = AutoencoderKL.from_pretrained(base_model, subfolder="vae")
     unet: UNet3DConditionModel = UNet3DConditionModel.from_pretrained_2d(
         pretrained_model_path=base_model,
         motion_module_path=motion_module,
@@ -650,15 +651,7 @@ def create_pipeline(
         logger.info("Enabling xformers memory-efficient attention")
         unet.enable_xformers_memory_efficient_attention()
 
-    if False:
-        # lora
-        for l in model_config.lora_map:
-            lora_path = path_mgr.loras / l
-            if lora_path.is_file():
-                logger.info(f"Loading lora {lora_path}")
-                logger.info(f"alpha = {model_config.lora_map[l]}")
-                load_safetensors_lora(text_encoder, unet, lora_path, alpha=model_config.lora_map[l])
-
+    # pgr.update_phrase(5, "Loading controlnet models...")
     # motion lora
     for l in model_config.motion_lora_map:
         lora_path = path_mgr.loras / l
@@ -670,7 +663,7 @@ def create_pipeline(
         else:
             raise ValueError(f"{lora_path=} not found")
 
-    logger.info("Creating AnimationPipeline...")
+    # pgr.update_phrase(10, "Creating AnimationPipeline")
     pipeline = AnimationPipeline(
         vae=vae,
         text_encoder=text_encoder,
@@ -721,8 +714,6 @@ def load_controlnet_models(
 
 
 def unload_controlnet_models(pipe: AnimationPipeline):
-    from animatediff.utils.util import show_gpu
-
     # show_gpu("before uload controlnet")
     pipe.controlnet_map = None
     torch.cuda.empty_cache()
@@ -828,7 +819,7 @@ def create_us_pipeline(
         pipeline.enable_xformers_memory_efficient_attention()
 
     # lora
-    for l in model_config.lora_map:
+    for l in tqdm(model_config.lora_map):
         lora_path = path_mgr.loras / l
         if lora_path.is_file():
             alpha = model_config.lora_map[l]
@@ -912,7 +903,7 @@ def controlnet_preprocess(
 
                         use_preprocessor = item.get("use_preprocessor", True)
 
-                        for img_path in tqdm(cond_imgs, desc=f"Preprocessing images ({c})"):
+                        for img_path in tqdm(cond_imgs, desc=f"Preprocessing Images ({c})"):
                             frame_no = int(Path(img_path).stem)
                             if frame_no < duration:
                                 if frame_no not in controlnet_image_map:
@@ -955,11 +946,9 @@ def controlnet_preprocess(
             det_dir.mkdir(parents=True, exist_ok=True)
 
             for frame_no in tqdm(controlnet_image_map, desc=f"Saving Preprocessed images ({c})"):
-                cache_path = os.path.join(cache_dir, f"{frame_no:08d}_{c}.png")
                 save_path = det_dir.joinpath(f"{frame_no:08d}.png")
                 if c in controlnet_image_map[frame_no]:
                     controlnet_image_map[frame_no][c].save(save_path)
-                    print(cache_path)
 
         clear_controlnet_preprocessor(c)
 
@@ -1346,11 +1335,13 @@ def save_output(
     pipeline_output,
     frame_dir: str,
     out_file: str,
-    output_map: Dict[str, Any] = {},
+    output_map=None,
     no_frames: bool = False,
     save_frames=save_frames,
     save_video=None,
 ):
+    if output_map is None:
+        output_map = {}
     output_format = "gif"
     output_fps = 8
     if output_map:

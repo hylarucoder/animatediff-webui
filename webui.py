@@ -1,11 +1,9 @@
 import json
 import os
 import shutil
-import time
 from pathlib import Path
 
 import gradio as gr
-import tqdm
 from pydantic import BaseModel
 
 from animatediff.consts import (
@@ -14,6 +12,7 @@ from animatediff.consts import (
     path_mgr,
 )
 from animatediff.settings import ModelConfig
+from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import read_json
 
 BLANK_PLACEHOLDER = "---"
@@ -357,7 +356,8 @@ with gr.Blocks(
                     with gr.Column(scale=4):
                         gr.Files(container=False)
             with gr.Tab(label="File Explorer"):
-                gr.FileExplorer("projects/**/*.*")
+                # gr.FileExplorer("projects/**/*.*")
+                ...
             with gr.Group():
                 tb_prompt = gr.Textbox(
                     show_label=False,
@@ -531,11 +531,18 @@ with gr.Blocks(
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
     def track_tqdm(
-        project, performance, seed, checkpoint, motion, *loras, data=None, progress=gr.Progress(track_tqdm=True)
+        project,
+        performance,
+        seed,
+        checkpoint,
+        motion,
+        data=None,
+        progress=gr.Progress(
+            track_tqdm=True,
+        ),
     ):
-        # loras 10
-        tqdm.tqdm.write(f"project: {project}")
-        tqdm.tqdm.write(f"config: {project}")
+        # pgr.set_pgr(progress)
+        # pgr(0 / 100, desc="Step 01: Apply Configuration...")
         if performance == "Speed":
             global_config.lcm_lora_scale = 1
             global_config.apply_lcm_lora = False
@@ -552,12 +559,12 @@ with gr.Blocks(
             global_config.steps = 8
             global_config.guidance_scale = 1.8
 
-        global_config.lora_map = {lora[0]: lora[1] for lora in group_by_n(loras, 2) if lora[0] != BLANK_PLACEHOLDER}
+        # global_config.lora_map = {lora[0]: lora[1] for lora in group_by_n(loras, 2) if lora[0] != BLANK_PLACEHOLDER}
 
         global_config.seed = seed
         global_config.checkpoint = checkpoint
         global_config.motion = motion
-        tqdm.tqdm.write(f"apply generate: {project}")
+        # progress(5 / 100, desc="Step 02: Do Configuration...")
 
         from animatediff.cli import generate
 
@@ -566,7 +573,7 @@ with gr.Blocks(
             width=432,
             height=768,
             # TODO: length
-            length=32,
+            length=64,
             context=16,
             overlap=16 // 4,
             stride=0,
@@ -595,7 +602,7 @@ with gr.Blocks(
             num_seed,
             dp_checkpoint,
             dp_motion,
-            *lora_ctrls,
+            # *lora_ctrls,
         ],
         outputs=[preview_video],
     ).then(

@@ -38,6 +38,7 @@ from animatediff.models.unet_blocks import CrossAttnDownBlock3D, CrossAttnUpBloc
 from animatediff.pipelines.context import get_context_scheduler, get_total_steps
 from animatediff.utils.model import nop_train
 from animatediff.utils.pipeline import get_memory_format
+from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import (
     end_profile,
     get_tensor_interpolation_method,
@@ -596,8 +597,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         self.controlnet_map = controlnet_map
 
     def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding.
+        r"""Enable sliced VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor in slices to compute decoding in several
         steps. This is useful to save some memory and allow larger batch sizes.
@@ -605,15 +605,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         self.vae.enable_slicing()
 
     def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
+        r"""Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_slicing()
 
     def enable_vae_tiling(self):
-        r"""
-        Enable tiled VAE decoding.
+        r"""Enable tiled VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor into tiles to compute decoding and encoding in
         several steps. This is useful to save a large amount of memory and to allow the processing of larger images.
@@ -621,15 +619,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         self.vae.enable_tiling()
 
     def disable_vae_tiling(self):
-        r"""
-        Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
+        r"""Disable tiled VAE decoding. If `enable_vae_tiling` was previously invoked, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_tiling()
 
     def enable_model_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+        r"""Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
         to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
         method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
         `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
@@ -660,8 +656,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
     @property
     def _execution_device(self):
-        r"""
-        Returns the device on which the pipeline's models will be executed. After calling
+        r"""Returns the device on which the pipeline's models will be executed. After calling
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
@@ -688,10 +683,10 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         negative_prompt_embeds: Optional[torch.FloatTensor] = None,
         clip_skip: int = 1,
     ):
-        r"""
-        Encodes the prompt into text encoder hidden states.
+        r"""Encodes the prompt into text encoder hidden states.
 
         Args:
+        ----
             prompt (`str` or `list(int)`):
                 prompt to be encoded
             device: (`torch.device`):
@@ -3146,9 +3141,9 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             )
 
         if iterable is not None:
-            return tqdm(iterable, **self._progress_bar_config)
+            return tqdm(iterable, **self._progress_bar_config, desc="Step 08/10 Animating")
         elif total is not None:
-            return tqdm(total=total, **self._progress_bar_config)
+            return tqdm(total=total, **self._progress_bar_config, desc="Step 08/10 Animating")
         else:
             raise ValueError("Either `total` or `iterable` has to be defined.")
 
