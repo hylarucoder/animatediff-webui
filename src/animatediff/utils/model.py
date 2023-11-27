@@ -202,3 +202,17 @@ def ensure_motion_modules(
                 resume_download=True,
             )
             logger.debug(f"Downloaded {path_from_cwd(result)}")
+
+
+def fffx():
+    for f in [
+        "svd.safetensors",
+        "svd_image_decoder.safetensors",
+    ]:
+        result = hf_hub_download(
+            repo_id="stabilityai/stable-video-diffusion-img2vid",
+            filename=f,
+            local_dir=".",
+            local_dir_use_symlinks=False,
+            resume_download=True,
+        )

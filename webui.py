@@ -410,6 +410,7 @@ def render_ui():
         global_config.lora_map = {
             lora[0]: lora[1] for lora in group_by_n(lora_items, 2) if lora[0] != BLANK_PLACEHOLDER
         }
+        print("---<", global_config.lora_map)
 
         global_config.seed = [seed]
         global_config.checkpoint = checkpoint

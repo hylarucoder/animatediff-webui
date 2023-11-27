@@ -19,6 +19,7 @@ class TIPAdapterMap(BaseModel):
     resized_to_square: bool = True
     scale: float = 1.0
     is_plus_face: bool = False
+    is_full_face: bool = False
     is_plus: bool = True
     is_light: bool = False
 
@@ -69,7 +70,7 @@ class TControlnetOpenpose(BaseModel):
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
     control_guidance_end: float = 1.0
-    control_scale_list: list[float] = pt.Field(default_factory=normal_scale_list)
+    control_scale_list: list[float] = pt.Field(default_factory=list)
 
 
 class TControlnetSoftedge(BaseModel):
