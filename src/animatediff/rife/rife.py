@@ -1,6 +1,7 @@
 import logging
 import subprocess
 from math import ceil
+from os import PathLike
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -26,8 +27,8 @@ app: typer.Typer = typer.Typer(
 
 
 def rife_interpolate(
-    input_frames_dir: str,
-    output_frames_dir: str,
+    input_frames_dir: PathLike,
+    output_frames_dir: PathLike,
     frame_multiplier: int = 2,
     rife_model: str = "rife-v4.6",
     spatial_tta: bool = False,

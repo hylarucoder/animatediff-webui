@@ -53,9 +53,9 @@ class Tagger:
             )
         else:
             self.model = onnxruntime.InferenceSession(
-                path_mgr.wd14_tagger / "/model.onnx", providers=["CUDAExecutionProvider"]
+                path_mgr.wd14_tagger / "model.onnx", providers=["CUDAExecutionProvider"]
             )
-        df = pd.read_csv(path_mgr.wd14_tagger / "/selected_tags.csv")
+        df = pd.read_csv(path_mgr.wd14_tagger / "selected_tags.csv")
         self.tag_names = df["name"].tolist()
         self.rating_indexes = list(np.where(df["category"] == 9)[0])
         self.general_indexes = list(np.where(df["category"] == 0)[0])

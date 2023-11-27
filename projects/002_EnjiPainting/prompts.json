@@ -6,9 +6,11 @@
   "seed": [
     -1
   ],
-  "scheduler": "k_dpmpp_2m",
-  "steps": 20,
-  "guidance_scale": 7,
+  "scheduler": "k_dpmpp_2m_sde",
+  "apply_lcm_lora": true,
+  "lcm_lora_scale": 1,
+  "steps": 8,
+  "guidance_scale": 1.8,
   "unet_batch_size": 1,
   "clip_skip": 2,
   "prompt_fixed_ratio": 0.5,
@@ -26,7 +28,7 @@
     "nude, worst quality,ow quality,normal quality,lowres,normal quality,monochrome,grayscale,blurry,lowres,ng_deepnegative_v1_75t,badhandv4,(worst quality:2),(low quality:2),(normal quality:2),lowres,bad anatomy,bad hands,normal quality,, (low quality, worst quality:1.4),(bad anatomy),extra digit,cropped,jpeg artifacts,signature,watermark,username,blurry,EasyNegativeV2,(badhandv4:1.2),dedicated_to_artificial_humans,"
   ],
   "lora_map": {
-    "EnjiPainting_v1.0.safetensors": 0.9
+    "燕胭_EnjiPainting_v1.0.safetensors": 0.9
   },
   "motion_lora_map": {
   },

@@ -10,46 +10,13 @@ from pydantic_settings import BaseSettings, EnvSettingsSource, InitSettingsSourc
 
 from animatediff import get_dir
 from animatediff.schedulers import DiffusionScheduler
+from animatediff.schema import TProjectSetting
 from animatediff.utils.util import read_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 CKPT_EXTENSIONS = [".pt", ".ckpt", ".pth", ".safetensors"]
-
-
-class JsonSettingsSource:
-    __slots__ = ["json_config_path"]
-
-    def __init__(
-        self,
-        json_config_path: Optional[Union[PathLike, list[PathLike]]] = list(),
-    ) -> None:
-        if isinstance(json_config_path, list):
-            self.json_config_path = [Path(path) for path in json_config_path]
-        else:
-            self.json_config_path = [Path(json_config_path)] if json_config_path is not None else []
-
-    def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa C901
-        classname = settings.__class__.__name__
-        encoding = settings.__config__.env_file_encoding
-        if len(self.json_config_path) == 0:
-            pass  # no json config provided
-
-        merged_config = dict()  # create an empty dict to merge configs into
-        for idx, path in enumerate(self.json_config_path):
-            if path.exists() and path.is_file():  # check if the path exists and is a file
-                logger.debug(f"{classname}: loading config #{idx + 1} from {path}")
-                merged_config.update(json.loads(path.read_text(encoding=encoding)))
-                logger.debug(f"{classname}: config state #{idx + 1}: {merged_config}")
-            else:
-                raise FileNotFoundError(f"{classname}: config #{idx + 1} at {path} not found or not a file")
-
-        logger.debug(f"{classname}: loaded config: {merged_config}")
-        return merged_config  # return the merged config
-
-    def __repr__(self) -> str:
-        return f"JsonSettingsSource(json_config_path={repr(self.json_config_path)})"
 
 
 class InferenceConfig(BaseSettings):
@@ -73,11 +40,11 @@ def get_infer_config(
 
 
 class ModelConfig(BaseSettings):
-    name: str = Field(...)  # Config name, not actually used for much of anything
-    checkpoint: Path = Field(...)  # Path to the model
+    name: str
+    checkpoint: Path
     apply_lcm_lora: bool = Field(False)
     lcm_lora_scale: float = Field(1.0)
-    vae_path: str = ""  # Path to the model
+    vae: str = ""  # Path to the model
     motion: Path = Field(...)  # Path to the motion module
     compile: bool = Field(False)  # whether to compile the model with TorchDynamo
     tensor_interpolation_slerp: bool = Field(False)
@@ -89,27 +56,33 @@ class ModelConfig(BaseSettings):
     clip_skip: int = 1  # skip the last N-1 layers of the CLIP text encoder
     prompt_fixed_ratio: float = 0.5
     head_prompt: str = ""
-    prompt_map: Dict[str, str] = Field({})
+    prompt_map: dict[str, str] = Field({})
     tail_prompt: str = ""
     n_prompt: list[str] = Field([])  # Anti-prompt(s) to use
     is_single_prompt_mode: bool = Field(False)
-    lora_map: Dict[str, Any] = Field({})
-    motion_lora_map: Dict[str, float] = Field({})
-    ip_adapter_map: Dict[str, Any] = Field({})
-    img2img_map: Dict[str, Any] = Field({})
-    region_map: Dict[str, Any] = Field({})
-    controlnet_map: Dict[str, Any] = Field({})
-    upscale_config: Dict[str, Any] = Field({})
-    stylize_config: Dict[str, Any] = Field({})
-    output: Dict[str, Any] = Field({})
-    result: Dict[str, Any] = Field({})
+    lora_map: dict[str, Any] = Field({})
+    motion_lora_map: dict[str, float] = Field({})
+    ip_adapter_map: dict[str, Any] = Field({})
+    img2img_map: dict[str, Any] = Field({})
+    region_map: dict[str, Any] = Field({})
+    controlnet_map: dict[str, Any] = Field({})
+    upscale_config: dict[str, Any] = Field({})
+    stylize_config: dict[str, Any] = Field({})
+    output: dict[str, Any] = Field({})
+    result: dict[str, Any] = Field({})
 
     @property
     def save_name(self):
         return f"{self.name.lower()}-{self.checkpoint.stem.lower()}"
 
 
-def get_model_config(config_path: Path) -> ModelConfig:
+def get_model_config_old(config_path: Path) -> ModelConfig:
     d = read_json(config_path)
     settings = ModelConfig(**d)
+    return settings
+
+
+def get_project_setting(config_path: Path) -> TProjectSetting:
+    d = read_json(config_path)
+    settings = TProjectSetting(**d)
     return settings

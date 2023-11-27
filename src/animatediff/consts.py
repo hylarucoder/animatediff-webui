@@ -27,6 +27,7 @@ class PathMgr:
     controlnet = MODELS_DIR / "controlnet"
     projects = REPO_DIR / "projects"
     pro_painter = MODELS_DIR / "pro_painter"
+    demo_prompt_json = REPO_DIR / "config/prompts/prompt_travel.json"
 
 
 path_mgr = PathMgr()

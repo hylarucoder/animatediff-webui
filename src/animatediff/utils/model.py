@@ -1,4 +1,5 @@
 import logging
+from os import PathLike
 from pathlib import Path
 from typing import Optional, TypeVar
 
@@ -26,7 +27,7 @@ def nop_train(self: T, mode: bool = True) -> T:
     return self
 
 
-def get_base_model(model_name_or_path: str, local_dir: Path, force: bool = False, is_sdxl: bool = False) -> Path:
+def get_base_model(model_name_or_path: PathLike, local_dir: Path, force: bool = False, is_sdxl: bool = False) -> Path:
     model_name_or_path = Path(model_name_or_path)
 
     model_save_dir = local_dir.joinpath(str(model_name_or_path).split("/")[-1]).resolve()
@@ -201,3 +202,17 @@ def ensure_motion_modules(
                 resume_download=True,
             )
             logger.debug(f"Downloaded {path_from_cwd(result)}")
+
+
+def fffx():
+    for f in [
+        "svd.safetensors",
+        "svd_image_decoder.safetensors",
+    ]:
+        result = hf_hub_download(
+            repo_id="stabilityai/stable-video-diffusion-img2vid",
+            filename=f,
+            local_dir=".",
+            local_dir_use_symlinks=False,
+            resume_download=True,
+        )

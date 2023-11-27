@@ -244,7 +244,7 @@ class PromptEncoderSDXL(PromptEncoder):
 
         return outputs, outputs2
 
-    def get_current_prompt_embeds_single(self, context: List[int] = None, video_length: int = 0):
+    def get_current_prompt_embeds_single(self, context: Optional[List[int]] = None, video_length: int = 0):
         center_frame = context[len(context) // 2]
         text_emb, pooled_emb = self.get_current_prompt_embeds_from_text(center_frame, video_length)
         text_emb = torch.cat(text_emb)
@@ -256,7 +256,7 @@ class PromptEncoderSDXL(PromptEncoder):
         else:
             return text_emb, pooled_emb
 
-    def get_current_prompt_embeds_multi(self, context: List[int] = None, video_length: int = 0):
+    def get_current_prompt_embeds_multi(self, context: Optional[List[int]] = None, video_length: int = 0):
         emb_list = []
         pooled_emb_list = []
         for c in context:
@@ -317,10 +317,11 @@ class PromptEncoderSDXL(PromptEncoder):
 
 @dataclass
 class AnimatePipelineOutput(BaseOutput):
-    """
-    Output class for Stable Diffusion pipelines.
+
+    """Output class for Stable Diffusion pipelines.
 
     Args:
+    ----
         images (`List[PIL.Image.Image]` or `np.ndarray`)
             List of denoised PIL images of length `batch_size` or numpy array of shape `(batch_size, height, width,
             num_channels)`. PIL images or numpy array present the denoised images of the diffusion pipeline.
@@ -350,8 +351,7 @@ EXAMPLE_DOC_STRING = """
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
 def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
-    """
-    Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
+    """Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
     Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
     """
     std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
@@ -364,8 +364,8 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
 
 
 class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin, TextualInversionLoaderMixin):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion XL.
+
+    r"""Pipeline for text-to-image generation using Stable Diffusion XL.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -378,6 +378,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         - *LoRA*: [`loaders.StableDiffusionXLPipeline.save_lora_weights`]
 
     Args:
+    ----
         vae ([`AutoencoderKL`]):
             Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
         text_encoder ([`CLIPTextModel`]):
@@ -415,7 +416,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         scheduler: KarrasDiffusionSchedulers,
         force_zeros_for_empty_prompt: bool = True,
         add_watermarker: Optional[bool] = None,
-        controlnet_map: Dict[str, ControlNetModel] = None,
+        controlnet_map: Optional[Dict[str, ControlNetModel]] = None,
     ):
         super().__init__()
 
@@ -440,24 +441,21 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_slicing
     def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding. When this option is enabled, the VAE will split the input tensor in slices to
+        r"""Enable sliced VAE decoding. When this option is enabled, the VAE will split the input tensor in slices to
         compute decoding in several steps. This is useful to save some memory and allow larger batch sizes.
         """
         self.vae.enable_slicing()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_slicing
     def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously enabled, this method will go back to
+        r"""Disable sliced VAE decoding. If `enable_vae_slicing` was previously enabled, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_slicing()
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_vae_tiling
     def enable_vae_tiling(self):
-        r"""
-        Enable tiled VAE decoding. When this option is enabled, the VAE will split the input tensor into tiles to
+        r"""Enable tiled VAE decoding. When this option is enabled, the VAE will split the input tensor into tiles to
         compute decoding and encoding in several steps. This is useful for saving a large amount of memory and to allow
         processing larger images.
         """
@@ -465,15 +463,13 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_vae_tiling
     def disable_vae_tiling(self):
-        r"""
-        Disable tiled VAE decoding. If `enable_vae_tiling` was previously enabled, this method will go back to
+        r"""Disable tiled VAE decoding. If `enable_vae_tiling` was previously enabled, this method will go back to
         computing decoding in one step.
         """
         self.vae.disable_tiling()
 
     def __enable_model_cpu_offload(self, gpu_id=0):
-        r"""
-        Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
+        r"""Offloads all models to CPU using accelerate, reducing memory usage with a low impact on performance. Compared
         to `enable_sequential_cpu_offload`, this method moves one whole model at a time to the GPU when its `forward`
         method is called, and the model remains in GPU until the next model runs. Memory savings are lower than with
         `enable_sequential_cpu_offload`, but performance is much better due to the iterative execution of the `unet`.
@@ -516,10 +512,10 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
         lora_scale: Optional[float] = None,
     ):
-        r"""
-        Encodes the prompt into text encoder hidden states.
+        r"""Encodes the prompt into text encoder hidden states.
 
         Args:
+        ----
             prompt (`str` or `List[str]`, *optional*):
                 prompt to be encoded
             prompt_2 (`str` or `List[str]`, *optional*):
@@ -1054,7 +1050,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
-        prompt: Union[str, List[str]] = None,
+        prompt: Optional[Union[str, List[str]]] = None,
         prompt_2: Optional[Union[str, List[str]]] = None,
         single_model_length: Optional[int] = 16,
         height: Optional[int] = None,
@@ -1088,25 +1084,25 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         context_overlap: int = 4,
         context_schedule: str = "uniform",
         clip_skip: int = 1,
-        controlnet_type_map: Dict[str, Dict[str, float]] = None,
-        controlnet_image_map: Dict[int, Dict[str, Any]] = None,
-        controlnet_ref_map: Dict[str, Any] = None,
+        controlnet_type_map: Optional[Dict[str, Dict[str, float]]] = None,
+        controlnet_image_map: Optional[Dict[int, Dict[str, Any]]] = None,
+        controlnet_ref_map: Optional[Dict[str, Any]] = None,
         controlnet_max_samples_on_vram: int = 999,
         controlnet_max_models_on_vram: int = 99,
         controlnet_is_loop: bool = True,
-        img2img_map: Dict[str, Any] = None,
-        ip_adapter_config_map: Dict[str, Any] = None,
-        region_list: List[Any] = None,
-        region_condi_list: List[Any] = None,
+        img2img_map: Optional[Dict[str, Any]] = None,
+        ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+        region_list: Optional[List[Any]] = None,
+        region_condi_list: Optional[List[Any]] = None,
         interpolation_factor=1,
         is_single_prompt_mode=False,
         apply_lcm_lora=False,
         **kwargs,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
+        r"""Function invoked when calling the pipeline for generation.
 
         Args:
+        ----
             prompt (`str` or `List[str]`, *optional*):
                 The prompt or prompts to guide the image generation. If not defined, one has to pass `prompt_embeds`.
                 instead.
@@ -1203,13 +1199,14 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                 section 2.2 of [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952).
 
         Examples:
+        --------
 
         Returns:
+        -------
             [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] or `tuple`:
             [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] if `return_dict` is True, otherwise a
             `tuple`. When returning a tuple, the first element is a list with the generated images.
         """
-
         logger.info(f"{apply_lcm_lora=}")
         if apply_lcm_lora:
             self.scheduler = LCMScheduler.from_config(self.scheduler.config)
@@ -1538,7 +1535,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                 # { "0_type_str" : (down_samples, mid_sample)  }
                 controlnet_result = {}
 
-                def get_controlnet_result(context: List[int] = None):
+                def get_controlnet_result(context: Optional[List[int]] = None):
                     # logger.info(f"get_controlnet_result called {context=}")
 
                     if controlnet_image_map is None:
@@ -1622,7 +1619,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                     return _down_block_res_samples, _mid_block_res_samples
 
-                def process_controlnet(target_frames: List[int] = None):
+                def process_controlnet(target_frames: Optional[List[int]] = None):
                     # logger.info(f"process_controlnet called {target_frames=}")
                     nonlocal controlnet_result
 
@@ -2031,12 +2028,12 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
     def save_lora_weights(
         self,
         save_directory: Union[str, os.PathLike],
-        unet_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
-        text_encoder_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
-        text_encoder_2_lora_layers: Dict[str, Union[torch.nn.Module, torch.Tensor]] = None,
+        unet_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_2_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
         is_main_process: bool = True,
-        weight_name: str = None,
-        save_function: Callable = None,
+        weight_name: Optional[str] = None,
+        save_function: Optional[Callable] = None,
         safe_serialization: bool = True,
     ):
         state_dict = {}

@@ -1,29 +1,18 @@
+"""cli.py
+"""
 import glob
 import logging
 import os.path
 from datetime import datetime
+from importlib.metadata import version as meta_version
 from pathlib import Path
 from typing import Annotated, Optional
-
-if False:
-    if "PYTORCH_CUDA_ALLOC_CONF" in os.environ:
-        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = ",backend:cudaMallocAsync"
-    else:
-        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "backend:cudaMallocAsync"
-
-    # "garbage_collection_threshold:0.6"
-    # max_split_size_mb:1024"
-    # "backend:cudaMallocAsync"
-    # roundup_power2_divisions:4
-    print(f"{os.environ['PYTORCH_CUDA_ALLOC_CONF']=}")
-
-if False:
-    os.environ["PYTORCH_NO_CUDA_MEMORY_CACHING"] = "1"
 
 import torch
 import typer
 from diffusers import DiffusionPipeline
 from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosity_error
+from packaging import version
 from rich.logging import RichHandler
 
 from animatediff import __version__, console, get_dir
@@ -41,23 +30,19 @@ from animatediff.generate import (
     unload_controlnet_models,
     wild_card_conversion,
 )
-from animatediff.pipelines import AnimationPipeline, load_text_embeddings
-from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, get_infer_config, get_model_config
+from animatediff.pipelines import load_text_embeddings
+from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, get_infer_config, get_project_setting
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
+from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import (
-    extract_frames,
     is_sdxl_checkpoint,
     is_v2_motion_module,
     path_from_cwd,
-    save_frames,
-    save_imgs,
     save_video,
     set_tensor_interpolation_method,
-    show_gpu,
 )
-from animatediff.utils.wild_card import replace_wild_card
 
 cli: typer.Typer = typer.Typer(
     context_settings=dict(help_option_names=["-h", "--help"]),
@@ -66,14 +51,13 @@ cli: typer.Typer = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 data_dir = get_dir("data")
-checkpoint_dir = data_dir.joinpath("models/sd")
-pipeline_dir = data_dir.joinpath("models/huggingface")
+pipeline_dir = path_mgr.huggingface_pipeline
 
 try:
     import google.colab
 
     IN_COLAB = True
-except:
+except ImportError:
     IN_COLAB = False
 
 if IN_COLAB:
@@ -99,17 +83,13 @@ else:
 
 logger = logging.getLogger(__name__)
 
-from importlib.metadata import version as meta_version
-
-from packaging import version
-
 diffuser_ver = meta_version("diffusers")
 
 logger.info(f"{diffuser_ver=}")
 
 if version.parse(diffuser_ver) < version.parse("0.23.0"):
-    logger.error(f"The version of diffusers is out of date")
-    logger.error(f"python -m pip install diffusers==0.23.0")
+    logger.error("The version of diffusers is out of date")
+    logger.error("python -m pip install diffusers==0.23.0")
     raise ImportError("Please update diffusers to 0.23.0")
 
 try:
@@ -191,7 +171,7 @@ def generate(
         ),
     ] = 16,
     context: Annotated[
-        Optional[int],
+        int,
         typer.Option(
             "--context",
             "-C",
@@ -201,9 +181,9 @@ def generate(
             show_default=False,
             rich_help_panel="Generation",
         ),
-    ] = None,
+    ] = 16,
     overlap: Annotated[
-        Optional[int],
+        int,
         typer.Option(
             "--overlap",
             "-O",
@@ -213,9 +193,9 @@ def generate(
             show_default=False,
             rich_help_panel="Generation",
         ),
-    ] = None,
+    ] = 4,
     stride: Annotated[
-        Optional[int],
+        int,
         typer.Option(
             "--stride",
             "-S",
@@ -225,7 +205,7 @@ def generate(
             show_default=False,
             rich_help_panel="Generation",
         ),
-    ] = None,
+    ] = 0,
     repeats: Annotated[
         int,
         typer.Option(
@@ -304,10 +284,7 @@ def generate(
         ),
     ] = None,
 ):
-    """
-    Do the thing. Make the animation happen. Waow.
-    """
-
+    """Do the thing. Make the animation happen. Waow."""
     # be quiet, diffusers. we care not for your safety checker
     set_diffusers_verbosity_error()
 
@@ -316,17 +293,17 @@ def generate(
     config_path = config_path.absolute()
     project_dir = config_path.parent
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
-    model_config: ModelConfig = get_model_config(config_path)
-    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+    project_setting = get_project_setting(config_path)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / project_setting.checkpoint)
 
     if is_sdxl:
         is_v2 = False
     else:
-        is_v2 = is_v2_motion_module(path_mgr.motions / model_config.motion)
+        is_v2 = is_v2_motion_module(path_mgr.motions / project_setting.motion)
 
     infer_config: InferenceConfig = get_infer_config(is_v2, is_sdxl)
 
-    set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
+    set_tensor_interpolation_method(project_setting.tensor_interpolation_slerp)
 
     # set sane defaults for context, overlap, and stride if not supplied
     context, overlap, stride = get_context_params(length, context, overlap, stride)
@@ -336,7 +313,7 @@ def generate(
         context = 24
 
     # turn the device string into a torch.device
-    device: torch.device = torch.device(device)
+    torch_device: torch.device = torch.device(device)
 
     model_name_or_path = (
         Path("runwayml/stable-diffusion-v1-5") if not is_sdxl else Path("stabilityai/stable-diffusion-xl-base-1.0")
@@ -349,69 +326,93 @@ def generate(
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     # make the output directory
-    save_dir = out_dir.joinpath(f"{time_str}-{model_config.save_name}")
+    save_dir = out_dir.joinpath(f"{time_str}")
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
+    pgr.update_phrase(1, "Step 02/08: Preprocessing Images Controlnet & IPAdapter")
+
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
-        project_dir, model_config.controlnet_map, width, height, length, save_dir, device, is_sdxl
+        project_dir,
+        save_dir,
+        project_setting.controlnet_map,
+        width,
+        height,
+        length,
+        # TODO: bi
+        torch_device,
+        is_sdxl,
     )
-    img2img_map = img2img_preprocess(project_dir, model_config.img2img_map, width, height, length, save_dir)
+    pgr.update_phrase(1, "Step 03/08: Preprocessing Img 2 Img")
+    img2img_map = img2img_preprocess(
+        project_dir,
+        save_dir,
+        project_setting.img2img_map,
+        width,
+        height,
+        length,
+    )
 
     # beware the pipeline
     global g_pipeline
     global last_model_path
-    if g_pipeline is None or last_model_path != model_config.checkpoint.resolve():
+    pgr.update_phrase(1, "Step 04/08: Load Models: Ckpt, tokenizer, text encoder, vae, unet, Controlnet")
+    if g_pipeline is None or last_model_path != path_mgr.checkpoints / project_setting.checkpoint:
         g_pipeline = create_pipeline(
             base_model=base_model_path,
-            model_config=model_config,
+            project_setting=project_setting,
             infer_config=infer_config,
             use_xformers=use_xformers,
             video_length=length,
             is_sdxl=is_sdxl,
         )
-        last_model_path = model_config.checkpoint.resolve()
+        last_model_path = path_mgr.checkpoints / project_setting.checkpoint
     else:
         logger.info("Pipeline already loaded, skipping initialization")
         # reload TIs; create_pipeline does this for us, but they may have changed
         # since load time if we're being called from another package
         load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
-    load_controlnet_models(project_dir, pipe=g_pipeline, model_config=model_config, is_sdxl=is_sdxl)
+    load_controlnet_models(project_dir, pipe=g_pipeline, project_setting=project_setting, is_sdxl=is_sdxl)
 
-    if g_pipeline.device == device:
+    if g_pipeline.device == torch_device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
     else:
         g_pipeline = send_to_device(
-            g_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile, is_sdxl=is_sdxl
+            g_pipeline,
+            torch_device,
+            freeze=True,
+            force_half=force_half_vae,
+            compile=project_setting.compile,
+            is_sdxl=is_sdxl,
         )
 
         torch.cuda.empty_cache()
 
     # save raw config to output directory
     save_config_path = save_dir.joinpath("raw_prompt.json")
-    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+    save_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
     # fix seed
-    for i, s in enumerate(model_config.seed):
+    for i, s in enumerate(project_setting.seed):
         if s == -1:
-            model_config.seed[i] = get_random()
+            project_setting.seed[i] = get_random()
 
     # wildcard conversion
-    wild_card_conversion(model_config)
+    wild_card_conversion(project_setting)
 
-    is_init_img_exist = img2img_map != None
+    is_init_img_exist = img2img_map is not None
     region_condi_list, region_list, ip_adapter_config_map = region_preprocess(
-        project_dir, model_config, width, height, length, save_dir, is_init_img_exist, is_sdxl
+        project_dir, save_dir, project_setting, width, height, length, is_init_img_exist, is_sdxl
     )
 
     # save config to output directory
     logger.info("Saving prompt config to output directory")
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+    save_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
-    num_negatives = len(model_config.n_prompt)
-    num_seeds = len(model_config.seed)
+    num_negatives = len(project_setting.n_prompt)
+    num_seeds = len(project_setting.seed)
     gen_total = repeats  # total number of generations
 
     logger.info("Initialization complete!")
@@ -422,24 +423,25 @@ def generate(
 
     # repeat the prompts if we're doing multiple runs
     for _ in range(repeats):
-        if model_config.prompt_map:
+        if project_setting.prompt_map:
             # get the index of the prompt, negative, and seed
             idx = gen_num
             logger.info(f"Running generation {gen_num + 1} of {gen_total}")
 
             # allow for reusing the same negative prompt(s) and seed(s) for multiple prompts
-            n_prompt = model_config.n_prompt[idx % num_negatives]
-            seed = model_config.seed[idx % num_seeds]
+            n_prompt = project_setting.n_prompt[idx % num_negatives]
+            seed = project_setting.seed[idx % num_seeds]
 
             logger.info(f"Generation seed: {seed}")
 
+            # pgr.update_phrase(1, "Step 05/08: Run Interference...")
             output = run_inference(
                 pipeline=g_pipeline,
                 n_prompt=n_prompt,
                 seed=seed,
-                steps=model_config.steps,
-                guidance_scale=model_config.guidance_scale,
-                unet_batch_size=model_config.unet_batch_size,
+                steps=project_setting.steps,
+                guidance_scale=project_setting.guidance_scale,
+                unet_batch_size=project_setting.unet_batch_size,
                 width=width,
                 height=height,
                 duration=length,
@@ -448,8 +450,8 @@ def generate(
                 context_frames=context,
                 context_overlap=overlap,
                 context_stride=stride,
-                clip_skip=model_config.clip_skip,
-                controlnet_map=model_config.controlnet_map,
+                clip_skip=project_setting.clip_skip,
+                controlnet_map=project_setting.controlnet_map,
                 controlnet_image_map=controlnet_image_map,
                 controlnet_type_map=controlnet_type_map,
                 controlnet_ref_map=controlnet_ref_map,
@@ -458,10 +460,10 @@ def generate(
                 ip_adapter_config_map=ip_adapter_config_map,
                 region_list=region_list,
                 region_condi_list=region_condi_list,
-                output_map=model_config.output,
-                is_single_prompt_mode=model_config.is_single_prompt_mode,
+                output_map=project_setting.output,
+                is_single_prompt_mode=project_setting.is_single_prompt_mode,
                 is_sdxl=is_sdxl,
-                apply_lcm_lora=model_config.apply_lcm_lora,
+                apply_lcm_lora=project_setting.apply_lcm_lora,
             )
             outputs.append(output)
             torch.cuda.empty_cache()
@@ -469,9 +471,11 @@ def generate(
             # increment the generation number
             gen_num += 1
 
+    pgr.update_phrase(95, "unload_controlnet_models...")
     unload_controlnet_models(pipe=g_pipeline)
 
     logger.info("Generation complete!")
+    pgr.update_phrase(99, "generate videos...")
     if save_merged:
         logger.info("Output merged output video...")
         merged_output = torch.concat(outputs, dim=0)
@@ -486,9 +490,9 @@ def tile_upscale(
     frames_dir: Annotated[
         Path,
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
-    ] = ...,
+    ],
     config_path: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--config-path",
             "-c",
@@ -579,32 +583,33 @@ def tile_upscale(
             config_path = tmp
 
     project_dir = frames_dir.parent
+    assert config_path
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
-    model_config: ModelConfig = get_model_config(config_path)
-    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / model_config.checkpoint)
+    project_setting = get_project_setting(config_path)
+    is_sdxl = is_sdxl_checkpoint(path_mgr.checkpoints / project_setting.checkpoint)
     if is_sdxl:
         raise ValueError("Currently SDXL model is not available for this command.")
 
     infer_config: InferenceConfig = get_infer_config(
-        is_v2_motion_module(path_mgr.motions.joinpath(model_config.motion)), is_sdxl
+        is_v2_motion_module(path_mgr.motions.joinpath(project_setting.motion)), is_sdxl
     )
     frames_dir = frames_dir.absolute()
 
-    set_tensor_interpolation_method(model_config.tensor_interpolation_slerp)
+    set_tensor_interpolation_method(project_setting.tensor_interpolation_slerp)
 
     # turn the device string into a torch.device
-    device: torch.device = torch.device(device)
+    torch_device: torch.device = torch.device(device)
 
     # get a timestamp for the output directory
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     # make the output directory
-    save_dir = out_dir.joinpath(f"{time_str}-{model_config.save_name}")
+    save_dir = out_dir.joinpath(f"{time_str}")
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
-    if "controlnet_tile" not in model_config.upscale_config:
-        model_config.upscale_config["controlnet_tile"] = {
+    if "controlnet_tile" not in project_setting.upscale_config:
+        project_setting.upscale_config["controlnet_tile"] = {
             "enable": True,
             "controlnet_conditioning_scale": 1.0,
             "guess_mode": False,
@@ -617,38 +622,38 @@ def tile_upscale(
     use_controlnet_line_anime = False
     use_controlnet_ip2p = False
 
-    if model_config.upscale_config:
+    if project_setting.upscale_config:
         use_controlnet_ref = (
-            model_config.upscale_config["controlnet_ref"]["enable"]
-            if "controlnet_ref" in model_config.upscale_config
+            project_setting.upscale_config["controlnet_ref"]["enable"]
+            if "controlnet_ref" in project_setting.upscale_config
             else False
         )
         use_controlnet_tile = (
-            model_config.upscale_config["controlnet_tile"]["enable"]
-            if "controlnet_tile" in model_config.upscale_config
+            project_setting.upscale_config["controlnet_tile"]["enable"]
+            if "controlnet_tile" in project_setting.upscale_config
             else False
         )
         use_controlnet_line_anime = (
-            model_config.upscale_config["controlnet_line_anime"]["enable"]
-            if "controlnet_line_anime" in model_config.upscale_config
+            project_setting.upscale_config["controlnet_line_anime"]["enable"]
+            if "controlnet_line_anime" in project_setting.upscale_config
             else False
         )
         use_controlnet_ip2p = (
-            model_config.upscale_config["controlnet_ip2p"]["enable"]
-            if "controlnet_ip2p" in model_config.upscale_config
+            project_setting.upscale_config["controlnet_ip2p"]["enable"]
+            if "controlnet_ip2p" in project_setting.upscale_config
             else False
         )
 
-    if use_controlnet_tile == False:
-        if use_controlnet_line_anime == False:
-            if use_controlnet_ip2p == False:
+    if not use_controlnet_tile:
+        if not use_controlnet_line_anime:
+            if not use_controlnet_ip2p:
                 raise ValueError(
                     f"At least one of them should be enabled. {use_controlnet_tile=}, {use_controlnet_line_anime=}, {use_controlnet_ip2p=}"
                 )
 
     # beware the pipeline
     us_pipeline = create_us_pipeline(
-        model_config=model_config,
+        model_config=project_setting,
         infer_config=infer_config,
         use_xformers=use_xformers,
         use_controlnet_ref=use_controlnet_ref,
@@ -657,23 +662,23 @@ def tile_upscale(
         use_controlnet_ip2p=use_controlnet_ip2p,
     )
 
-    if us_pipeline.device == device:
+    if us_pipeline.device == torch_device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
     else:
         us_pipeline = send_to_device(
-            us_pipeline, device, freeze=True, force_half=force_half_vae, compile=model_config.compile
+            us_pipeline, torch_device, freeze=True, force_half=force_half_vae, compile=project_setting.compile
         )
 
-    model_config.result = {"original_frames": str(frames_dir)}
+    project_setting.result = {"original_frames": str(frames_dir)}
 
     # save config to output directory
     logger.info("Saving prompt config to output directory")
     save_config_path = save_dir.joinpath("prompt.json")
-    save_config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+    save_config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
     num_prompts = 1
-    num_negatives = len(model_config.n_prompt)
-    num_seeds = len(model_config.seed)
+    num_negatives = len(project_setting.n_prompt)
+    num_seeds = len(project_setting.seed)
 
     logger.info("Initialization complete!")
 
@@ -682,52 +687,51 @@ def tile_upscale(
     org_images = sorted(glob.glob(os.path.join(frames_dir, "[0-9]*.png"), recursive=False))
     length = len(org_images)
 
-    if model_config.prompt_map:
+    if project_setting.prompt_map:
         # get the index of the prompt, negative, and seed
         idx = gen_num % num_prompts
         logger.info(f"Running generation {gen_num + 1} of {1} (prompt {idx + 1})")
 
         # allow for reusing the same negative prompt(s) and seed(s) for multiple prompts
-        n_prompt = model_config.n_prompt[idx % num_negatives]
-        seed = seed = model_config.seed[idx % num_seeds]
+        n_prompt = project_setting.n_prompt[idx % num_negatives]
+        seed = seed = project_setting.seed[idx % num_seeds]
 
         if seed == -1:
             seed = get_random()
         logger.info(f"Generation seed: {seed}")
 
         prompt_map = {}
-        for k in model_config.prompt_map.keys():
+        for k in project_setting.prompt_map.keys():
             if int(k) < length:
-                pr = model_config.prompt_map[k]
-                if model_config.head_prompt:
-                    pr = model_config.head_prompt + "," + pr
-                if model_config.tail_prompt:
-                    pr = pr + "," + model_config.tail_prompt
+                pr = project_setting.prompt_map[k]
+                if project_setting.head_prompt:
+                    pr = project_setting.head_prompt + "," + pr
+                if project_setting.tail_prompt:
+                    pr = pr + "," + project_setting.tail_prompt
 
                 prompt_map[int(k)] = pr
 
-        if model_config.upscale_config:
+        if project_setting.upscale_config:
             upscaled_output = run_upscale(
                 project_dir,
+                project_setting,
                 org_imgs=org_images,
                 pipeline=us_pipeline,
                 prompt_map=prompt_map,
                 n_prompt=n_prompt,
                 seed=seed,
-                steps=model_config.steps,
-                guidance_scale=model_config.guidance_scale,
-                clip_skip=model_config.clip_skip,
+                steps=project_setting.steps,
+                guidance_scale=project_setting.guidance_scale,
+                clip_skip=project_setting.clip_skip,
                 us_width=width,
                 us_height=height,
                 idx=gen_num,
                 out_dir=save_dir,
-                upscale_config=model_config.upscale_config,
                 use_controlnet_ref=use_controlnet_ref,
                 use_controlnet_tile=use_controlnet_tile,
                 use_controlnet_line_anime=use_controlnet_line_anime,
                 use_controlnet_ip2p=use_controlnet_ip2p,
                 no_frames=no_frames,
-                output_map=model_config.output,
             )
             torch.cuda.empty_cache()
 
@@ -747,7 +751,7 @@ def civitai2config(
     lora_dir: Annotated[
         Path,
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to loras directory"),
-    ] = ...,
+    ],
     config_org: Annotated[
         Path,
         typer.Option(
@@ -760,7 +764,7 @@ def civitai2config(
         ),
     ] = Path("config/prompts/prompt_travel.json"),
     out_dir: Annotated[
-        Optional[Path],
+        Path,
         typer.Option(
             "--out-dir",
             "-o",
@@ -781,7 +785,6 @@ def civitai2config(
     ] = 0.75,
 ):
     """Generate config file from *.civitai.info"""
-
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Generate config files from: {lora_dir}")
@@ -801,7 +804,7 @@ def convert(
             exists=True,
             help="Path to a model checkpoint file",
         ),
-    ] = ...,
+    ],
     out_dir: Annotated[
         Optional[Path],
         typer.Option(
@@ -811,7 +814,7 @@ def convert(
             file_okay=False,
             help="Target directory for converted model",
         ),
-    ] = None,
+    ],
 ):
     """Convert a StableDiffusion checkpoint into a Diffusers pipeline"""
     logger.info(f"Converting checkpoint: {checkpoint}")
@@ -824,7 +827,7 @@ def fix_checkpoint(
     checkpoint: Annotated[
         Path,
         typer.Argument(path_type=Path, dir_okay=False, exists=True, help="Path to a model checkpoint file"),
-    ] = ...,
+    ],
     debug: Annotated[
         bool,
         typer.Option(
@@ -854,7 +857,7 @@ def merge(
             exists=True,
             help="Path to a model checkpoint file",
         ),
-    ] = ...,
+    ],
     out_dir: Annotated[
         Optional[Path],
         typer.Option(
@@ -864,7 +867,7 @@ def merge(
             file_okay=False,
             help="Target directory for converted model",
         ),
-    ] = None,
+    ],
 ):
     """Convert a StableDiffusion checkpoint into an AnimationPipeline"""
     raise NotImplementedError("Sorry, haven't implemented this yet!")
@@ -890,9 +893,9 @@ def refine(
     frames_dir: Annotated[
         Path,
         typer.Argument(path_type=Path, file_okay=False, exists=True, help="Path to source frames directory"),
-    ] = ...,
+    ],
     config_path: Annotated[
-        Path,
+        Optional[Path],
         typer.Option(
             "--config-path",
             "-c",
@@ -1053,7 +1056,7 @@ def refine(
         if tmp.is_file():
             config_path = tmp
         else:
-            raise ValueError(f"config_path invalid.")
+            raise ValueError("config_path invalid.")
 
     org_frames = sorted(glob.glob(os.path.join(frames_dir, "[0-9]*.png"), recursive=False))
     W, H = Image.open(org_frames[0]).size
@@ -1075,7 +1078,7 @@ def refine(
 
     config_path = config_path.absolute()
     logger.info(f"Using generation config: {path_from_cwd(config_path)}")
-    model_config: ModelConfig = get_model_config(config_path)
+    project_setting = get_project_setting(config_path)
 
     save_dir = out_dir
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
@@ -1092,11 +1095,12 @@ def refine(
             rife_interpolate(frames_dir, rife_img_dir, interpolation_multiplier)
             length *= interpolation_multiplier
 
-            if model_config.output:
-                model_config.output["fps"] *= interpolation_multiplier
-            if model_config.prompt_map:
-                model_config.prompt_map = {
-                    str(int(i) * interpolation_multiplier): model_config.prompt_map[i] for i in model_config.prompt_map
+            if project_setting.output:
+                project_setting.output["fps"] *= interpolation_multiplier
+            if project_setting.prompt_map:
+                project_setting.prompt_map = {
+                    str(int(i) * interpolation_multiplier): project_setting.prompt_map[i]
+                    for i in project_setting.prompt_map
                 }
 
             frames_dir = rife_img_dir
@@ -1127,28 +1131,30 @@ def refine(
         shutil.copytree(frames_dir, controlnet_img_dir.joinpath("controlnet_openpose"), dirs_exist_ok=True)
         shutil.copytree(frames_dir, controlnet_img_dir.joinpath("controlnet_canny"), dirs_exist_ok=True)
 
-        model_config.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
-        model_config.controlnet_map["is_loop"] = False
+        project_setting.controlnet_map["input_image_dir"] = os.path.relpath(controlnet_img_dir.absolute(), data_dir)
+        project_setting.controlnet_map["is_loop"] = False
 
-        if "controlnet_tile" in model_config.controlnet_map:
-            model_config.controlnet_map["controlnet_tile"]["enable"] = True
-            model_config.controlnet_map["controlnet_tile"]["control_scale_list"] = []
-            model_config.controlnet_map["controlnet_tile"]["controlnet_conditioning_scale"] = tile_conditioning_scale
+        if "controlnet_tile" in project_setting.controlnet_map:
+            project_setting.controlnet_map["controlnet_tile"]["enable"] = True
+            project_setting.controlnet_map["controlnet_tile"]["control_scale_list"] = []
+            project_setting.controlnet_map["controlnet_tile"]["controlnet_conditioning_scale"] = tile_conditioning_scale
 
-        if "controlnet_openpose" in model_config.controlnet_map:
-            model_config.controlnet_map["controlnet_openpose"]["enable"] = True
-            model_config.controlnet_map["controlnet_openpose"]["control_scale_list"] = []
-            model_config.controlnet_map["controlnet_openpose"][
+        if "controlnet_openpose" in project_setting.controlnet_map:
+            project_setting.controlnet_map["controlnet_openpose"]["enable"] = True
+            project_setting.controlnet_map["controlnet_openpose"]["control_scale_list"] = []
+            project_setting.controlnet_map["controlnet_openpose"][
                 "controlnet_conditioning_scale"
             ] = tile_conditioning_scale
 
-        if "controlnet_canny" in model_config.controlnet_map:
-            model_config.controlnet_map["controlnet_canny"]["enable"] = True
-            model_config.controlnet_map["controlnet_canny"]["control_scale_list"] = []
-            model_config.controlnet_map["controlnet_canny"]["controlnet_conditioning_scale"] = tile_conditioning_scale
+        if "controlnet_canny" in project_setting.controlnet_map:
+            project_setting.controlnet_map["controlnet_canny"]["enable"] = True
+            project_setting.controlnet_map["controlnet_canny"]["control_scale_list"] = []
+            project_setting.controlnet_map["controlnet_canny"][
+                "controlnet_conditioning_scale"
+            ] = tile_conditioning_scale
 
         else:
-            model_config.controlnet_map["controlnet_tile"] = {
+            project_setting.controlnet_map["controlnet_tile"] = {
                 "enable": True,
                 "use_preprocessor": True,
                 "guess_mode": False,
@@ -1158,10 +1164,10 @@ def refine(
                 "control_scale_list": [],
             }
 
-        model_config.seed = [seeds[repeat_count]]
+        project_setting.seed = [seeds[repeat_count]]
 
         config_path = save_dir.joinpath(f"{repeat_count:02d}_prompt.json")
-        config_path.write_text(model_config.model_dump_json(indent=4), encoding="utf-8")
+        config_path.write_text(project_setting.model_dump_json(indent=4), encoding="utf-8")
 
         generated_dir = generate(
             config_path=config_path,
@@ -1181,7 +1187,7 @@ def refine(
 
         torch.cuda.empty_cache()
 
-        frames_dir = glob.glob(os.path.join(generated_dir, "00-frames"), recursive=False)[0]
+        frames_dir = Path(glob.glob(os.path.join(generated_dir, "00-frames"), recursive=False)[0])
 
     if rife_img_dir:
         frames = sorted(glob.glob(os.path.join(rife_img_dir, "[0-9]*.png"), recursive=False))
@@ -1189,14 +1195,7 @@ def refine(
         for f in frames:
             out_images.append(Image.open(f))
 
-        out_file = save_dir.joinpath(f"rife_only_for_comparison")
-        save_output(out_images, rife_img_dir, out_file, model_config.output, True, save_frames=None, save_video=None)
+        out_file = save_dir.joinpath("rife_only_for_comparison")
+        save_output(out_images, rife_img_dir, out_file, project_setting.output, True, save_frames=None, save_video=None)
 
     logger.info(f"Refined results are output to {generated_dir}")
-
-
-@cli.command()
-def webui():
-    from animatediff.webui.project import project_app
-
-    project_app.launch(server_name="0.0.0.0")

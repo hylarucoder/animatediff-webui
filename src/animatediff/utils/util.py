@@ -2,14 +2,14 @@ import json
 import logging
 import os
 from os import PathLike
-from pathlib import PurePosixPath, Path
+from pathlib import Path, PurePosixPath
 from typing import List
 
 import torch
 import torch.distributed as dist
-from PIL import Image
 from einops import rearrange
 from huggingface_hub import hf_hub_download
+from PIL import Image
 from torch import Tensor
 from torchvision.utils import save_image
 from tqdm.rich import tqdm
@@ -80,7 +80,7 @@ def resize_for_condition_image(input_image: Image, us_width: int, us_height: int
     return img
 
 
-def get_resized_images(org_images_path: List[str], us_width: int, us_height: int):
+def get_resized_images(org_images_path: list[Path], us_width: int, us_height: int):
     images = [Image.open(p) for p in org_images_path]
 
     W, H = images[0].size
@@ -292,7 +292,7 @@ def prepare_lcm_lora():
     os.makedirs(path_mgr.lcm_loras / "sd15", exist_ok=True)
     prepare_hf_model(
         path_mgr.lcm_loras / "sd15",
-        "latent-consistency/lcm-lora-sdxl",
+        "latent-consistency/lcm-lora-sdv1-5",
         [
             "pytorch_lora_weights.safetensors",
         ],
@@ -300,7 +300,7 @@ def prepare_lcm_lora():
     os.makedirs(path_mgr.lcm_loras / "sdxl", exist_ok=True)
     prepare_hf_model(
         path_mgr.lcm_loras / "sdxl",
-        "latent-consistency/lcm-lora-sdv1-5",
+        "latent-consistency/lcm-lora-sdxl",
         [
             "pytorch_lora_weights.safetensors",
         ],
