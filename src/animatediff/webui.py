@@ -11,23 +11,15 @@ from animatediff.settings import ModelConfig
 from animatediff.utils.progressbar import pgr
 from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import read_json
+from backend import get_models_endswith, TPreset
 
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 BLANK_PLACEHOLDER = "---"
-
-
-def get_models_endswith(d, endswith="safetensors"):
-    return [f for f in os.listdir(d) if f.endswith(endswith)]
-
-
-def get_projects():
-    return [BLANK_PLACEHOLDER] + list(sorted([_.name for _ in path_mgr.projects.iterdir() if _.is_dir()]))
-
 
 checkpoint_list = get_models_endswith(path_mgr.checkpoints)
 if checkpoint_list:
@@ -35,40 +27,16 @@ if checkpoint_list:
 
 lora_arr = [[BLANK_PLACEHOLDER, 0.7] for _ in range(5)]
 
-
-class Preset(pt.BaseModel):
-    name: str
-    performance: str = "Speed"
-    aspect_radio: str = "432x768 | 9:16"
-    head_prompt: str = "masterpiece, best quality"
-    tail_prompt: str = ""
-    negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
-
-    checkpoint: str = "majicmixRealistic_v7.safetensors"
-    loras: list[list] = pt.Field(default_factory=lambda: lora_arr)
-    motion: str = "mm_sd_v15_v2.ckpt"
-    motion_lora: str | None = None
-
-    fps: int = 8
-    duration: int = 4
-    seed: int = -1
-
-    lcm: bool = False
-    sampler: str = "k_dpmpp_sde"
-    step: int = 20
-    cfg: float = 7
-
-
-preset_default = Preset(
+preset_default = TPreset(
     name="default",
 )
-preset_lcm = Preset(
+preset_lcm = TPreset(
     name="default - lcm",
     performance="Extreme Speed",
     aspect_radio="768x432 | 16:9",
 )
 
-preset_color = Preset(
+preset_color = TPreset(
     name="lcm + motion-lora + color fashion",
     performance="Extreme Speed",
     head_prompt="masterpiece,best quality, 1girl, walk,",
@@ -121,7 +89,7 @@ def render_ui():
             with gr.Row():
                 with gr.Column():
                     ip_preset = gr.Dropdown(
-                        label="Preset",
+                        label="TPreset",
                         choices=get_presets(),
                         value=preset_default.name,
                         interactive=True,
@@ -267,7 +235,7 @@ def render_ui():
                             "576x768 | 3:4",
                         ],
                         label="Aspect Ratios",
-                        value=preset_default.aspect_radio,
+                        value=preset_default.aspect_ratio,
                         interactive=True,
                     )
                 with gr.Row():
@@ -363,23 +331,23 @@ def render_ui():
                 gr.Slider(minimum=1, maximum=100, value=50, label="CFG")
 
     def fn_generate(
-        project,
-        performance,
-        aspect_radio,
-        head_prompt,
-        tail_prompt,
-        negative_prompt,
-        fps,
-        duration,
-        seed,
-        checkpoint,
-        motion,
-        motion_loras,
-        *lora_items,
-        data=None,
-        progress=gr.Progress(
-            track_tqdm=True,
-        ),
+            project,
+            performance,
+            aspect_radio,
+            head_prompt,
+            tail_prompt,
+            negative_prompt,
+            fps,
+            duration,
+            seed,
+            checkpoint,
+            motion,
+            motion_loras,
+            *lora_items,
+            data=None,
+            progress=gr.Progress(
+                track_tqdm=True,
+            ),
     ):
         project_dir = path_mgr.projects / project
         global_config = ModelConfig(**read_json(path_mgr.demo_prompt_json))
@@ -482,7 +450,7 @@ def render_ui():
     )
 
     def apply_preset(
-        preset_name,
+            preset_name,
     ):
         preset = next((_ for _ in presets if _.name == preset_name), None)
         loras_gr = []
@@ -494,7 +462,7 @@ def render_ui():
                 value=preset.performance,
             ),
             gr.update(
-                value=preset.aspect_radio,
+                value=preset.aspect_ratio,
             ),
             gr.update(
                 value=preset.head_prompt,
@@ -549,16 +517,16 @@ def render_ui():
 
 
 with gr.Blocks(
-    title="Animatediff WebUI",
-    css="""
+        title="Animatediff WebUI",
+        css="""
         video {
             height: 504px !important;
         }
         """,
-    theme=gr.themes.Default(
-        spacing_size="sm",
-        text_size="sm",
-    ),
+        theme=gr.themes.Default(
+            spacing_size="sm",
+            text_size="sm",
+        ),
 ) as demo:
     render_ui()
 

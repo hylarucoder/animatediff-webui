@@ -246,3 +246,5 @@ src/animatediff/_version.py
 output/
 upscaled/
 src/ProPainter
+
+node_modules
