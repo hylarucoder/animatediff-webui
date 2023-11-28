@@ -1,30 +1,22 @@
-# React + TypeScript + Vite
+# simpleaiart.com
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Tech Tack
 
-Currently, two official plugins are available:
+- 💚 [Nuxt 3](https://nuxt.com/) - SSR, ESR, File-based routing, components auto importing, modules, etc.
+- ⚡️ Vite - Instant HMR.
+- 🎨 [TailwindCSS](https://github.com/tailwindlabs/tailwindcss) - The CSS engine.
+- 😃 Use icons from any icon sets [Nuxt Icon](https://github.com/nuxt-modules/icon).
+- 🔥 The `<script setup lang="ts">` syntax.
+- 🍍 [State Management via Pinia](https://github.com/vuejs/pinia).
+- 📥 APIs auto importing - for Composition API, VueUse.
+- 🏎 Zero-config cloud functions and deploy.
+- 🦾 TypeScript, of course.
+- 📲 [PWA](https://github.com/vite-pwa/nuxt) with offline support and auto update behavior.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Credits
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+- https://github.com/antfu/vitesse-nuxt3
+- https://github.com/nuxt/content
+- https://github.com/nuxtlabs/ui
+- https://github.com/sindresorhus/github-markdown-css
+- https://github.com/remarkjs/remark-rehype

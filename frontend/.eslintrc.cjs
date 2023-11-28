@@ -1,18 +1,16 @@
+// require("@rushstack/eslint-patch/modern-module-resolution")
+
 module.exports = {
-  root: true,
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+  extends: ["@nuxtjs/eslint-config-typescript"],
   rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
+    quotes: ["error", "double", { allowTemplateLiterals: true }],
+    "comma-dangle": ["error", "always-multiline"],
+    "space-before-function-paren": "off",
+    "arrow-parens": "off",
+    "vue/valid-template-root": "off",
+    "vue/no-multiple-template-root": "off",
+    "vue/one-component-per-file": "off",
+    "no-console": "off",
+    "multiline-ternary": "off",
   },
 }
