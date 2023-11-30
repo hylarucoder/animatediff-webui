@@ -3,8 +3,7 @@ import { urlPrefix } from "~/consts"
 import { TStatus } from "~/composables/usePlayer"
 
 const formStore = useFormStore()
-const { preset, project } = formStore
-const { loadPreset } = formStore
+const { preset, project, loadPreset } = formStore
 const player = usePlayer()
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
@@ -53,11 +52,11 @@ const generate = () => {
 }
 
 const changePresets = (value: string) => {
-  const preset = options.value.presets.find((p) => p.name === value)
-  if (!preset) {
+  const _preset = options.value.presets.find((p) => p.name === value)
+  if (!_preset) {
     return
   }
-  loadPreset(preset)
+  loadPreset(_preset)
 }
 console.log("optPresets", toRaw(optPresets))
 </script>
@@ -71,7 +70,7 @@ console.log("optPresets", toRaw(optPresets))
       <AFormItem style="margin: 0" label="Preset">
         <ASelect
           :options="optPresets"
-          :model-value="preset"
+          :value="preset"
           style="width: 200px"
           class="text-left"
           @update:value="changePresets"
@@ -92,10 +91,6 @@ console.log("optPresets", toRaw(optPresets))
 </template>
 
 <style>
-#topbar ant-form-item {
-  margin-bottom: 0px !important;
-}
-
 .ant-form-item-no-mb .ant-form-item {
   margin-bottom: 0 !important;
 }
