@@ -12,7 +12,7 @@ from huggingface_hub import hf_hub_download
 from PIL import Image
 from torch import Tensor
 from torchvision.utils import save_image
-from tqdm.rich import tqdm
+from tqdm.auto import tqdm
 
 from animatediff.consts import path_mgr
 

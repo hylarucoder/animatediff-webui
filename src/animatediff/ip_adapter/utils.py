@@ -11,6 +11,8 @@ from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.utils.torch_utils import is_compiled_module
 
+from animatediff.utils.progressbar import pgr
+
 
 def is_torch2_available():
     return hasattr(F, "scaled_dot_product_attention")

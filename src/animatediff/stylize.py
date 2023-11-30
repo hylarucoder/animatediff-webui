@@ -10,7 +10,7 @@ from typing import Annotated, Optional
 import torch
 import typer
 from PIL import Image
-from tqdm.rich import tqdm
+from tqdm.auto import tqdm
 
 from animatediff import __version__, get_dir
 from animatediff.consts import path_mgr

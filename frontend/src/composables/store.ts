@@ -199,7 +199,7 @@ export const useOptionsStore = () => {
   const init = async () => {
     const res = (await $fetch(urlPrefix + `/api/options`)) as any
     loadOptions(res)
-    const preset_name = res.presets[2].name
+    const preset_name = res.presets[0].name
     console.log("init=>", preset_name)
     const _preset = res.presets.find((p) => p.name === preset_name)
     loadPreset(_preset)

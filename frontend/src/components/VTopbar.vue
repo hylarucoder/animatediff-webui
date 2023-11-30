@@ -12,6 +12,9 @@ const pull_video_path = () => {
   $fetch(urlPrefix + "/api/render/status", {
     method: "GET",
   }).then((res: any) => {
+    if (res.progress.length) {
+      player.tasks.value = res.progress
+    }
     if (!res.video_path) {
       return
     }
@@ -36,9 +39,9 @@ const generate = () => {
     loras: formStore.loras.value,
     motion: formStore.motion.value,
     motion_lora: formStore.motion_lora.value,
-    // fps: formStore.fps.value,
-    // duration: formStore.duration.value,
-    // seed: formStore.seed.value,
+    fps: formStore.fps.value,
+    duration: formStore.duration.value,
+    seed: formStore.seed.value,
   }
   $fetch(urlPrefix + "/api/render/submit", {
     method: "POST",
@@ -71,13 +74,14 @@ console.log("optPresets", toRaw(optPresets))
         <ASelect
           :options="optPresets"
           :value="preset"
+          show-search
           style="width: 200px"
           class="text-left"
           @update:value="changePresets"
         />
       </AFormItem>
       <AFormItem style="margin: 0" label="Project">
-        <ASelect v-model:value="project" :options="optProjects" style="width: 200px" class="text-left" />
+        <ASelect show-search v-model:value="project" :options="optProjects" style="width: 200px" class="text-left" />
       </AFormItem>
     </div>
 

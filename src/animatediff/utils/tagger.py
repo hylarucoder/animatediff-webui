@@ -9,7 +9,7 @@ import numpy as np
 import onnxruntime
 import pandas as pd
 from PIL import Image
-from tqdm.rich import tqdm
+from tqdm.auto import tqdm
 
 from animatediff.consts import path_mgr
 from animatediff.utils.util import prepare_wd14tagger
