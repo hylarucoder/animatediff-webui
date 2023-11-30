@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { CashOutline } from "@vicons/ionicons5"
 import { urlPrefix } from "~/consts"
 import { TStatus } from "~/composables/usePlayer"
 
-const { form, setPreset } = useAnimateForm()
+const formStore = useFormStore()
+const { preset, project } = formStore
+const { loadPreset } = formStore
 const player = usePlayer()
-const { options } = useStore()
+const optionsStore = useOptionsStore()
+const { optPresets, optProjects, options } = optionsStore
 
 const pull_video_path = () => {
-  $fetch(
-    urlPrefix + "/api/render/status",
-    {
-      method: "GET",
-    },
-  ).then((res: any) => {
+  $fetch(urlPrefix + "/api/render/status", {
+    method: "GET",
+  }).then((res: any) => {
     if (!res.video_path) {
       return
     }
@@ -28,82 +27,66 @@ let pull_inter = null
 const generate = () => {
   player.status.value = TStatus.LOADING
   const data = {
-    ...form,
-    project: form.value.project,
+    project: formStore.project.value,
+    performance: formStore.performance.value,
+    aspect_ratio: formStore.aspect_ratio.value,
+    head_prompt: formStore.head_prompt.value,
+    tail_prompt: formStore.tail_prompt.value,
+    negative_prompt: formStore.negative_prompt.value,
+    checkpoint: formStore.checkpoint.value,
+    loras: formStore.loras.value,
+    motion: formStore.motion.value,
+    motion_lora: formStore.motion_lora.value,
+    // fps: formStore.fps.value,
+    // duration: formStore.duration.value,
+    // seed: formStore.seed.value,
   }
-  $fetch(
-    urlPrefix + "/api/render/submit",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  ).then((res) => {
+  $fetch(urlPrefix + "/api/render/submit", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }).then((res) => {
     console.log(res)
     pull_inter = setInterval(() => {
       pull_video_path()
     }, 4000)
   })
 }
-const presetsOption = options.value.presets.map((preset) => {
-  return {
-    label: preset.name,
-    value: preset.name,
-  }
-})
-const projectsOption = options.value.projects.map((p) => {
-  return {
-    label: p,
-    value: p,
-  }
-})
 
 const changePresets = (value: string) => {
-  console.log("value", value)
   const preset = options.value.presets.find((p) => p.name === value)
   if (!preset) {
     return
   }
-  setPreset(preset)
+  loadPreset(preset)
 }
-console.log(presetsOption)
-
+console.log("optPresets", toRaw(optPresets))
 </script>
 
 <template>
-  <div class="w-full flex justify-evenly text-center px-5 border-[1px]">
-    <div id="topbar" class="flex items-center flex-1 space-x-3 form-item-no-feedback align-middle py-2">
-      <AFormItem
-        style="margin-bottom: 10px !important;"
-        label="Preset"
-      >
+  <div class="flex w-full justify-evenly border-[1px] px-5 text-center">
+    <div
+      id="topbar"
+      class="ant-form-item-no-mb form-item-no-feedback flex flex-1 items-center space-x-3 py-2 align-middle"
+    >
+      <AFormItem style="margin: 0" label="Preset">
         <ASelect
-          :options="presetsOption"
-          :model-value="form.preset"
-          style="width: 200px;"
+          :options="optPresets"
+          :model-value="preset"
+          style="width: 200px"
           class="text-left"
           @update:value="changePresets"
         />
       </AFormItem>
-      <AFormItem
-        style="margin: 0"
-        label="Project"
-      >
-        <ASelect
-          v-model:value="form.project"
-          :options="projectsOption"
-          style="width: 200px;"
-          class="text-left"
-        />
+      <AFormItem style="margin: 0" label="Project">
+        <ASelect v-model:value="project" :options="optProjects" style="width: 200px" class="text-left" />
       </AFormItem>
     </div>
 
-    <div class="space-x-3 flex justify-center items-center">
-      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate">
-        Generate
-      </AButton>
-      <AButton @click="pull_video_path">
-        load video
-      </AButton>
+    <div class="flex items-center justify-center space-x-3">
+      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Generate</AButton>
+      <!--      <AButton @click="pull_video_path">-->
+      <!--        load video-->
+      <!--      </AButton>-->
     </div>
   </div>
 </template>
@@ -113,4 +96,7 @@ console.log(presetsOption)
   margin-bottom: 0px !important;
 }
 
+.ant-form-item-no-mb .ant-form-item {
+  margin-bottom: 0 !important;
+}
 </style>

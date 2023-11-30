@@ -1,38 +1,31 @@
 <script setup lang="ts">
+import { useFormStore, useOptionsStore } from "~/composables/store"
 
+const optionsStore = useOptionsStore()
 const {
   options,
-} = useStore()
-const { form } = useAnimateForm()
-console.log(options.value)
-
-const unflatten = (arr: any[]) => {
-  return arr.map((x) => {
-    return {
-      label: x,
-      value: x,
-    }
-  })
-}
-
-const unflattenCheckpoint = (arr: any[]) => {
-  return arr.map((x) => {
-    return {
-      label: x.name,
-      value: x.name,
-    }
-  })
-}
-const perfOptions = unflatten(performances)
-
-const aspectRadioOptions = unflatten(aspect_ratios)
-
-const checkpointOptions = unflattenCheckpoint(options.value.checkpoints)
-
-const motionOptions = unflattenCheckpoint(options.value.motions)
-const motionLorasOptions = unflattenCheckpoint(options.value.motion_loras)
-const lorasOptions = unflattenCheckpoint(options.value.loras)
-console.log(perfOptions, checkpointOptions, lorasOptions, toRaw(options.value))
+  optPerformances,
+  optLoras,
+  optMotions,
+  optCheckpoints,
+  optAspectRadios,
+  optMotionLoras,
+} = optionsStore
+const formStore = useFormStore()
+const {
+  performance,
+  checkpoint,
+  aspect_ratio,
+  head_prompt,
+  tail_prompt,
+  negative_prompt,
+  seed,
+  duration,
+  fps,
+  loras,
+  motion,
+  motion_lora,
+} = formStore
 
 const advanced = ref({
   cfg: 1,
@@ -45,82 +38,84 @@ const activeKey = ref("1")
     <a-tabs v-model:activeKey="activeKey">
       <a-tab-pane key="1" tab="Setting">
         <AForm
-            layout="vertical"
+          layout="vertical"
         >
           <a-form-item
-              label="Performance"
+            label="Performance"
           >
             <a-radio-group
-                v-model:value="form.performance"
+              v-model:value="performance"
             >
               <a-radio
-                  v-for="_ in perfOptions"
-                  :key="_.value"
-                  :value="_.value"
-                  :label="_.label"
-              > {{ _.value }}
+                v-for="opt in optPerformances"
+                :key="opt.value"
+                :value="opt.value"
+                :label="opt.label"
+              >
+                {{ opt.value }}
               </a-radio>
             </a-radio-group>
           </a-form-item>
           <a-form-item
-              label="Aspect Radios"
+            label="Aspect Radios"
           >
             <a-radio-group
-                v-model:value="form.aspect_ratio"
+              v-model:value="aspect_ratio"
             >
               <a-radio
-                  v-for="ar in aspectRadioOptions"
-                  :key="ar.value"
-                  class="font-mono"
-                  :value="ar.value"
-                  :label="ar.label"
-              >{{ ar.value }}
+                v-for="ar in optAspectRadios"
+                :key="ar.value"
+                class="font-mono"
+                :value="ar.value"
+                :label="ar.label"
+              >
+                {{ ar.value }}
               </a-radio>
             </a-radio-group>
           </a-form-item>
           <a-form-item
-              label="Head Prompt"
+            label="Head Prompt"
           >
-            <a-input :value="form.head_prompt"/>
+            <a-input :value="head_prompt" />
           </a-form-item>
           <a-form-item
-              label="Tail Prompt"
+            label="Tail Prompt"
           >
             <a-textarea
-                v-model:value="form.tail_prompt"
+              v-model:value="tail_prompt"
             />
           </a-form-item>
           <a-form-item
-              label="Negative Prompt"
+            label="Negative Prompt"
           >
             <a-textarea
-                v-model:value="form.negative_prompt"
+              v-model:value="negative_prompt"
             />
           </a-form-item>
           <a-form-item
-              label="Seed"
+            label="Seed"
           >
-            <a-input-number v-model:value="form.seed" step="1"/>
+            <a-input-number v-model:value="seed" step="1" />
           </a-form-item>
           <div class="flex space-x-5">
             <a-form-item
-                label="Duration(s)"
+              label="Duration(s)"
             >
               <a-input-number
-                  step="1"
-                  min="1"
-                  max="600"
-                  v-model:value="form.duration"
+                v-model:value="duration"
+                step="1"
+                min="1"
+                max="600"
               />
             </a-form-item>
             <a-form-item
-                label="FPS"
+              label="FPS"
             >
               <a-input-number
-                  step="1"
-                  min="4"
-                  max="16"
-                  v-model:value="form.fps"
+                v-model:value="fps"
+                step="1"
+                min="4"
+                max="16"
               />
             </a-form-item>
           </div>
@@ -128,60 +123,61 @@ const activeKey = ref("1")
       </a-tab-pane>
       <a-tab-pane key="2" tab="Model">
         <a-form
-            layout="vertical"
+          layout="vertical"
         >
           <a-form-item
-              label="Checkpoint"
+            label="Checkpoint"
           >
             <a-select
-                v-model:value="form.checkpoint"
-                :options="checkpointOptions"
+              v-model:value="checkpoint"
+              :options="optCheckpoints"
             />
           </a-form-item>
         </a-form>
         <a-form
-            layout="vertical"
+          layout="vertical"
         >
           <a-form-item
-              v-for="(song, idx) in form.loras"
-              class="form-item-no-feedback"
-              :label="`LoRA ${idx + 1}`"
+            v-for="(opt, idx) in loras"
+            :key="idx"
+            class="form-item-no-feedback"
+            :label="`LoRA ${idx + 1}`"
           >
             <div class="flex">
               <a-select
-                  v-model:value="song.name"
-                  size="small"
-                  class="w-[150px] min-w-[150px]"
-                  :options="lorasOptions"
+                v-model:value="opt.name"
+                size="small"
+                class="w-[150px] min-w-[150px]"
+                :options="optLoras"
               />
               <a-input-number
-                  v-model:value="song.weight"
-                  size="small"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  class="ml-2"
+                v-model:value="opt.weight"
+                size="small"
+                min="0"
+                max="2"
+                step="0.1"
+                class="ml-2"
               />
             </div>
           </a-form-item>
           <a-form
-              class="pt-5"
-              layout="vertical"
+            class="pt-5"
+            layout="vertical"
           >
             <a-form-item
-                label="Motion"
+              label="Motion"
             >
               <a-select
-                  v-model:value="form.motion"
-                  :options="motionOptions"
+                v-model:value="motion"
+                :options="optMotions"
               />
             </a-form-item>
             <a-form-item
-                label="Motion LoRAs"
+              label="Motion LoRAs"
             >
               <a-select
-                  v-model:value="form.motion_lora"
-                  :options="motionLorasOptions"
+                v-model:value="motion_lora"
+                :options="optMotionLoras"
               />
             </a-form-item>
           </a-form>
@@ -189,11 +185,11 @@ const activeKey = ref("1")
       </a-tab-pane>
       <a-tab-pane key="3" tab="Advanced">
         <a-form-item
-            label="cfg"
-            size="small"
+          label="cfg"
+          size="small"
         >
           <a-slider
-              v-model:value="advanced.cfg"
+            v-model:value="advanced.cfg"
           />
         </a-form-item>
       </a-tab-pane>

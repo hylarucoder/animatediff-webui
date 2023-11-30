@@ -12,5 +12,6 @@ module.exports = {
     "vue/one-component-per-file": "off",
     "no-console": "off",
     "multiline-ternary": "off",
+    "camelcase": "off",
   },
 }
