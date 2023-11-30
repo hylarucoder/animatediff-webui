@@ -1,0 +1,8 @@
+#prose-h1-title {
+  line-height: 0.8;
+
+  a {
+    @apply text-3xl leading-none;
+    line-height: 0.8;
+  }
+}

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 from rembg import new_session, remove
-from tqdm.rich import tqdm
+from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
 

@@ -33,7 +33,7 @@ from PIL import Image
 from torchvision.datasets.folder import IMG_EXTENSIONS
 
 # from tqdm.rich import tqdm
-from tqdm.rich import tqdm
+from tqdm.auto import tqdm
 from transformers import (
     AutoImageProcessor,
     CLIPImageProcessor,
@@ -663,7 +663,6 @@ def create_pipeline(
         else:
             raise ValueError(f"{lora_path=} not found")
 
-    pgr.update_phrase(10, "Creating AnimationPipeline")
     pipeline = AnimationPipeline(
         vae=vae,
         text_encoder=text_encoder,
