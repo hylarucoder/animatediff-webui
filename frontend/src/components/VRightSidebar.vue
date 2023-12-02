@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { mediaPrefix } from "~/consts"
+
 const optionsStore = useOptionsStore()
-const { options, optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
+const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
 const {
   performance,
@@ -23,7 +25,7 @@ const advanced = ref({
 const activeKey = ref("1")
 </script>
 <template>
-  <div class="h-[800px] w-[400px] overflow-auto border-b-[1px] border-r-[1px] border-gray-200 px-5 py-2">
+  <div class="w-[400px] overflow-auto border-b-[1px] border-r-[1px] border-gray-200 px-5 py-2">
     <a-tabs v-model:activeKey="activeKey">
       <a-tab-pane key="1" tab="Setting" class="max-w-[500px]">
         <AForm layout="vertical">
@@ -69,25 +71,48 @@ const activeKey = ref("1")
           </div>
         </AForm>
       </a-tab-pane>
-      <a-tab-pane class="w-[300px]" key="2" tab="Model">
+      <a-tab-pane key="2" class="w-[300px]" tab="Model">
         <a-form layout="vertical">
           <a-form-item label="Checkpoint">
-            <a-select show-search v-model:value="checkpoint" :options="optCheckpoints" />
+            <a-select v-model:value="checkpoint" show-search>
+              <a-select-option
+                v-for="opt in optCheckpoints"
+                :key="opt.value"
+                :value="opt.value"
+                :label="opt.label"
+                :title="opt.label"
+                style="width: 100%"
+              >
+                <a-popover
+                  :mouseEnterDelay="0.02"
+                  style="z-index: 1000"
+                  class="rounded-xl p-0"
+                  placement="left"
+                  v-if="opt.thumbnail"
+                >
+                  <template #content>
+                    <img class="max-w-[300px]" :src="mediaPrefix + opt.thumbnail" />
+                  </template>
+                  <span>{{ opt.label }}</span>
+                </a-popover>
+                <span v-else>{{ opt.label }}</span>
+              </a-select-option>
+            </a-select>
           </a-form-item>
         </a-form>
         <a-form layout="vertical">
           <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-no-feedback" :label="`LoRA ${idx + 1}`">
             <div class="flex">
-              <a-select show-search v-model:value="opt.name" class="w-[150px] min-w-[150px]" :options="optLoras" />
+              <a-select v-model:value="opt.name" show-search class="w-[150px] min-w-[150px]" :options="optLoras" />
               <a-input-number v-model:value="opt.weight" size="small" min="0" max="2" step="0.1" class="ml-2" />
             </div>
           </a-form-item>
           <a-form class="pt-5" layout="vertical">
             <a-form-item label="Motion">
-              <a-select show-search v-model:value="motion" :options="optMotions" />
+              <a-select v-model:value="motion" show-search :options="optMotions" />
             </a-form-item>
             <a-form-item label="Motion LoRAs">
-              <a-select show-search v-model:value="motion_lora" :options="optMotionLoras" />
+              <a-select v-model:value="motion_lora" show-search :options="optMotionLoras" />
             </a-form-item>
           </a-form>
         </a-form>

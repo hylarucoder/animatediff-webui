@@ -8,20 +8,27 @@ export enum TStatus {
 const video_url = ref("")
 const status = ref(TStatus.PENDING)
 const videoRef = ref<HTMLVideoElement | null>(null)
-const tasks = ref<
-  {
-    description: string
-    completed: number
-    total: number
-  }[]
->([])
+
+type TProgress = {
+  description: string
+  completed: number
+  total: number
+}
+
+const progress = ref<{
+  main: TProgress
+  tasks: TProgress[]
+}>({
+  main: null,
+  tasks: [],
+})
 
 export const usePlayer = () => {
   return {
     status,
     video_url,
     videoRef,
-    tasks,
+    progress,
     reloadVideo: () => {
       console.log(videoRef, videoRef?.value)
       videoRef?.value?.load()

@@ -92,6 +92,8 @@ const loadPreset = (_preset: TPreset) => {
   head_prompt.value = _preset.head_prompt
   tail_prompt.value = _preset.tail_prompt
   negative_prompt.value = _preset.negative_prompt
+  fps.value = _preset.fps
+  duration.value = _preset.duration
 }
 const video_url = ref("")
 const video_status = ref("")
@@ -145,6 +147,7 @@ const unflattenCheckpoint = (arr: any[]) => {
     return {
       label: x.name,
       value: x.name,
+      thumbnail: x.thumbnail,
     }
   })
 }

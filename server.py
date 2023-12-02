@@ -3,13 +3,11 @@ from pathlib import Path
 import fastapi
 import pydantic as pt
 from fastapi import BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from rich.progress import Progress
 from starlette.responses import Response, FileResponse
 
 from animatediff.consts import path_mgr
-import os
-from fastapi.middleware.cors import CORSMiddleware
-
 from animatediff.settings import ModelConfig
 from animatediff.utils.progressbar import pgr
 from animatediff.utils.util import read_json
@@ -24,18 +22,24 @@ app.add_middleware(
 )
 
 
-def get_models_endswith(d, endswith="safetensors"):
-    return [f for f in os.listdir(d) if f.endswith(endswith)]
+def get_models_endswith_v2(d: Path, endswith="safetensors"):
+    all_files = list(d.glob("**/*.*"))
+    # 创建一个映射，将每个图片文件的基本名称映射到其相对路径
+    image_map = {
+        f.stem: str(f) for f in all_files
+        if f.is_file() and f.suffix.lstrip('.').lower() in {"png", "webp", "jpg", "jpeg"}
+    }
 
-
-def get_models_endswith_v2(d, endswith="safetensors"):
-    items = [f for f in os.listdir(d) if f.endswith(endswith)]
-    return [
+    # 对于每个模型，获取其名字（不包括扩展名），然后在映射中查找对应的图片
+    models = [
         {
-            "name": f,
-            "thumbnail": os.path.join(d, f)
-        } for f in items
+            "name": str(f.relative_to(d)),
+            "thumbnail": image_map.get(f.stem)  # 如果没有找到对应的图片，这将返回 None
+        }
+        for f in all_files
+        if f.is_file() and f.name.endswith(endswith)
     ]
+    return models
 
 
 def lora_arr():
@@ -99,6 +103,7 @@ def gen_presets():
         head_prompt="masterpiece,best quality, 1girl, walk,",
         tail_prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
         lcm=True,
+        duration=2,
     )
     preset_color.loras[0] = ["釉彩·麻袋调色盘_v1.0.safetensors", 0.8]
     presets = [
@@ -258,7 +263,10 @@ def render_status():
     return {
         "message": "Hello World",
         "video_path": bg_task_video,
-        "progress": pgr.status
+        "progress": {
+            "main": pgr.status[:1],
+            "tasks": pgr.status[1:]
+        }
     }
 
 
@@ -281,8 +289,7 @@ def image_proxy(path: str):
     repo_dir = Path(path_mgr.repo)
     if str(repo_dir) not in str(absolute_path):
         return Response(status_code=404)
-    # TODO: better check
-    if str(absolute_path).split(".")[-1] not in ["png", "jpg", "jpeg", "mp4"]:
+    if str(absolute_path).split(".")[-1] not in ["png", "jpg", "jpeg", "mp4", "webp"]:
         return Response(status_code=404)
     return FileResponse(str(absolute_path))
 

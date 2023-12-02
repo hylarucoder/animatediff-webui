@@ -12,8 +12,9 @@ const pull_video_path = () => {
   $fetch(urlPrefix + "/api/render/status", {
     method: "GET",
   }).then((res: any) => {
-    if (res.progress.length) {
-      player.tasks.value = res.progress
+    if (res.progress.main) {
+      console.log("---->", res.progress)
+      player.progress = res.progress
     }
     if (!res.video_path) {
       return
@@ -65,7 +66,7 @@ console.log("optPresets", toRaw(optPresets))
 </script>
 
 <template>
-  <div class="flex w-full justify-evenly border-[1px] px-5 text-center">
+  <div class="flex h-[--header-height] w-full justify-evenly border-[1px] px-5 text-center">
     <div
       id="topbar"
       class="ant-form-item-no-mb form-item-no-feedback flex flex-1 items-center space-x-3 py-2 align-middle"
