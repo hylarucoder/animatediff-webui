@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TStatus } from "~/composables/usePlayer"
+import { TStatus, usePlayer } from "~/composable/usePlayer"
 
 const { progress, status, video_url, videoRef } = usePlayer()
 

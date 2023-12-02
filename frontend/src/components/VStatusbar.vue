@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { usePlayer } from "~/composable/usePlayer"
+
 const { progress } = usePlayer()
 // computed not finished tasks
 const notCompletedTasks = computed(() => {

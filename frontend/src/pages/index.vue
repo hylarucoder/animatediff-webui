@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useOptionsStore } from "~/composable/store"
+
 const optionsStore = useOptionsStore()
-const { optionLoaded } = storeToRefs(optionsStore)
+const { optionLoaded } = optionsStore
 await optionsStore.init()
 </script>
 <template>

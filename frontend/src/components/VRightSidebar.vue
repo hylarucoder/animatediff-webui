@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFormStore, useOptionsStore } from "~/composable/store"
+
 const optionsStore = useOptionsStore()
 const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
@@ -73,7 +75,7 @@ const activeKey = ref("1")
         </a-form>
         <a-form layout="vertical">
           <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-no-feedback" :label="`LoRA ${idx + 1}`">
-            <div class="form-item-no-feedback flex">
+            <div class="flex">
               <v-preview-select v-model:value="opt.name" class="w-[150px] min-w-[150px]" :options="optLoras" />
               <a-input-number v-model:value="opt.weight" size="small" min="0" max="2" step="0.1" class="ml-2" />
             </div>

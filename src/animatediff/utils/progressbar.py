@@ -11,7 +11,9 @@ class ProgressBar:
     def __init__(self):
         ...
 
-    def set_pgr(self, _pgr: Progress):
+    def set_pgr(self, _pgr: Progress, task_id):
+        from animatediff.adw.service import get_task_by_id
+        self.bg_task = get_task_by_id(task_id)
         self._pgr = _pgr
         self.task_id_main = _pgr.add_task("Video Rendering...", total=100)
         self.task_id_config = _pgr.add_task("Step 01/08: Checking Configuration", total=100)

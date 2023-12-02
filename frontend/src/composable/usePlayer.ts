@@ -34,7 +34,6 @@ export const usePlayer = () => {
     videoRef,
     progress,
     reloadVideo: () => {
-      console.log(videoRef, videoRef?.value)
       videoRef?.value?.load()
     },
   }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { TStatus } from "~/composables/usePlayer"
+import { TStatus, usePlayer } from "~/composable/usePlayer"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
+import { useFormStore, useOptionsStore } from "~/composable/store"
 
 const formStore = useFormStore()
 const { preset, project, loadPreset } = formStore
@@ -14,15 +15,15 @@ const pullVideoPath = async () => {
   if (res.progress.main) {
     player.progress.value = res.progress
   }
-  if (!res.video_path) {
+  if (!res?.task?.videoPath) {
     return
   }
-  player.video_url.value = formatProxyMedia(res.video_path)
+  player.video_url.value = formatProxyMedia(res.task.videoPath)
   player.status.value = TStatus.SUCCESS
   player.reloadVideo()
-  clearInterval(pull_inter)
+  clearInterval(pullInter)
 }
-let pull_inter = null
+let pullInter = null
 
 const generate = async () => {
   player.status.value = TStatus.LOADING
@@ -43,7 +44,7 @@ const generate = async () => {
   try {
     const res = await submitTask(data)
     console.log("generate res", res)
-    pull_inter = setInterval(() => {
+    pullInter = setInterval(() => {
       pullVideoPath()
     }, 2000)
   } catch (e) {
