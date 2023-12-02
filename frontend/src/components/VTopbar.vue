@@ -12,7 +12,7 @@ const pullVideoPath = async () => {
   const res = await getTaskStatus()
   console.log(res)
   if (res.progress.main) {
-    player.progress = res.progress
+    player.progress.value = res.progress
   }
   if (!res.video_path) {
     return
