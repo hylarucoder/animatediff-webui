@@ -19,7 +19,11 @@ const progress = ref<{
   main: TProgress
   tasks: TProgress[]
 }>({
-  main: null,
+  main: {
+    description: "progressing",
+    completed: 10,
+    total: 100,
+  },
   tasks: [],
 })
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { urlPrefix } from "~/consts"
 import { TStatus } from "~/composables/usePlayer"
+import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
 
 const formStore = useFormStore()
 const { preset, project, loadPreset } = formStore
@@ -8,33 +8,29 @@ const player = usePlayer()
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
 
-const pull_video_path = () => {
-  $fetch(urlPrefix + "/api/render/status", {
-    method: "GET",
-  }).then((res: any) => {
-    if (res.progress.main) {
-      console.log("---->", res.progress)
-      player.progress = res.progress
-    }
-    if (!res.video_path) {
-      return
-    }
-    player.video_url.value = urlPrefix + "/media?path=" + res.video_path
-    player.status.value = TStatus.SUCCESS
-    player.reloadVideo()
-    clearInterval(pull_inter)
-  })
+const pullVideoPath = async () => {
+  const res = await getTaskStatus()
+  console.log(res)
+  if (res.progress.main) {
+    player.progress = res.progress
+  }
+  if (!res.video_path) {
+    return
+  }
+  player.video_url.value = formatProxyMedia(res.video_path)
+  player.status.value = TStatus.SUCCESS
+  player.reloadVideo()
+  clearInterval(pull_inter)
 }
 let pull_inter = null
 
-const generate = () => {
+const generate = async () => {
   player.status.value = TStatus.LOADING
   const data = {
     project: formStore.project.value,
     performance: formStore.performance.value,
     aspect_ratio: formStore.aspect_ratio.value,
-    head_prompt: formStore.head_prompt.value,
-    tail_prompt: formStore.tail_prompt.value,
+    prompt: formStore.prompt.value,
     negative_prompt: formStore.negative_prompt.value,
     checkpoint: formStore.checkpoint.value,
     loras: formStore.loras.value,
@@ -44,15 +40,17 @@ const generate = () => {
     duration: formStore.duration.value,
     seed: formStore.seed.value,
   }
-  $fetch(urlPrefix + "/api/render/submit", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }).then((res) => {
-    console.log(res)
+  try {
+    const res = await submitTask(data)
+    console.log("generate res", res)
     pull_inter = setInterval(() => {
-      pull_video_path()
-    }, 4000)
-  })
+      pullVideoPath()
+    }, 2000)
+  } catch (e) {
+    console.log("generate error", e)
+    message.error(e.message)
+    player.status.value = TStatus.ERROR
+  }
 }
 
 const changePresets = (value: string) => {

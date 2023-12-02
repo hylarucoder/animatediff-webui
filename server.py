@@ -1,8 +1,8 @@
+import json
 from pathlib import Path
-
 import fastapi
 import pydantic as pt
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from rich.progress import Progress
 from starlette.responses import Response, FileResponse
@@ -22,6 +22,17 @@ app.add_middleware(
 )
 
 
+class ApiException(HTTPException):
+    def __init__(self, message: str, code=400):
+        self.status_code = code
+        self.detail = message
+
+
+app.add_exception_handler(ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({
+    "message": e.detail
+})))
+
+
 def get_models_endswith_v2(d: Path, endswith="safetensors"):
     all_files = list(d.glob("**/*.*"))
     # 创建一个映射，将每个图片文件的基本名称映射到其相对路径
@@ -39,6 +50,7 @@ def get_models_endswith_v2(d: Path, endswith="safetensors"):
         for f in all_files
         if f.is_file() and f.name.endswith(endswith)
     ]
+    models.sort(key=lambda x: x["name"])
     return models
 
 
@@ -144,8 +156,7 @@ class TParams(pt.BaseModel):
     project: str
     performance: str = "Speed"
     aspect_radio: str = "432x768 | 9:16"
-    head_prompt: str = "masterpiece, best quality"
-    tail_prompt: str = ""
+    prompt: str = "masterpiece, best quality"
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
     fps: int = 8
     duration: int = 4
@@ -186,8 +197,9 @@ def render_bg(data: TParams):
             global_config.steps = 8
             global_config.guidance_scale = 1.8
 
-        global_config.head_prompt = data.head_prompt
-        global_config.tail_prompt = data.tail_prompt
+        global_config.head_prompt = "masterpiece, best quality"
+        # TODO: use gpt2 optimizing?
+        global_config.tail_prompt = data.prompt
         global_config.n_prompt = [data.negative_prompt]
 
         global_config.lora_map = {
@@ -198,7 +210,7 @@ def render_bg(data: TParams):
         global_config.motion = data.motion
         global_config.motion_lora_map = {}
         global_config.prompt_map = {
-            "0": global_config.head_prompt,
+            "0": global_config.tail_prompt,
         }
         global_config.output = {"format": "mp4", "fps": 8, "encode_param": {"crf": 10}}
         open(project_dir / "prompts.json", "wt", encoding="utf-8").write(
@@ -241,41 +253,65 @@ bg_task = False
 bg_task_video = None
 
 
-@app.post("/api/render/submit")
+def raise_if(
+        condition: bool,
+        message: str,
+):
+    if condition:
+        raise ApiException(message)
+
+
+def raise_unless(
+        condition: bool,
+        message: str,
+):
+    if not condition:
+        raise ApiException(message)
+
+
+def validate_data(data: TParams):
+    raise_unless((path_mgr.checkpoints / data.checkpoint).exists(), "Checkpoint not Exist!")
+    # loras
+    raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
+    # motion
+    # motion loras
+
+
+@app.post("/api/tasks/submit")
 def render_submit(
         data: TParams,
         background_tasks: BackgroundTasks,
 ):
+    validate_data(data)
+    global bg_task_video
     global bg_task
     if bg_task:
         return {"message": "rendering"}
-    global bg_task_video
     bg_task_video = None
     bg_task = True
     background_tasks.add_task(render_bg, data)
     return {"message": "Hello World"}
 
 
-@app.get("/api/render/status")
+@app.get("/api/tasks/status")
 def render_status():
     global bg_task_video
     global task_progress
     return {
-        "message": "Hello World",
         "video_path": bg_task_video,
         "progress": {
-            "main": pgr.status[:1],
+            "main": pgr.status[0] if pgr.status else None,
             "tasks": pgr.status[1:]
         }
     }
 
 
-@app.get("/api/render/interrupt")
+@app.get("/api/tasks/interrupt")
 def render_interrupt():
     return {"message": "Hello World"}
 
 
-@app.get("/api/render/skip")
+@app.get("/api/tasks/skip")
 def presets__a():
     return {"message": "Hello World"}
 

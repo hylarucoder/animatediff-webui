@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { mediaPrefix } from "~/consts"
-
 const optionsStore = useOptionsStore()
 const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
@@ -8,8 +6,7 @@ const {
   performance,
   checkpoint,
   aspect_ratio,
-  head_prompt,
-  tail_prompt,
+  prompt,
   negative_prompt,
   seed,
   duration,
@@ -49,11 +46,8 @@ const activeKey = ref("1")
               </a-radio>
             </a-radio-group>
           </a-form-item>
-          <a-form-item label="Head Prompt">
-            <a-input :value="head_prompt" />
-          </a-form-item>
-          <a-form-item label="Tail Prompt">
-            <a-textarea v-model:value="tail_prompt" />
+          <a-form-item label="Prompt">
+            <a-textarea v-model:value="prompt" />
           </a-form-item>
           <a-form-item label="Negative Prompt">
             <a-textarea v-model:value="negative_prompt" />
@@ -74,36 +68,13 @@ const activeKey = ref("1")
       <a-tab-pane key="2" class="w-[300px]" tab="Model">
         <a-form layout="vertical">
           <a-form-item label="Checkpoint">
-            <a-select v-model:value="checkpoint" show-search>
-              <a-select-option
-                v-for="opt in optCheckpoints"
-                :key="opt.value"
-                :value="opt.value"
-                :label="opt.label"
-                :title="opt.label"
-                style="width: 100%"
-              >
-                <a-popover
-                  :mouseEnterDelay="0.02"
-                  style="z-index: 1000"
-                  class="rounded-xl p-0"
-                  placement="left"
-                  v-if="opt.thumbnail"
-                >
-                  <template #content>
-                    <img class="max-w-[300px]" :src="mediaPrefix + opt.thumbnail" />
-                  </template>
-                  <span>{{ opt.label }}</span>
-                </a-popover>
-                <span v-else>{{ opt.label }}</span>
-              </a-select-option>
-            </a-select>
+            <v-preview-select v-model:value="checkpoint" :options="optCheckpoints" />
           </a-form-item>
         </a-form>
         <a-form layout="vertical">
           <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-no-feedback" :label="`LoRA ${idx + 1}`">
-            <div class="flex">
-              <a-select v-model:value="opt.name" show-search class="w-[150px] min-w-[150px]" :options="optLoras" />
+            <div class="form-item-no-feedback flex">
+              <v-preview-select v-model:value="opt.name" class="w-[150px] min-w-[150px]" :options="optLoras" />
               <a-input-number v-model:value="opt.weight" size="small" min="0" max="2" step="0.1" class="ml-2" />
             </div>
           </a-form-item>
@@ -129,5 +100,6 @@ const activeKey = ref("1")
 <style>
 .form-item-no-feedback .n-form-item-feedback-wrapper {
   display: none;
+  margin-bottom: 0 !important;
 }
 </style>
