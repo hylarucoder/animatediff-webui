@@ -1,12 +1,10 @@
-import { urlPrefix } from "~/consts"
-import { TStatus } from "~/composables/usePlayer"
+import { getOptions } from "~/client"
 
 export interface TPreset {
   name: string
   performance: string
   aspect_ratio: string
-  head_prompt: string
-  tail_prompt: string
+  prompt: string
   negative_prompt: string
   checkpoint: string
   loras?: (null | number | string)[][]
@@ -46,8 +44,7 @@ const performance = ref(performances[0])
 const aspect_ratio = ref(aspect_ratios[3])
 const duration = ref(4)
 const seed = ref(-1)
-const head_prompt = ref("")
-const tail_prompt = ref("")
+const prompt = ref("")
 const negative_prompt = ref("")
 const preset = ref("default")
 const fps = ref(8)
@@ -89,25 +86,14 @@ const loadPreset = (_preset: TPreset) => {
   motion_lora.value = _preset.motion_lora
   performance.value = _preset.performance
   aspect_ratio.value = _preset.aspect_ratio
-  head_prompt.value = _preset.head_prompt
-  tail_prompt.value = _preset.tail_prompt
+  prompt.value = _preset.prompt
   negative_prompt.value = _preset.negative_prompt
+  fps.value = _preset.fps
+  duration.value = _preset.duration
 }
+
 const video_url = ref("")
 const video_status = ref("")
-const pullStatus = async () => {
-  const res = (await $fetch(urlPrefix + "/api/render/status")) as any
-  if (!res.video_path) {
-    return
-  }
-  video_url.value = urlPrefix + "/media?path=" + res.video_path
-  video_status.value = TStatus.SUCCESS
-  // reloadVideo()
-  // player.video_url.value = urlPrefix + "/media?path=" + res.video_path
-  // player.status.value = TStatus.SUCCESS
-  // player.reloadVideo()
-}
-// fetch options from api
 
 export const useFormStore = () => {
   return {
@@ -119,8 +105,7 @@ export const useFormStore = () => {
     aspect_ratio,
     duration,
     seed,
-    head_prompt,
-    tail_prompt,
+    prompt,
     negative_prompt,
     preset,
     fps,
@@ -140,11 +125,21 @@ const unflatten = (arr: any[]) => {
   })
 }
 
+const cleanLabel = (f: string) => {
+  if (f.endsWith(".safetensors")) {
+    return f.split(".safetensors")[0]
+  }
+  return f
+}
+
 const unflattenCheckpoint = (arr: any[]) => {
   return arr.map((x) => {
+    // if label endswith ckpt or safetenstors remove it
+
     return {
-      label: x.name,
+      label: cleanLabel(x.name),
       value: x.name,
+      thumbnail: x.thumbnail,
     }
   })
 }
@@ -197,10 +192,9 @@ export const useOptionsStore = () => {
     options.value.motion_loras = _options.motion_loras
   }
   const init = async () => {
-    const res = (await $fetch(urlPrefix + `/api/options`)) as any
+    const res = await getOptions()
     loadOptions(res)
     const preset_name = res.presets[0].name
-    console.log("init=>", preset_name)
     const _preset = res.presets.find((p) => p.name === preset_name)
     loadPreset(_preset)
   }

@@ -1,20 +1,16 @@
 <script setup lang="ts">
-import {siteConfig} from "~/config/site"
-
+import { siteConfig } from "~/config/site"
 
 useHead({
   title: siteConfig.title,
   script: [],
 })
 
-onMounted(() => {
-})
+onMounted(() => {})
 </script>
 
 <template>
   <NuxtLayout>
-    <naive-config>
-      <NuxtPage/>
-    </naive-config>
+    <NuxtPage />
   </NuxtLayout>
 </template>

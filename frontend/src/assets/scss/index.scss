@@ -5,76 +5,48 @@
   --gray: #fafafa;
   --primary: #ec7e2a;
   --second: #e7f8ff;
-  --hover-color: #f3f3f3;
-  --bar-color: rgba(0, 0, 0, 0.1);
-  --theme-color: var(--gray);
-  --shadow: 50px 50px 100px 10px rgba(0, 0, 0, 0.1);
-  --card-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.05);
-  --border-in-light: 1px solid #dedede;
   --window-width: 90vw;
   --window-height: 90vh;
-  --header-height: 70px;
-  --sidebar-width: 300px;
-  --window-content-width: calc(100% - var(--sidebar-width));
-  --message-max-width: 80%;
-  --full-height: 100%;
-  --markdown-font-size: 16px;
+  --header-height: 60px;
+  --timeline-height: 300px;
+  --right-sidebar-width: 300px;
+  --status-bar-height: 30px;
+  --workspace-height: calc(100% - var(--header-height) - var(--status-bar-height) - var(--timeline-height));
+  --window-content-width: calc(100% - var(--right-sidebar-width));
 }
 
 html {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    Segoe UI,
-    Roboto,
-    Helvetica Neue,
-    Arial,
-    Noto Sans,
-    sans-serif,
-    Apple Color Emoji,
-    Segoe UI Emoji,
-    Segoe UI Symbol,
-    Noto Color Emoji;
+  font-family: ui-sans-serif,
+  system-ui,
+  -apple-system,
+  BlinkMacSystemFont,
+  Segoe UI,
+  Roboto,
+  Helvetica Neue,
+  Arial,
+  Noto Sans,
+  sans-serif,
+  Apple Color Emoji,
+  Segoe UI Emoji,
+  Segoe UI Symbol,
+  Noto Color Emoji;
   font-feature-settings: normal;
   font-variation-settings: normal;
 }
 
-pre .copy-code-button {
-  right: 10px;
-  top: 15px;
-  cursor: pointer;
-  padding: 0 5px;
-  text-align: right;
-  background-color: var(--black);
-  color: var(--white);
-  border: var(--border-in-light);
-  border-radius: 10px;
-  transform: translateX(10px);
-  pointer-events: none;
-  opacity: 0.8;
-  transition: all 0.3s ease;
-}
-
-.dark {
-  --bg-color-900: #131313;
-  --bg-color-800: #1e1e20;
-}
 
 html,
 body,
 #__nuxt {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
   color: black;
-  display: flex;
 }
 
 #__nuxt {
-  @apply mx-auto my-0 w-screen max-w-7xl flex-col bg-white shadow dark:bg-zinc-800;
+  @apply mx-auto max-w-7xl my-0 bg-white shadow dark:bg-zinc-800;
 }
 
 html.dark,
@@ -85,9 +57,8 @@ html.dark,
 
 html.dark-theme {
   color: white;
-  transition:
-    background-color 0.5s ease,
-    color 0.5s ease;
+  transition: background-color 0.5s ease,
+  color 0.5s ease;
 }
 
 body {
@@ -105,12 +76,3 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 
-.prose-code code {
-  @apply py-5 text-sm;
-  span::before {
-    content: "" !important;
-  }
-}
-
-@import "highlight";
-@import "artalk";

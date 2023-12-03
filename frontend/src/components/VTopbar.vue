@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { urlPrefix } from "~/consts"
-import { TStatus } from "~/composables/usePlayer"
+import { TStatus, usePlayer } from "~/composables/usePlayer"
+import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
+import { useFormStore, useOptionsStore } from "~/composables/store"
 
 const formStore = useFormStore()
 const { preset, project, loadPreset } = formStore
@@ -8,32 +9,29 @@ const player = usePlayer()
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
 
-const pull_video_path = () => {
-  $fetch(urlPrefix + "/api/render/status", {
-    method: "GET",
-  }).then((res: any) => {
-    if (res.progress.length) {
-      player.tasks.value = res.progress
-    }
-    if (!res.video_path) {
-      return
-    }
-    player.video_url.value = urlPrefix + "/media?path=" + res.video_path
-    player.status.value = TStatus.SUCCESS
-    player.reloadVideo()
-    clearInterval(pull_inter)
-  })
+const pullVideoPath = async () => {
+  const res = await getTaskStatus()
+  console.log(res)
+  if (res.progress.main) {
+    player.progress.value = res.progress
+  }
+  if (!res?.task?.videoPath) {
+    return
+  }
+  player.video_url.value = formatProxyMedia(res.task.videoPath)
+  player.status.value = TStatus.SUCCESS
+  player.reloadVideo()
+  clearInterval(pullInter)
 }
-let pull_inter = null
+let pullInter = null
 
-const generate = () => {
+const generate = async () => {
   player.status.value = TStatus.LOADING
   const data = {
     project: formStore.project.value,
     performance: formStore.performance.value,
     aspect_ratio: formStore.aspect_ratio.value,
-    head_prompt: formStore.head_prompt.value,
-    tail_prompt: formStore.tail_prompt.value,
+    prompt: formStore.prompt.value,
     negative_prompt: formStore.negative_prompt.value,
     checkpoint: formStore.checkpoint.value,
     loras: formStore.loras.value,
@@ -43,15 +41,17 @@ const generate = () => {
     duration: formStore.duration.value,
     seed: formStore.seed.value,
   }
-  $fetch(urlPrefix + "/api/render/submit", {
-    method: "POST",
-    body: JSON.stringify(data),
-  }).then((res) => {
-    console.log(res)
-    pull_inter = setInterval(() => {
-      pull_video_path()
-    }, 4000)
-  })
+  try {
+    const res = await submitTask(data)
+    console.log("generate res", res)
+    pullInter = setInterval(() => {
+      pullVideoPath()
+    }, 2000)
+  } catch (e) {
+    console.log("generate error", e)
+    message.error(e.message)
+    player.status.value = TStatus.ERROR
+  }
 }
 
 const changePresets = (value: string) => {
@@ -65,7 +65,7 @@ console.log("optPresets", toRaw(optPresets))
 </script>
 
 <template>
-  <div class="flex w-full justify-evenly border-[1px] px-5 text-center">
+  <div class="flex h-[--header-height] w-full justify-evenly border-[1px] px-5 text-center">
     <div
       id="topbar"
       class="ant-form-item-no-mb form-item-no-feedback flex flex-1 items-center space-x-3 py-2 align-middle"
@@ -81,15 +81,12 @@ console.log("optPresets", toRaw(optPresets))
         />
       </AFormItem>
       <AFormItem style="margin: 0" label="Project">
-        <ASelect show-search v-model:value="project" :options="optProjects" style="width: 200px" class="text-left" />
+        <ASelect v-model:value="project" show-search :options="optProjects" style="width: 200px" class="text-left" />
       </AFormItem>
     </div>
 
     <div class="flex items-center justify-center space-x-3">
-      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Generate</AButton>
-      <!--      <AButton @click="pull_video_path">-->
-      <!--        load video-->
-      <!--      </AButton>-->
+      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Export </AButton>
     </div>
   </div>
 </template>
