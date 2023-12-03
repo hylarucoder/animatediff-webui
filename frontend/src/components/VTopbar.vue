@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { TStatus, usePlayer } from "~/composable/usePlayer"
+import { TStatus, usePlayer } from "~/composables/usePlayer"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
-import { useFormStore, useOptionsStore } from "~/composable/store"
+import { useFormStore, useOptionsStore } from "~/composables/store"
 
 const formStore = useFormStore()
 const { preset, project, loadPreset } = formStore
@@ -81,15 +81,12 @@ console.log("optPresets", toRaw(optPresets))
         />
       </AFormItem>
       <AFormItem style="margin: 0" label="Project">
-        <ASelect show-search v-model:value="project" :options="optProjects" style="width: 200px" class="text-left" />
+        <ASelect v-model:value="project" show-search :options="optProjects" style="width: 200px" class="text-left" />
       </AFormItem>
     </div>
 
     <div class="flex items-center justify-center space-x-3">
-      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Generate</AButton>
-      <!--      <AButton @click="pull_video_path">-->
-      <!--        load video-->
-      <!--      </AButton>-->
+      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Export </AButton>
     </div>
   </div>
 </template>

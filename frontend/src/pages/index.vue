@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useOptionsStore } from "~/composable/store"
+import { useOptionsStore } from "~/composables/store"
+import VTimeline from "~/components/VTimeline.vue"
 
 const optionsStore = useOptionsStore()
 const { optionLoaded } = optionsStore
@@ -13,6 +14,7 @@ await optionsStore.init()
       <VMainPlayer />
       <VRightSidebar />
     </div>
-    <VStatusbar />
+    <VTimeline />
+    <!--    <VStatusbar />-->
   </div>
 </template>

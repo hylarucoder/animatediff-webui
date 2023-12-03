@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TStatus, usePlayer } from "~/composable/usePlayer"
+import { TStatus, usePlayer } from "~/composables/usePlayer"
 
 const { progress, status, video_url, videoRef } = usePlayer()
 
@@ -21,15 +21,9 @@ watch(
         </div>
         <div v-show="status === TStatus.SUCCESS" class="flex h-full min-h-[400px] w-full">
           <video ref="videoRef" class="h-[600px] w-full" controls>
-            <source :src="video_url" type="video/mp4">
+            <source :src="video_url" type="video/mp4" />
           </video>
         </div>
-      </a-tab-pane>
-      <a-tab-pane key="image_prompt" tab="Image Prompt">
-        <div class="h-full w-full">image_prompt</div>
-      </a-tab-pane>
-      <a-tab-pane key="controlnet" tab="Controlnet">
-        <div class="h-full w-full">Controlnet</div>
       </a-tab-pane>
     </a-tabs>
   </div>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { usePlayer } from "~/composable/usePlayer"
+import { usePlayer } from "~/composables/usePlayer"
 
 const { progress } = usePlayer()
 // computed not finished tasks
