@@ -1,22 +1,9 @@
 <script setup lang="ts">
-import { useFormStore, useOptionsStore } from "~/composables/store"
-
 const optionsStore = useOptionsStore()
 const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
-const {
-  performance,
-  checkpoint,
-  aspect_ratio,
-  prompt,
-  negative_prompt,
-  seed,
-  duration,
-  fps,
-  loras,
-  motion,
-  motion_lora,
-} = formStore
+const { performance, checkpoint, aspectRatio, prompt, negativePrompt, seed, duration, fps, loras, motion, motionLora } =
+  storeToRefs(formStore)
 
 const advanced = ref({
   cfg: 1,
@@ -35,7 +22,7 @@ const activeKey = ref("1")
           </a-radio-group>
         </a-form-item>
         <a-form-item label="Aspect Radios">
-          <a-radio-group v-model:value="aspect_ratio">
+          <a-radio-group v-model:value="aspectRatio">
             <a-radio
               v-for="ar in optAspectRadios"
               :key="ar.value"
@@ -51,7 +38,7 @@ const activeKey = ref("1")
           <a-textarea v-model:value="prompt" />
         </a-form-item>
         <a-form-item label="Negative Prompt">
-          <a-textarea v-model:value="negative_prompt" />
+          <a-textarea v-model:value="negativePrompt" />
         </a-form-item>
         <a-form-item label="Seed">
           <a-input-number v-model:value="seed" step="1" />
@@ -84,7 +71,7 @@ const activeKey = ref("1")
             <a-select v-model:value="motion" show-search :options="optMotions" />
           </a-form-item>
           <a-form-item label="Motion LoRAs">
-            <a-select v-model:value="motion_lora" show-search :options="optMotionLoras" />
+            <a-select v-model:value="motionLora" show-search :options="optMotionLoras" />
           </a-form-item>
         </a-form>
       </a-form>

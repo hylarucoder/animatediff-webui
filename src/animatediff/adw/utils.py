@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def get_models_endswith_v2(d: Path, endswith="safetensors"):
+def get_models_endswith(d: Path, endswith="safetensors"):
     all_files = list(d.glob("**/*.*"))
     # 创建一个映射，将每个图片文件的基本名称映射到其相对路径
     image_map = {

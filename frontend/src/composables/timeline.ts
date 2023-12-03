@@ -10,7 +10,6 @@ const duration = 12
 const fps = 8
 const unitWidth = 25
 const blocks = new Map<number, string>([])
-const panelView = usePanelView()
 
 const millisecondStep = 1000 / fps
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useTimeline } from "~/composables/timeline"
-
 const { timelines, duration, unitWidth, fps, promptLayer } = useTimeline()
 
 const handleDragStart = (event) => {
@@ -16,14 +14,14 @@ const onClose = () => {
 }
 const openPanel = () => {
   // TODO: 如果点到了其他地方, 则换掉
-  panelView.prompt.value = true
-  panelView.controlnet.value = false
+  // panelView.prompt.value = true
+  // panelView.controlnet.value = false
 }
 
 const openControlnet = () => {
   // TODO: 如果点到了其他地方, 则换掉
-  panelView.prompt.value = false
-  panelView.controlnet.value = true
+  // panelView.prompt.value = false
+  // panelView.controlnet.value = true
 }
 </script>
 <template>

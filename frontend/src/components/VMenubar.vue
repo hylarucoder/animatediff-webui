@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { TStatus, usePlayer } from "~/composables/usePlayer"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
-import { useFormStore, useOptionsStore } from "~/composables/store"
+
+const unpackStore = (store) => {
+  return {
+    state: storeToRefs(store),
+    action: store,
+  }
+}
 
 const formStore = useFormStore()
-const { preset, project, loadPreset } = formStore
+const {
+  state: { preset, project },
+  action: { loadPreset },
+} = unpackStore(formStore)
 const player = usePlayer()
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
@@ -28,18 +37,18 @@ let pullInter = null
 const generate = async () => {
   player.status.value = TStatus.LOADING
   const data = {
-    project: formStore.project.value,
-    performance: formStore.performance.value,
-    aspect_ratio: formStore.aspect_ratio.value,
-    prompt: formStore.prompt.value,
-    negative_prompt: formStore.negative_prompt.value,
-    checkpoint: formStore.checkpoint.value,
-    loras: formStore.loras.value,
-    motion: formStore.motion.value,
-    motion_lora: formStore.motion_lora.value,
-    fps: formStore.fps.value,
-    duration: formStore.duration.value,
-    seed: formStore.seed.value,
+    project: formStore.project,
+    performance: formStore.performance,
+    aspectRatio: formStore.aspectRatio,
+    prompt: formStore.prompt,
+    negativePrompt: formStore.negativePrompt,
+    checkpoint: formStore.checkpoint,
+    loras: formStore.loras,
+    motion: formStore.motion,
+    motionLora: formStore.motionLora,
+    fps: formStore.fps,
+    duration: formStore.duration,
+    seed: formStore.seed,
   }
   try {
     const res = await submitTask(data)
@@ -55,13 +64,12 @@ const generate = async () => {
 }
 
 const changePresets = (value: string) => {
-  const _preset = options.value.presets.find((p) => p.name === value)
+  const _preset = options.presets.find((p) => p.name === value)
   if (!_preset) {
     return
   }
   loadPreset(_preset)
 }
-console.log("optPresets", toRaw(optPresets))
 </script>
 
 <template>
@@ -86,7 +94,7 @@ console.log("optPresets", toRaw(optPresets))
     </div>
 
     <div class="flex items-center justify-center space-x-3">
-      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Export </AButton>
+      <AButton :loading="player.status.value === TStatus.LOADING" @click="generate"> Export</AButton>
     </div>
   </div>
 </template>

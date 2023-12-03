@@ -2,15 +2,15 @@ import json
 from pathlib import Path
 
 import fastapi
-import pydantic as pt
 from fastapi import BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import Response, FileResponse
 
+from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
 from animatediff.adw.schema import TTask, TPreset, TStatusEnum
 from animatediff.adw.service import get_projects, TParams, tasks_store, push_task_by_id, do_render_video
-from animatediff.adw.utils import get_models_endswith_v2
+from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
 from animatediff.utils.progressbar import pgr
 
@@ -33,7 +33,7 @@ def index():
     return {"message": "Hello World"}
 
 
-class TPresetItems(pt.BaseModel):
+class TPresetItems(PtBaseModel):
     presets: list[TPreset]
 
 
@@ -69,26 +69,40 @@ def gen_presets():
     return presets
 
 
+class TOptionsPreviewItem(PtBaseModel):
+    name: str
+    thumbnail: str | None
+
+
+class TOptions(PtBaseModel):
+    projects: list[str]
+    checkpoints: list[TOptionsPreviewItem]
+    motions: list[TOptionsPreviewItem]
+    motion_loras: list[TOptionsPreviewItem]
+    loras: list[TOptionsPreviewItem]
+    presets: list[TPreset]
+
+
 @app.get("/api/options")
-def get_checkpoints():
-    checkpoints = get_models_endswith_v2(path_mgr.checkpoints)
-    motion_loras = get_models_endswith_v2(path_mgr.motion_loras, endswith="ckpt")
-    motions = get_models_endswith_v2(
+def get_checkpoints() -> TOptions:
+    checkpoints = get_models_endswith(path_mgr.checkpoints)
+    motion_loras = get_models_endswith(path_mgr.motion_loras, endswith="ckpt")
+    motions = get_models_endswith(
         path_mgr.motions,
         endswith="ckpt",
     )
-    loras = get_models_endswith_v2(
+    loras = get_models_endswith(
         path_mgr.loras,
     )
     presets = gen_presets()
-    return {
+    return TOptions(**{
         "projects": get_projects(),
         "checkpoints": checkpoints,
         "loras": loras,
         "motions": motions,
         "motion_loras": motion_loras,
         "presets": presets,
-    }
+    })
 
 
 def validate_data(data: TParams):

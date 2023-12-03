@@ -1,6 +1,7 @@
 import pydantic as pt
 from rich.progress import Progress
 
+from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.schema import TStatusEnum, TTask
 from animatediff.consts import path_mgr
 from animatediff.settings import ModelConfig
@@ -43,7 +44,7 @@ def lora_arr():
     ]
 
 
-class TParams(pt.BaseModel):
+class TParams(PtBaseModel):
     project: str
     performance: str = "Speed"
     aspect_radio: str = "432x768 | 9:16"

@@ -1,6 +1,8 @@
 import pydantic as pt
 import enum
 
+from animatediff.adw.contrib import PtBaseModel
+
 
 class TStatusEnum(str, enum.Enum):
     pending = "pending"
@@ -9,14 +11,14 @@ class TStatusEnum(str, enum.Enum):
     success = "success"
 
 
-class TSubtask(pt.BaseModel):
+class TSubtask(PtBaseModel):
     description: str = ""
     completed: int = 0
     total: int = 100
     status: TStatusEnum = TStatusEnum.pending
 
 
-class TTask(pt.BaseModel):
+class TTask(PtBaseModel):
     task_id: int
     status: TStatusEnum = TStatusEnum.pending
     completed: int = 0
@@ -33,7 +35,7 @@ def lora_arr():
     ]
 
 
-class TPreset(pt.BaseModel):
+class TPreset(PtBaseModel):
     name: str
     performance: str = "Speed"
     aspect_ratio: str = "432x768 | 9:16"

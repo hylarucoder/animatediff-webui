@@ -165,9 +165,9 @@ const a = {
     {
       name: "default",
       performance: "Speed",
-      aspect_ratio: "432x768 | 9:16",
+      aspectRatio: "432x768 | 9:16",
       prompt: "masterpiece, best quality",
-      negative_prompt:
+      negativePrompt:
         "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms",
       checkpoint: "majicmixRealistic_v7.safetensors",
       loras: [
@@ -190,9 +190,9 @@ const a = {
     {
       name: "default - lcm",
       performance: "Extreme Speed",
-      aspect_ratio: "432x768 | 9:16",
+      aspectRatio: "432x768 | 9:16",
       prompt: "",
-      negative_prompt:
+      negativePrompt:
         "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms",
       checkpoint: "majicmixRealistic_v7.safetensors",
       loras: [
@@ -215,10 +215,10 @@ const a = {
     {
       name: "lcm + motion-lora + color fashion",
       performance: "Extreme Speed",
-      aspect_ratio: "432x768 | 9:16",
+      aspectRatio: "432x768 | 9:16",
       prompt:
         "photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
-      negative_prompt:
+      negativePrompt:
         "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms",
       checkpoint: "majicmixRealistic_v7.safetensors",
       loras: [
