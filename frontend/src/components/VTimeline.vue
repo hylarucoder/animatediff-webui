@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { timelines, duration, unitWidth, fps, promptLayer } = useTimeline()
+const timelineStore = useTimeline()
+const { optTimelines, timelines, duration, unitWidth, fps, promptLayer } = timelineStore
 
 const handleDragStart = (event) => {
   // Your drag start logic
@@ -90,7 +91,7 @@ const openControlnet = () => {
             </div>
           </div>
         </div>
-        <div v-for="timeline in timelines" class="flex h-[40px] rounded bg-zinc-500 px-[8px] text-white">
+        <div v-for="timeline in optTimelines" class="flex h-[40px] rounded bg-zinc-500 px-[8px] text-white">
           <div class="flex w-[80px] overflow-ellipsis">
             <span class="line-clamp-1 block w-[80px] text-sm">
               {{ timeline.title }}

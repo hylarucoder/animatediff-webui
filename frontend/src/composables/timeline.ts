@@ -26,11 +26,6 @@ const promptLayer = {
   blocks,
 }
 
-const timeline: UnwrapRef<FormState> = reactive({
-  ipAdapter: ["ipadapter"],
-  controlnet: ["controlnet_openpose", "controlnet_depth"],
-})
-
 const controlnets = [
   "controlnet_canny",
   "controlnet_depth",
@@ -48,23 +43,30 @@ const controlnets = [
   "controlnet_tile",
 ]
 
-const timelines = ref([
-  {
-    title: "ip-adapter",
-    slug: "ip-adapter",
-    blocks,
-  },
-  ...controlnets.map((x) => {
-    const a = x.replaceAll("controlnet_", "")
-    return {
-      title: a,
-      slug: a,
+export const useTimeline = defineStore("timeline", () => {
+  const timeline: UnwrapRef<FormState> = reactive({
+    ipAdapter: ["ipadapter"],
+    controlnet: ["controlnet_openpose", "controlnet_depth"],
+  })
+  const timelines = ref([
+    {
+      title: "ip-adapter",
+      slug: "ip-adapter",
       blocks,
-    }
-  }),
-])
-
-export const useTimeline = () => {
+    },
+    ...controlnets.map((x) => {
+      const a = x.replaceAll("controlnet_", "")
+      return {
+        title: a,
+        slug: x,
+        blocks,
+      }
+    }),
+  ])
+  const optTimelines = computed(() => {
+    const intersection = timeline.controlnet.filter((value) => timeline.controlnet.includes(value))
+    return timelines.value.filter((timeline) => intersection.includes(timeline.slug))
+  })
   return {
     fps,
     unitWidth,
@@ -72,5 +74,6 @@ export const useTimeline = () => {
     promptLayer,
     timeline,
     timelines,
+    optTimelines,
   }
-}
+})
