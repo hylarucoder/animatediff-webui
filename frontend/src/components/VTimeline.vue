@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useTimeline } from "~/composables/timeline"
-
-const { timelines, duration, unitWidth, fps, promptLayer } = useTimeline()
+const timelineStore = useTimeline()
+const { optTimelines, timelines, duration, unitWidth, fps, promptLayer } = timelineStore
 
 const handleDragStart = (event) => {
   // Your drag start logic
@@ -16,14 +15,14 @@ const onClose = () => {
 }
 const openPanel = () => {
   // TODO: 如果点到了其他地方, 则换掉
-  panelView.prompt.value = true
-  panelView.controlnet.value = false
+  // panelView.prompt.value = true
+  // panelView.controlnet.value = false
 }
 
 const openControlnet = () => {
   // TODO: 如果点到了其他地方, 则换掉
-  panelView.prompt.value = false
-  panelView.controlnet.value = true
+  // panelView.prompt.value = false
+  // panelView.controlnet.value = true
 }
 </script>
 <template>
@@ -92,7 +91,7 @@ const openControlnet = () => {
             </div>
           </div>
         </div>
-        <div v-for="timeline in timelines" class="flex h-[40px] rounded bg-zinc-500 px-[8px] text-white">
+        <div v-for="timeline in optTimelines" class="flex h-[40px] rounded bg-zinc-500 px-[8px] text-white">
           <div class="flex w-[80px] overflow-ellipsis">
             <span class="line-clamp-1 block w-[80px] text-sm">
               {{ timeline.title }}

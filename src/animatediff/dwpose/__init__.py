@@ -49,6 +49,8 @@ class DWposeDetector:
         input_image = HWC3(input_image)
         input_image = resize_image(input_image, detect_resolution)
         H, W, C = input_image.shape
+        if not hasattr(self, "pose_estimation"):
+            self.to(torch.device("cpu"))
         with torch.no_grad():
             candidate, subset = self.pose_estimation(input_image)
             nums, keys, locs = candidate.shape

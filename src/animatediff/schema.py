@@ -25,14 +25,14 @@ class TIPAdapterMap(BaseModel):
 
 
 class TPreprocessor(BaseModel):
-    type: str
-    param: dict[str, Any]
+    type: str | None = None
+    param: dict[str, Any] = Field({})
 
 
 class TControlnetTile(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -43,7 +43,7 @@ class TControlnetTile(BaseModel):
 class TControlnetIp2p(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -54,7 +54,7 @@ class TControlnetIp2p(BaseModel):
 class TControlnetLineartAnime(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -76,7 +76,7 @@ class TControlnetOpenpose(BaseModel):
 class TControlnetSoftedge(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -87,7 +87,7 @@ class TControlnetSoftedge(BaseModel):
 class TControlnetShuffle(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -98,7 +98,7 @@ class TControlnetShuffle(BaseModel):
 class TControlnetDepth(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -109,7 +109,7 @@ class TControlnetDepth(BaseModel):
 class TControlnetCanny(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -120,7 +120,7 @@ class TControlnetCanny(BaseModel):
 class TControlnetInpaint(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -131,7 +131,7 @@ class TControlnetInpaint(BaseModel):
 class TControlnetLineart(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -142,7 +142,7 @@ class TControlnetLineart(BaseModel):
 class TControlnetMlsd(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -153,7 +153,7 @@ class TControlnetMlsd(BaseModel):
 class TControlnetNormalbae(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -164,7 +164,7 @@ class TControlnetNormalbae(BaseModel):
 class TControlnetScribble(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -175,7 +175,18 @@ class TControlnetScribble(BaseModel):
 class TControlnetSeg(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
+    guess_mode: bool = False
+    controlnet_conditioning_scale: float = 1.0
+    control_guidance_start: float = 0.0
+    control_guidance_end: float = 1.0
+    control_scale_list: list[float] = pt.Field(default_factory=normal_scale_list)
+
+
+class TAnimatediffControlnet(BaseModel):
+    enable: bool = True
+    use_preprocessor: bool = True
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -186,7 +197,7 @@ class TControlnetSeg(BaseModel):
 class TQrCodeMonsterV1(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -197,7 +208,7 @@ class TQrCodeMonsterV1(BaseModel):
 class TQrCodeMonsterV2(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -208,7 +219,7 @@ class TQrCodeMonsterV2(BaseModel):
 class TControlnetMediapipeFace(BaseModel):
     enable: bool = True
     use_preprocessor: bool = True
-    preprocessor: TPreprocessor = TPreprocessor(type="resize", param={"size": 512})
+    preprocessor: TPreprocessor = TPreprocessor()
     guess_mode: bool = False
     controlnet_conditioning_scale: float = 1.0
     control_guidance_start: float = 0.0
@@ -251,6 +262,7 @@ class TControlnetMap(BaseModel):
     qr_code_monster_v1: TQrCodeMonsterV1 = pt.Field(default_factory=lambda: TQrCodeMonsterV1())
     qr_code_monster_v2: TQrCodeMonsterV2 = pt.Field(default_factory=lambda: TQrCodeMonsterV2())
     controlnet_mediapipe_face: TControlnetMediapipeFace = pt.Field(default_factory=lambda: TControlnetMediapipeFace())
+    animatediff_controlnet: TAnimatediffControlnet = pt.Field(default_factory=lambda: TAnimatediffControlnet())
     controlnet_ref: TControlnetRef = pt.Field(default_factory=lambda: TControlnetRef())
 
     @property
@@ -260,6 +272,7 @@ class TControlnetMap(BaseModel):
             if k.startswith("controlnet_") or k in [
                 "qr_code_monster_v1",
                 "qr_code_monster_v2",
+                "animatediff_controlnet",
             ]:
                 controlnet_items.append((k, getattr(self, k)))
         return controlnet_items
@@ -328,6 +341,13 @@ class TImg2imgMap(BaseModel):
     denoising_strength: float = 0.7
 
 
+class TGradualLatentHiresFixMap(BaseModel):
+    enable: bool = (True,)
+    scale: dict[str, float] = Field({"0": 0.5, "0.7": 1.0})
+    reverse_steps: int = 5
+    noise_add_count: int = 3
+
+
 class TProjectSetting(BaseModel):
     apply_lcm_lora: bool = False
     lcm_lora_scale: float = 1.0
@@ -338,6 +358,9 @@ class TProjectSetting(BaseModel):
     checkpoint: str = "majicmixRealistic_v7.safetensors"
     motion: str = "mm_sd_v15_v2.ckpt"
     compile: bool = False
+    gradual_latent_hires_fix_map: TGradualLatentHiresFixMap = pt.Field(
+        default_factory=lambda: TGradualLatentHiresFixMap()
+    )
     tensor_interpolation_slerp: bool = Field(False)
     seed: list[int] = pt.Field(default_factory=lambda: [-1])
     scheduler: str = "k_dpmpp_sde"

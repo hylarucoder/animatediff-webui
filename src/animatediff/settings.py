@@ -46,6 +46,7 @@ class ModelConfig(BaseSettings):
     lcm_lora_scale: float = Field(1.0)
     vae: str = ""  # Path to the model
     motion: Path = Field(...)  # Path to the motion module
+    gradual_latent_hires_fix_map: dict[str, Any] = Field({})
     compile: bool = Field(False)  # whether to compile the model with TorchDynamo
     tensor_interpolation_slerp: bool = Field(False)
     seed: list[int] = Field([])  # Seed(s) for the random number generators

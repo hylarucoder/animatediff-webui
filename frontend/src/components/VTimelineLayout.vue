@@ -7,17 +7,18 @@ const wrapperCol = { span: 14 }
 const cleanLabel = (label) => {
   return label.replaceAll("controlnet_", "")
 }
-const timelineView = useTimeline()
+const timelineStore = useTimeline()
+const { timeline } = storeToRefs(timelineStore)
 </script>
 <template>
-  <a-form :model="timelineView.timeline" :label-col="labelCol" :wrapper-col="wrapperCol">
-    <a-form-item label="Controlnet">
-      <a-checkbox-group v-model:value="timelineView.timeline.controlnet">
+  <a-form :model="timeline" :label-col="labelCol" :wrapper-col="wrapperCol">
+    <a-form-item label="controlnet">
+      <a-checkbox-group v-model:value="timeline.controlnet">
         <a-checkbox v-for="cn in CONTROLNETS" :value="cn" name="controlnet">{{ cleanLabel(cn) }}</a-checkbox>
       </a-checkbox-group>
     </a-form-item>
-    <a-form-item label="IPAdapter">
-      <a-checkbox-group v-model:value="timelineView.timeline.ipAdapter">
+    <a-form-item label="ip-adapter">
+      <a-checkbox-group v-model:value="timeline.ipAdapter">
         <a-checkbox value="ipadapter" name="type">IPAdapter</a-checkbox>
       </a-checkbox-group>
     </a-form-item>

@@ -8,6 +8,7 @@ from huggingface_hub import hf_hub_download
 from torch import nn
 
 from animatediff import HF_HUB_CACHE, HF_MODULE_REPO, get_dir
+from animatediff.consts import path_mgr
 from animatediff.settings import CKPT_EXTENSIONS
 from animatediff.utils.huggingface import get_hf_pipeline, get_hf_pipeline_sdxl
 from animatediff.utils.util import path_from_cwd
@@ -128,6 +129,7 @@ def checkpoint_to_pipeline(
         pretrained_model_link_or_path=str(checkpoint.absolute()),
         local_files_only=True,
         load_safety_checker=False,
+        original_config_file=str(path_mgr.config / "inference/v1-inference.yaml"),
     )
 
     if save:

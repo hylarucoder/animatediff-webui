@@ -11,7 +11,7 @@
   --timeline-height: 300px;
   --right-sidebar-width: 300px;
   --status-bar-height: 30px;
-  --workspace-height: calc(100% - var(--header-height) - var(--status-bar-height) - var(--timeline-height));
+  --workspace-height: calc(100% - var(--header-height) - var(--timeline-height));
   --window-content-width: calc(100% - var(--right-sidebar-width));
 }
 

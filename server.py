@@ -2,17 +2,17 @@ import json
 from pathlib import Path
 
 import fastapi
-import pydantic as pt
 from fastapi import BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import Response, FileResponse
+from starlette.responses import FileResponse, Response
 
+from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
-from animatediff.adw.schema import TTask, TPreset, TStatusEnum
-from animatediff.adw.service import get_projects, TParams, tasks_store, push_task_by_id, do_render_video
-from animatediff.adw.utils import get_models_endswith_v2
+from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TTask
+from animatediff.adw.service import TParamsRenderVideo, do_render_video, get_projects, push_task_by_id, tasks_store
+from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
-from animatediff.utils.progressbar import pgr
+from animatediff.utils.progressbar import pbar
 
 app = fastapi.FastAPI()
 app.add_middleware(
@@ -23,9 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_exception_handler(ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({
-    "message": e.detail
-})))
+app.add_exception_handler(
+    ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({"message": e.detail}))
+)
 
 
 @app.get("/")
@@ -33,7 +33,7 @@ def index():
     return {"message": "Hello World"}
 
 
-class TPresetItems(pt.BaseModel):
+class TPresetItems(PtBaseModel):
     presets: list[TPreset]
 
 
@@ -49,19 +49,25 @@ def gen_presets():
     )
     preset_lcm = TPreset(
         name="default - lcm",
-        performance="Extreme Speed",
+        performance=TPerformance.EXTREME_SPEED,
         aspect_radio="768x432 | 16:9",
     )
     preset_color = TPreset(
         name="lcm + motion-lora + color fashion",
-        performance="Extreme Speed",
+        performance=TPerformance.EXTREME_SPEED,
         head_prompt="masterpiece,best quality, 1girl, walk,",
         tail_prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
         lcm=True,
         duration=2,
     )
     preset_color.loras[0] = ["釉彩·麻袋调色盘_v1.0.safetensors", 0.8]
+    preset_quality_default = TPreset(
+        name="speed hi res",
+        duration=1,
+        performance=TPerformance.SPEED_HI_RES,
+    )
     presets = [
+        preset_quality_default,
         preset_default,
         preset_lcm,
         preset_color,
@@ -69,29 +75,45 @@ def gen_presets():
     return presets
 
 
+class TOptionsPreviewItem(PtBaseModel):
+    name: str
+    thumbnail: str | None
+
+
+class TOptions(PtBaseModel):
+    projects: list[str]
+    checkpoints: list[TOptionsPreviewItem]
+    motions: list[TOptionsPreviewItem]
+    motion_loras: list[TOptionsPreviewItem]
+    loras: list[TOptionsPreviewItem]
+    presets: list[TPreset]
+
+
 @app.get("/api/options")
-def get_checkpoints():
-    checkpoints = get_models_endswith_v2(path_mgr.checkpoints)
-    motion_loras = get_models_endswith_v2(path_mgr.motion_loras, endswith="ckpt")
-    motions = get_models_endswith_v2(
+def get_checkpoints() -> TOptions:
+    checkpoints = get_models_endswith(path_mgr.checkpoints)
+    motion_loras = get_models_endswith(path_mgr.motion_loras, endswith="ckpt")
+    motions = get_models_endswith(
         path_mgr.motions,
         endswith="ckpt",
     )
-    loras = get_models_endswith_v2(
+    loras = get_models_endswith(
         path_mgr.loras,
     )
     presets = gen_presets()
-    return {
-        "projects": get_projects(),
-        "checkpoints": checkpoints,
-        "loras": loras,
-        "motions": motions,
-        "motion_loras": motion_loras,
-        "presets": presets,
-    }
+    return TOptions(
+        **{
+            "projects": get_projects(),
+            "checkpoints": checkpoints,
+            "loras": loras,
+            "motions": motions,
+            "motion_loras": motion_loras,
+            "presets": presets,
+        }
+    )
 
 
-def validate_data(data: TParams):
+def validate_data(data: TParamsRenderVideo):
     raise_unless((path_mgr.checkpoints / data.checkpoint).exists(), "Checkpoint not Exist!")
     # loras
     raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
@@ -112,17 +134,18 @@ def serialize_task(task: TTask):
 
 @app.post("/api/tasks/submit")
 def render_submit(
-        data: TParams,
-        background_tasks: BackgroundTasks,
+    data: TParamsRenderVideo,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(
-        filter(lambda x: x.status in [TStatusEnum.pending, TStatusEnum.running], tasks_store))
+        filter(lambda x: x.status in [TStatusEnum.pending, TStatusEnum.running], tasks_store)
+    )
     if pending_or_running_tasks:
         return pending_or_running_tasks[-1]
     task_id = len(tasks_store) + 1
     bg_task = push_task_by_id(task_id)
-    background_tasks.add_task(do_render_video, data, task_id)
+    background_tasks.add_task(do_render_video, data)
     return {
         "task": serialize_task(bg_task),
     }
@@ -130,6 +153,11 @@ def render_submit(
 
 @app.get("/api/tasks/status")
 def render_status():
+    if not tasks_store:
+        return {
+            "task": None,
+            "progress": None,
+        }
     bg_task = tasks_store[-1]
     return {
         "task": {
@@ -140,10 +168,7 @@ def render_status():
             "subtasks": bg_task.subtasks,
             "videoPath": bg_task.video_path,
         },
-        "progress": {
-            "main": pgr.status[0] if pgr.status else None,
-            "tasks": pgr.status[1:]
-        }
+        "progress": {"main": pbar.status[0] if pbar.status else None, "tasks": pbar.status[1:]},
     }
 
 
@@ -171,7 +196,7 @@ def image_proxy(path: str):
     return FileResponse(str(absolute_path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, reload=True, host="0.0.0.0", port=7860)

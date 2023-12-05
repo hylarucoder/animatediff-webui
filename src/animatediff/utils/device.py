@@ -5,6 +5,8 @@ from typing import Union
 
 import torch
 
+from animatediff.utils.torch_compact import is_macos
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +57,10 @@ def dtype_for_model(model: str, device: torch.device) -> torch.dtype:
         case "tenc":
             return torch.float32 if device.type == "cpu" else torch.float16
         case "vae":
-            return maybe_bfloat16(device, fallback=torch.float32)
+            if not is_macos():
+                return maybe_bfloat16(device, fallback=torch.float32)
+            return torch.float32
+
         case unknown:
             raise ValueError(f"Invalid model {unknown}")
 

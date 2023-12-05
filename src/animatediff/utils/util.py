@@ -253,7 +253,19 @@ def prepare_hf_model(model_path: Path, repo_id: str, hub_files: List[str]):
             subfolder=PurePosixPath(path.parent),
             filename=PurePosixPath(path.name),
             local_dir=model_path,
+            local_dir_use_symlinks=False,
         )
+
+
+def prepare_animatediff_controlnet():
+    os.makedirs(path_mgr.controlnet / "animatediff_controlnet", exist_ok=True)
+    prepare_hf_model(
+        path_mgr.controlnet / "animatediff_controlnet",
+        "crishhh/animatediff_controlnet",
+        [
+            "controlnet_checkpoint.ckpt",
+        ],
+    )
 
 
 def prepare_ip_adapter():

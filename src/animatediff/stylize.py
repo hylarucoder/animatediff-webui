@@ -281,9 +281,8 @@ def create_config(
     project_setting.lora_map = {}
     project_setting.motion_lora_map = {}
 
-    if low_vram:
-        project_setting.controlnet_map.max_samples_on_vram = 0
-        project_setting.controlnet_map.max_models_on_vram = 0
+    project_setting.controlnet_map.max_samples_on_vram = 0
+    project_setting.controlnet_map.max_models_on_vram = 0
 
     if not is_img2img:
         project_setting.controlnet_map.controlnet_tile.control_scale_list = []

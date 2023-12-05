@@ -53,12 +53,13 @@ from animatediff.pipelines.lora import load_lcm_lora, load_lora_map
 from animatediff.pipelines.pipeline_controlnet_img2img_reference import (
     StableDiffusionControlNetImg2ImgReferencePipeline,
 )
-from animatediff.schedulers import get_scheduler
+from animatediff.schedulers import DiffusionScheduler, get_scheduler
 from animatediff.schema import (
     TAnyControlnet,
     TControlnetMap,
     TControlnetRef,
     TControlnetTile,
+    TGradualLatentHiresFixMap,
     TImg2imgMap,
     TIPAdapterMap,
     TOutput,
@@ -69,12 +70,13 @@ from animatediff.schema import (
 from animatediff.settings import InferenceConfig, ModelConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights, get_checkpoint_weights_sdxl
-from animatediff.utils.progressbar import pgr
+from animatediff.utils.progressbar import pbar
 from animatediff.utils.util import (
     get_resized_image,
     get_resized_image2,
     get_resized_images,
     get_tensor_interpolation_method,
+    prepare_animatediff_controlnet,
     prepare_dwpose,
     prepare_ip_adapter,
     prepare_ip_adapter_sdxl,
@@ -276,26 +278,16 @@ controlnet_address_table = {
     "qr_code_monster_v1": ["monster-labs/control_v1p_sd15_qrcode_monster"],
     "qr_code_monster_v2": ["monster-labs/control_v1p_sd15_qrcode_monster", "v2"],
     "controlnet_mediapipe_face": ["CrucibleAI/ControlNetMediaPipeFace", "diffusion_sd15"],
+    "animatediff_controlnet": ["crishhh/animatediff_controlnet", "controlnet_checkpoint.ckpt"],
 }
 
 controlnet_address_table_sdxl = {
-    #    "controlnet_tile" : ('lllyasviel/control_v11f1e_sd15_tile'),
-    #    "controlnet_lineart_anime" : ('lllyasviel/control_v11p_sd15s2_lineart_anime'),
-    #    "controlnet_ip2p" : ('lllyasviel/control_v11e_sd15_ip2p'),
     "controlnet_openpose": ["thibaud/controlnet-openpose-sdxl-1.0"],
     "controlnet_softedge": ["SargeZT/controlnet-sd-xl-1.0-softedge-dexined"],
-    #    "controlnet_shuffle" : ('lllyasviel/control_v11e_sd15_shuffle'),
     "controlnet_depth": ["diffusers/controlnet-depth-sdxl-1.0-small"],
     "controlnet_canny": ["diffusers/controlnet-canny-sdxl-1.0-small"],
-    #    "controlnet_inpaint" : ('lllyasviel/control_v11p_sd15_inpaint'),
-    #    "controlnet_lineart" : ('lllyasviel/control_v11p_sd15_lineart'),
-    #    "controlnet_mlsd" : ('lllyasviel/control_v11p_sd15_mlsd'),
-    #    "controlnet_normalbae" : ('lllyasviel/control_v11p_sd15_normalbae'),
-    #    "controlnet_scribble" : ('lllyasviel/control_v11p_sd15_scribble'),
     "controlnet_seg": ["SargeZT/sdxl-controlnet-seg"],
     "qr_code_monster_v1": ["monster-labs/control_v1p_sdxl_qrcode_monster"],
-    #    "qr_code_monster_v2" : ('monster-labs/control_v1p_sd15_qrcode_monster', 'v2'),
-    #    "controlnet_mediapipe_face" : ('CrucibleAI/ControlNetMediaPipeFace', "diffusion_sd15"),
 }
 
 
@@ -306,10 +298,25 @@ def is_valid_controlnet_type(type_str: str, is_sdxl: bool):
         return type_str in controlnet_address_table_sdxl
 
 
+def load_animatediff_controlnet(addr, torch_dtype=torch.float16):
+    prepare_animatediff_controlnet()
+    controlnet_state_dict = torch.load(
+        path_mgr.controlnet / "animatediff_controlnet" / addr, map_location="cpu", weights_only=True
+    )
+    model = ControlNetModel(cross_attention_dim=768)
+    missing, _ = model.load_state_dict(controlnet_state_dict["state_dict"], strict=False)
+    if len(missing) > 0:
+        logger.info(f"ControlNetModel has missing keys: {missing}")
+    return model.to(dtype=torch_dtype)
+
+
 def create_controlnet_model(type_str, is_sdxl):
     if not is_sdxl:
+        # TODO: better code
         if type_str in controlnet_address_table:
             addr = controlnet_address_table[type_str]
+            if type_str == "animatediff_controlnet":
+                return load_animatediff_controlnet(addr[1])
             if len(addr) == 1:
                 return ControlNetModel.from_pretrained(addr[0], torch_dtype=torch.float16)
             else:
@@ -329,7 +336,7 @@ def create_controlnet_model(type_str, is_sdxl):
 
 default_preprocessor_table = {
     "controlnet_lineart_anime": "lineart_anime",
-    "controlnet_openpose": "openpose_full" if onnxruntime_installed == False else "dwpose",
+    "controlnet_openpose": "openpose_full" if not onnxruntime_installed else "dwpose",
     "controlnet_softedge": "softedge_hedsafe",
     "controlnet_shuffle": "shuffle",
     "controlnet_depth": "depth_midas",
@@ -372,24 +379,26 @@ def create_default_preprocessor(type_str):
     return create_preprocessor_from_name(pre_type)
 
 
-def get_preprocessor(type_str, device_str, preprocessor_map: TPreprocessor):
-    if type_str in controlnet_preprocessor:
-        return controlnet_preprocessor[type_str]
-    if preprocessor_map:
-        controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map.type)
+def get_preprocessor(controlnet_type, preprocessor_map: TPreprocessor, device_str="cpu"):
+    """TODO: memory usage profiling"""
+    if preprocessor_map and preprocessor_map.type:
+        controlnet_preprocessor[controlnet_type] = create_preprocessor_from_name(preprocessor_map.type)
 
-    if type_str not in controlnet_preprocessor:
-        controlnet_preprocessor[type_str] = create_default_preprocessor(type_str)
+    if controlnet_type in controlnet_preprocessor:
+        return controlnet_preprocessor[controlnet_type]
 
-    if hasattr(controlnet_preprocessor[type_str], "processor"):
-        if hasattr(controlnet_preprocessor[type_str].processor, "to"):
-            if device_str:
-                controlnet_preprocessor[type_str].processor.to(device_str)
-    elif hasattr(controlnet_preprocessor[type_str], "to"):
-        if device_str:
-            controlnet_preprocessor[type_str].to(device_str)
+    if controlnet_type not in controlnet_preprocessor:
+        controlnet_preprocessor[controlnet_type] = create_default_preprocessor(controlnet_type)
 
-    return controlnet_preprocessor[type_str]
+    cn_preprocessor = controlnet_preprocessor[controlnet_type]
+    if hasattr(cn_preprocessor, "processor"):
+        if hasattr(cn_preprocessor, "to"):
+            cn_preprocessor.processor.to(device_str)
+
+    if hasattr(cn_preprocessor, "to"):
+        cn_preprocessor.to(device_str)
+
+    return cn_preprocessor
 
 
 def clear_controlnet_preprocessor(type_str=None):
@@ -602,6 +611,10 @@ def create_pipeline(
     feature_extractor = CLIPImageProcessor.from_pretrained(base_model, subfolder="feature_extractor")
 
     # set up scheduler
+    if project_setting.gradual_latent_hires_fix_map.enable:
+        project_setting.scheduler = DiffusionScheduler.euler_a
+        logger.warning("gradual_latent_hires_fix enable -> Change scheduler to euler_a")
+
     sched_kwargs = infer_config.noise_scheduler_kwargs
     scheduler = get_scheduler(project_setting.scheduler, sched_kwargs)
     logger.info(f'Using scheduler "{project_setting.scheduler}" ({scheduler.__class__.__name__})')
@@ -690,7 +703,6 @@ def load_controlnet_models(
 ):
     controlnet_map = {}
     c_image_dir = project_dir / project_setting.controlnet_map.input_image_dir
-    print("--->", c_image_dir)
     for c, cn in project_setting.controlnet_map.controlnets:
         if not cn.enable:
             continue
@@ -860,8 +872,6 @@ def controlnet_preprocess(
     c_image_dir = project_dir / controlnet_map.input_image_dir
     save_detectmap = controlnet_map.save_detectmap
 
-    preprocess_on_gpu = controlnet_map.preprocess_on_gpu
-    device_str = device_str if preprocess_on_gpu else None
     cache_dir = path_mgr.projects / project_dir / "cache"
     cache_dir.mkdir(exist_ok=True)
 
@@ -877,7 +887,7 @@ def controlnet_preprocess(
         images_to_be_processing = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
         if not images_to_be_processing:
             return
-        preprocessor_map = controlnet.preprocessor
+        preprocessor_config = controlnet.preprocessor
 
         for img_path in images_to_be_processing:
             frame_no = int(Path(img_path).stem)
@@ -912,8 +922,7 @@ def controlnet_preprocess(
                 controlnet_image_map[frame_no][cn_name] = Image.open(cache_image_path)
                 continue
             img = get_resized_image2(img_path, 512)
-            param = preprocessor_map.param
-            preprocessed_img = get_preprocessor(cn_name, device_str, preprocessor_map)(img, **param)
+            preprocessed_img = get_preprocessor(cn_name, preprocessor_config)(img, **preprocessor_config.param)
             controlnet_image_map[frame_no][cn_name] = preprocessed_img
             preprocessed_img.save(cache_image_path)
 
@@ -1370,6 +1379,7 @@ def run_inference(
     is_single_prompt_mode: bool = False,
     is_sdxl: bool = False,
     apply_lcm_lora: bool = False,
+    gradual_latent_map: TGradualLatentHiresFixMap = None,
 ):
     out_dir = Path(out_dir)  # ensure out_dir is a Path
 
@@ -1427,6 +1437,7 @@ def run_inference(
         interpolation_factor=1,
         is_single_prompt_mode=is_single_prompt_mode,
         apply_lcm_lora=apply_lcm_lora,
+        gradual_latent_map=gradual_latent_map,
         callback=callback,
         callback_steps=output_map.preview_steps,
     )
