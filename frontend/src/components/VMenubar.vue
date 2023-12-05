@@ -21,8 +21,14 @@ const { optPresets, optProjects, options } = optionsStore
 const pullVideoPath = async () => {
   const res = await getTaskStatus()
   console.log(res)
-  if (res.progress.main) {
+  if (res?.progress?.main) {
     player.progress.value = res.progress
+  }
+  if (res.task?.status === "error") {
+    player.status.value = TStatus.ERROR
+  }
+  if (!res?.task) {
+    player.status.value = TStatus.ERROR
   }
   if (!res?.task?.videoPath) {
     return
@@ -55,7 +61,7 @@ const generate = async () => {
     console.log("generate res", res)
     pullInter = setInterval(() => {
       pullVideoPath()
-    }, 2000)
+    }, 4000)
   } catch (e) {
     console.log("generate error", e)
     message.error(e.message)

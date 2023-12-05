@@ -32,11 +32,11 @@ from animatediff.generate import (
     wild_card_conversion,
 )
 from animatediff.pipelines import load_text_embeddings
-from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, ModelConfig, get_infer_config, get_project_setting
+from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, get_infer_config, get_project_setting
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import get_context_params, send_to_device
-from animatediff.utils.progressbar import pgr
+from animatediff.utils.progressbar import pbar
 from animatediff.utils.util import (
     is_sdxl_checkpoint,
     is_v2_motion_module,
@@ -332,8 +332,8 @@ def generate(
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
-    pgr.update(pgr.task_id_preprocessing_image, 10)
-    pgr.update(pgr.task_id_main, 10)
+    pbar.pbar_preprocess_image.update(10)
+    pbar.pbar.update(10)
 
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
         project_dir,
@@ -345,8 +345,8 @@ def generate(
         torch_device,
         is_sdxl,
     )
-    pgr.update(pgr.task_id_preprocessing_image, 100)
-    pgr.update(pgr.task_id_image_2_image, 10)
+    pbar.pbar_preprocess_image.update(100)
+    pbar.pbar_image_2_image.update(10)
     img2img_map = img2img_preprocess(
         project_dir,
         save_dir,
@@ -355,12 +355,12 @@ def generate(
         height,
         length,
     )
-    pgr.update(pgr.task_id_image_2_image, 100)
+    pbar.pbar_image_2_image.update(100)
 
     # beware the pipeline
     global g_pipeline
     global last_model_path
-    pgr.update(pgr.task_id_load_model, 10)
+    pbar.pbar_load_model.update(10)
     if g_pipeline is None or last_model_path != path_mgr.checkpoints / project_setting.checkpoint:
         g_pipeline = create_pipeline(
             base_model=base_model_path,
@@ -377,10 +377,10 @@ def generate(
         # since load time if we're being called from another package
         load_text_embeddings(g_pipeline, is_sdxl=is_sdxl)
 
-    pgr.update(pgr.task_id_load_model, 80)
+    pbar.pbar_load_model.update(80)
     load_controlnet_models(project_dir, pipe=g_pipeline, project_setting=project_setting, is_sdxl=is_sdxl)
-    pgr.update(pgr.task_id_load_model, 100)
-    pgr.update(pgr.task_id_main, 10)
+    pbar.pbar_load_model.update(100)
+    pbar.pbar.update(10)
 
     if g_pipeline.device == torch_device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
@@ -428,8 +428,8 @@ def generate(
 
     gen_num = 0  # global generation index
 
-    pgr.update(pgr.task_id_main, 20)
-    pgr.update(pgr.task_id_animate, 0)
+    pbar.pbar.update(20)
+    pbar.pbar_animate.update(0)
     # repeat the prompts if we're doing multiple runs
     for _ in range(repeats):
         if project_setting.prompt_map:
@@ -473,6 +473,7 @@ def generate(
                 is_single_prompt_mode=project_setting.is_single_prompt_mode,
                 is_sdxl=is_sdxl,
                 apply_lcm_lora=project_setting.apply_lcm_lora,
+                gradual_latent_map=project_setting.gradual_latent_hires_fix_map
             )
             outputs.append(output)
             torch.cuda.empty_cache()
@@ -480,18 +481,19 @@ def generate(
             # increment the generation number
             gen_num += 1
 
-    pgr.update(pgr.task_id_unload_models, 50)
+    pbar.pbar_animate.update(100)
+    pbar.pbar_unload_models.update(50)
     unload_controlnet_models(pipe=g_pipeline)
-    pgr.update(pgr.task_id_unload_models, 100)
+    pbar.pbar_unload_models.update(100)
 
     logger.info("Generation complete!")
-    pgr.update(pgr.task_id_make_video, 50)
+    pbar.pbar_make_video.update(50)
     if save_merged:
         logger.info("Output merged output video...")
         merged_output = torch.concat(outputs, dim=0)
         save_video(merged_output, save_dir.joinpath("final.gif"))
-    pgr.update(pgr.task_id_make_video, 100)
-    pgr.update(pgr.task_id_main, 100)
+    pbar.pbar_make_video.update(100)
+    pbar.pbar.update(100)
 
     logger.info("Done, exiting...")
     return save_dir

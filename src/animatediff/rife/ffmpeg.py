@@ -1,11 +1,9 @@
 from enum import Enum
 from pathlib import Path
-from re import split
-from typing import Annotated, Optional, Union
+from typing import Optional
 
 import ffmpeg
 from ffmpeg.nodes import FilterNode, InputNode
-from torch import Value
 
 
 class VideoCodec(str, Enum):
@@ -200,7 +198,7 @@ class FfmpegEncoder:
         param.update(**self.param)
 
         stream = stream.output(self._out_file, **param)
-        return stream.run()
+        return stream.run(overwrite_output=True)
 
     def _encode_hevc(self) -> tuple:
         stream: FilterNode = self.input
@@ -216,4 +214,4 @@ class FfmpegEncoder:
         param.update(**self.param)
 
         stream = stream.output(self._out_file, **param)
-        return stream.run()
+        return stream.run(overwrite_output=True)

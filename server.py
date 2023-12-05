@@ -8,11 +8,11 @@ from starlette.responses import Response, FileResponse
 
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
-from animatediff.adw.schema import TTask, TPreset, TStatusEnum
+from animatediff.adw.schema import TTask, TPreset, TStatusEnum, TPerformance
 from animatediff.adw.service import get_projects, TParams, tasks_store, push_task_by_id, do_render_video
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
-from animatediff.utils.progressbar import pgr
+from animatediff.utils.progressbar import pbar
 
 app = fastapi.FastAPI()
 app.add_middleware(
@@ -49,19 +49,25 @@ def gen_presets():
     )
     preset_lcm = TPreset(
         name="default - lcm",
-        performance="Extreme Speed",
+        performance=TPerformance.EXTREME_SPEED,
         aspect_radio="768x432 | 16:9",
     )
     preset_color = TPreset(
         name="lcm + motion-lora + color fashion",
-        performance="Extreme Speed",
+        performance=TPerformance.EXTREME_SPEED,
         head_prompt="masterpiece,best quality, 1girl, walk,",
         tail_prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
         lcm=True,
         duration=2,
     )
     preset_color.loras[0] = ["釉彩·麻袋调色盘_v1.0.safetensors", 0.8]
+    preset_quality_default = TPreset(
+        name="speed hi res",
+        duration=1,
+        performance=TPerformance.SPEED_HI_RES,
+    )
     presets = [
+        preset_quality_default,
         preset_default,
         preset_lcm,
         preset_color,
@@ -144,6 +150,11 @@ def render_submit(
 
 @app.get("/api/tasks/status")
 def render_status():
+    if not tasks_store:
+        return {
+            "task": None,
+            "progress": None,
+        }
     bg_task = tasks_store[-1]
     return {
         "task": {
@@ -155,8 +166,8 @@ def render_status():
             "videoPath": bg_task.video_path,
         },
         "progress": {
-            "main": pgr.status[0] if pgr.status else None,
-            "tasks": pgr.status[1:]
+            "main": pbar.status[0] if pbar.status else None,
+            "tasks": pbar.status[1:]
         }
     }
 

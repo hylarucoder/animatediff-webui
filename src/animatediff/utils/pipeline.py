@@ -31,20 +31,6 @@ def send_to_device(
 
     logger.info(f"Sending pipeline to device \"{device.type}{device.index if device.index else ''}\"")
 
-    # Freeze model weights and force-disable training
-    if freeze or compile:
-        #        pipeline.freeze()
-        pipeline.vae.requires_grad_(False)
-        pipeline.unet.requires_grad_(False)
-        pipeline.text_encoder.requires_grad_(False)
-        pipeline.unet.eval()
-        pipeline.vae.eval()
-        pipeline.text_encoder.eval()
-
-        pipeline.unet.train = nop_train
-        pipeline.vae.train = nop_train
-        pipeline.text_encoder.train = nop_train
-
     unet_dtype, tenc_dtype, vae_dtype = get_model_dtypes(device, force_half)
     model_memory_format = get_memory_format(device)
 

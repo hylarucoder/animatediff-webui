@@ -17,7 +17,7 @@ const activeKey = ref("1")
         <a-form-item label="Performance">
           <a-radio-group v-model:value="performance">
             <a-radio v-for="opt in optPerformances" :key="opt.value" :value="opt.value" :label="opt.label">
-              {{ opt.value }}
+              {{ opt.label }}
             </a-radio>
           </a-radio-group>
         </a-form-item>

@@ -37,7 +37,15 @@ export interface TOptions {
 
 export const aspectRatios = ["768x432 | 16:9", "768x576 | 4:3", "600x600 | 1:1", "432x768 | 9:16", "576x768 | 3:4"]
 
-export const performances = ["Speed", "Quality", "Extreme Speed"]
+const performanceMapping = new Map([
+  ["Speed", "SPEED"],
+  ["Quality", "QUALITY"],
+  ["Extreme Speed", "EXTREME_SPEED"],
+  ["Speed Hi-Res", "SPEED_HI_RES"],
+  // ["Extreme Speed Hi-Res", "EXTREME_SPEED_HI_RES"],
+])
+export const performances = [...performanceMapping.keys()]
+
 const checkpoint = ref("")
 const performance = ref(performances[0])
 
@@ -141,6 +149,10 @@ const unflattenCheckpoint = (arr: any[]) => {
   })
 }
 
+function unflattenKV(map) {
+  return Array.from(map, ([label, value]) => ({ label, value }))
+}
+
 export const useOptionsStore = defineStore("options", () => {
   const options = ref<TOptions>({
     projects: [],
@@ -156,7 +168,7 @@ export const useOptionsStore = defineStore("options", () => {
   const { loadPreset } = form
   const optionLoaded = ref(true)
   const optPerformances = computed(() => {
-    return unflatten(performances)
+    return unflattenKV(performanceMapping)
   })
   const optAspectRadios = computed(() => {
     return unflatten(aspectRatios)
