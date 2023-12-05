@@ -16,5 +16,8 @@ help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 format: ## lint
-	pdm run ruff --target-version py310 --unsafe-fixes --fix format .
+	pdm run ruff --target-version py310 --fix format .
 	
+test: ## lint
+
+	pdm run ruff --target-version py310 --fix format .
