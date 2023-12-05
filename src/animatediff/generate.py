@@ -280,23 +280,12 @@ controlnet_address_table = {
 }
 
 controlnet_address_table_sdxl = {
-    #    "controlnet_tile" : ('lllyasviel/control_v11f1e_sd15_tile'),
-    #    "controlnet_lineart_anime" : ('lllyasviel/control_v11p_sd15s2_lineart_anime'),
-    #    "controlnet_ip2p" : ('lllyasviel/control_v11e_sd15_ip2p'),
     "controlnet_openpose": ["thibaud/controlnet-openpose-sdxl-1.0"],
     "controlnet_softedge": ["SargeZT/controlnet-sd-xl-1.0-softedge-dexined"],
-    #    "controlnet_shuffle" : ('lllyasviel/control_v11e_sd15_shuffle'),
     "controlnet_depth": ["diffusers/controlnet-depth-sdxl-1.0-small"],
     "controlnet_canny": ["diffusers/controlnet-canny-sdxl-1.0-small"],
-    #    "controlnet_inpaint" : ('lllyasviel/control_v11p_sd15_inpaint'),
-    #    "controlnet_lineart" : ('lllyasviel/control_v11p_sd15_lineart'),
-    #    "controlnet_mlsd" : ('lllyasviel/control_v11p_sd15_mlsd'),
-    #    "controlnet_normalbae" : ('lllyasviel/control_v11p_sd15_normalbae'),
-    #    "controlnet_scribble" : ('lllyasviel/control_v11p_sd15_scribble'),
     "controlnet_seg": ["SargeZT/sdxl-controlnet-seg"],
     "qr_code_monster_v1": ["monster-labs/control_v1p_sdxl_qrcode_monster"],
-    #    "qr_code_monster_v2" : ('monster-labs/control_v1p_sd15_qrcode_monster', 'v2'),
-    #    "controlnet_mediapipe_face" : ('CrucibleAI/ControlNetMediaPipeFace', "diffusion_sd15"),
 }
 
 
@@ -344,7 +333,7 @@ def create_controlnet_model(type_str, is_sdxl):
 
 default_preprocessor_table = {
     "controlnet_lineart_anime": "lineart_anime",
-    "controlnet_openpose": "openpose_full" if onnxruntime_installed == False else "dwpose",
+    "controlnet_openpose": "openpose_full" if not onnxruntime_installed else "dwpose",
     "controlnet_softedge": "softedge_hedsafe",
     "controlnet_shuffle": "shuffle",
     "controlnet_depth": "depth_midas",
@@ -387,25 +376,26 @@ def create_default_preprocessor(type_str):
     return create_preprocessor_from_name(pre_type)
 
 
-def get_preprocessor(type_str, device_str, preprocessor_map: TPreprocessor):
-    if type_str in controlnet_preprocessor:
-        return controlnet_preprocessor[type_str]
-
+def get_preprocessor(controlnet_type, preprocessor_map: TPreprocessor, device_str="cpu"):
     if preprocessor_map and preprocessor_map.type:
-        controlnet_preprocessor[type_str] = create_preprocessor_from_name(preprocessor_map.type)
+        controlnet_preprocessor[controlnet_type] = create_preprocessor_from_name(preprocessor_map.type)
+        return controlnet_preprocessor[controlnet_type]
 
-    if type_str not in controlnet_preprocessor:
-        controlnet_preprocessor[type_str] = create_default_preprocessor(type_str)
+    if controlnet_type in controlnet_preprocessor:
+        return controlnet_preprocessor[controlnet_type]
 
-    if hasattr(controlnet_preprocessor[type_str], "processor"):
-        if hasattr(controlnet_preprocessor[type_str].processor, "to"):
-            if device_str:
-                controlnet_preprocessor[type_str].processor.to(device_str)
-    elif hasattr(controlnet_preprocessor[type_str], "to"):
-        if device_str:
-            controlnet_preprocessor[type_str].to(device_str)
+    if controlnet_type not in controlnet_preprocessor:
+        controlnet_preprocessor[controlnet_type] = create_default_preprocessor(controlnet_type)
 
-    return controlnet_preprocessor[type_str]
+    cn_preprocessor = controlnet_preprocessor[controlnet_type]
+    if hasattr(cn_preprocessor, "processor"):
+        if hasattr(cn_preprocessor, "to"):
+            cn_preprocessor.processor.to(device_str)
+
+    if hasattr(cn_preprocessor, "to"):
+        cn_preprocessor.to(device_str)
+
+    return cn_preprocessor
 
 
 def clear_controlnet_preprocessor(type_str=None):
@@ -879,8 +869,6 @@ def controlnet_preprocess(
     c_image_dir = project_dir / controlnet_map.input_image_dir
     save_detectmap = controlnet_map.save_detectmap
 
-    preprocess_on_gpu = controlnet_map.preprocess_on_gpu
-    device_str = device_str if preprocess_on_gpu else None
     cache_dir = path_mgr.projects / project_dir / "cache"
     cache_dir.mkdir(exist_ok=True)
 
@@ -896,7 +884,7 @@ def controlnet_preprocess(
         images_to_be_processing = sorted(glob.glob(os.path.join(img_dir, "[0-9]*.png"), recursive=False))
         if not images_to_be_processing:
             return
-        preprocessor_map = controlnet.preprocessor
+        preprocessor_config = controlnet.preprocessor
 
         for img_path in images_to_be_processing:
             frame_no = int(Path(img_path).stem)
@@ -931,8 +919,7 @@ def controlnet_preprocess(
                 controlnet_image_map[frame_no][cn_name] = Image.open(cache_image_path)
                 continue
             img = get_resized_image2(img_path, 512)
-            param = preprocessor_map.param
-            preprocessed_img = get_preprocessor(cn_name, device_str, preprocessor_map)(img, **param)
+            preprocessed_img = get_preprocessor(cn_name, preprocessor_config)(img, **preprocessor_config.param)
             controlnet_image_map[frame_no][cn_name] = preprocessed_img
             preprocessed_img.save(cache_image_path)
 
