@@ -76,7 +76,7 @@ def test_lineart_anime(preprocessor_str):
         "softedge_hedsafe",
     ],
 )
-def test_lineart_anime(preprocessor_str):
+def test_softedge(preprocessor_str):
     processor = get_preprocessor("controlnet_softedge", TPreprocessor(type=preprocessor_str))
     i = processor(open_test_image("animate_portrait.jpeg"))
 
@@ -85,7 +85,7 @@ def test_lineart_anime(preprocessor_str):
     "preprocessor_str",
     [
         None,
-        "softedge_hedsafe",
+        "shuffle",
     ],
 )
 def test_shuffle(preprocessor_str):
@@ -157,7 +157,7 @@ def test_mediapipe_face(preprocessor_str):
     "preprocessor_str",
     [
         None,
-        "qr_code_monster_v1",
+        "depth_midas",
     ],
 )
 def test_qr_code_monster_v1(preprocessor_str):
@@ -169,7 +169,7 @@ def test_qr_code_monster_v1(preprocessor_str):
     "preprocessor_str",
     [
         None,
-        "qr_code_monster_v2",
+        "depth_midas",
     ],
 )
 def test_qr_code_monster_v2(preprocessor_str):

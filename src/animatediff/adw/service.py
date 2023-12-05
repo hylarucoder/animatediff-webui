@@ -38,14 +38,14 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 def lora_arr():
     return [[None, 0.7] for _ in range(5)]
 
 
-class TParams(PtBaseModel):
+class TParamsRenderVideo(PtBaseModel):
     project: str
     performance: TPerformance = TPerformance.SPEED
     aspect_radio: str = "432x768 | 9:16"
@@ -54,7 +54,7 @@ class TParams(PtBaseModel):
     fps: int = 8
     duration: int = 4
     seed: int = -1
-    checkpoint: str = "majicmixRealistic_v7.safetensors"
+    checkpoint: str = "majicmix/majicmixRealistic_v7.safetensors"
     motion: str = "mm_sd_v15_v2.ckpt"
     motion_loras: str | None = None
     lora_items: list[list] = pt.Field(default_factory=lora_arr)
@@ -83,9 +83,17 @@ def resize_to_768(width, height):
     return width // 8 * 8, height // 8 * 8
 
 
-def do_render_video(data: TParams, task_id):
-    pbar.init_pbar(task_id)
-    bg_task = get_task_by_id(task_id)
+def do_render_video(
+        data: TParamsRenderVideo,
+        on_config_start=lambda: None,
+        on_config_end=lambda: None,
+        on_render_start=lambda: None,
+        on_render_success=lambda: None,
+        on_render_failed=lambda: None,
+        on_render_end=lambda: None,
+):
+    if on_config_start:
+        on_config_start()
     project_dir = path_mgr.projects / data.project
     project_setting = TProjectSetting(**read_json(path_mgr.demo_prompt_json))
     project_dir.mkdir(exist_ok=True)
@@ -137,13 +145,16 @@ def do_render_video(data: TParams, task_id):
         )
     )
 
-    pbar.pbar_config.update(100)
-    pbar.pbar.update(10)
+    if on_config_end:
+        on_config_end()
+
     from animatediff.cli import generate
 
     video_len = data.fps * data.duration
     context = 16 if video_len > 16 else 8
     overlap = context // 4
+    if on_render_start:
+        on_render_start()
     try:
         save_dir = generate(
             config_path=project_dir / "prompts.json",
@@ -161,10 +172,14 @@ def do_render_video(data: TParams, task_id):
             no_frames=False,
             save_merged=False,
         )
-        bg_task.video_path = save_dir / "video.mp4"
-        bg_task.status = TStatusEnum.success
+        if on_render_success:
+            # TODO typehint
+            on_render_success(save_dir / "video.mp4")
     except Exception as e:
         import traceback
-
         print(traceback.format_exc())
-        bg_task.status = TStatusEnum.error
+        if on_render_failed:
+            on_render_failed()
+    finally:
+        if on_render_end:
+            on_render_end()

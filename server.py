@@ -9,7 +9,7 @@ from starlette.responses import Response, FileResponse
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
 from animatediff.adw.schema import TTask, TPreset, TStatusEnum, TPerformance
-from animatediff.adw.service import get_projects, TParams, tasks_store, push_task_by_id, do_render_video
+from animatediff.adw.service import get_projects, TParamsRenderVideo, tasks_store, push_task_by_id, do_render_video
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
 from animatediff.utils.progressbar import pbar
@@ -113,7 +113,7 @@ def get_checkpoints() -> TOptions:
     )
 
 
-def validate_data(data: TParams):
+def validate_data(data: TParamsRenderVideo):
     raise_unless((path_mgr.checkpoints / data.checkpoint).exists(), "Checkpoint not Exist!")
     # loras
     raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
@@ -134,8 +134,8 @@ def serialize_task(task: TTask):
 
 @app.post("/api/tasks/submit")
 def render_submit(
-    data: TParams,
-    background_tasks: BackgroundTasks,
+        data: TParamsRenderVideo,
+        background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(
@@ -145,7 +145,7 @@ def render_submit(
         return pending_or_running_tasks[-1]
     task_id = len(tasks_store) + 1
     bg_task = push_task_by_id(task_id)
-    background_tasks.add_task(do_render_video, data, task_id)
+    background_tasks.add_task(do_render_video, data)
     return {
         "task": serialize_task(bg_task),
     }

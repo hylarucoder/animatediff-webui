@@ -124,167 +124,21 @@ def get_random():
     return int(np.random.randint(sys.maxsize, dtype=np.int64))
 
 
-@cli.command()
 def generate(
-    config_path: Annotated[
-        Path,
-        typer.Option(
-            "--config-path",
-            "-c",
-            path_type=Path,
-            exists=True,
-            readable=True,
-            dir_okay=False,
-            help="Path to a prompt configuration JSON file",
-        ),
-    ] = Path("config/prompts/01-ToonYou.json"),
-    width: Annotated[
-        int,
-        typer.Option(
-            "--width",
-            "-W",
-            min=64,
-            max=3840,
-            help="Width of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = 512,
-    height: Annotated[
-        int,
-        typer.Option(
-            "--height",
-            "-H",
-            min=64,
-            max=2160,
-            help="Height of generated frames",
-            rich_help_panel="Generation",
-        ),
-    ] = 512,
-    length: Annotated[
-        int,
-        typer.Option(
-            "--length",
-            "-L",
-            min=1,
-            max=9999,
-            help="Number of frames to generate",
-            rich_help_panel="Generation",
-        ),
-    ] = 16,
-    context: Annotated[
-        int,
-        typer.Option(
-            "--context",
-            "-C",
-            min=1,
-            max=32,
-            help="Number of frames to condition on (default: max of <length> or 32). max for motion module v1 is 24",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 16,
-    overlap: Annotated[
-        int,
-        typer.Option(
-            "--overlap",
-            "-O",
-            min=0,
-            max=12,
-            help="Number of frames to overlap in context (default: context//4)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 4,
-    stride: Annotated[
-        int,
-        typer.Option(
-            "--stride",
-            "-S",
-            min=0,
-            max=8,
-            help="Max motion stride as a power of 2 (default: 0)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 0,
-    repeats: Annotated[
-        int,
-        typer.Option(
-            "--repeats",
-            "-r",
-            min=1,
-            max=99,
-            help="Number of times to repeat the prompt (default: 1)",
-            show_default=False,
-            rich_help_panel="Generation",
-        ),
-    ] = 1,
-    device: Annotated[
-        str,
-        typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
-    ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    force_half_vae: Annotated[
-        bool,
-        typer.Option(
-            "--half-vae",
-            is_flag=True,
-            help="Force VAE to use fp16 (not recommended)",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
-    out_dir: Annotated[
-        Path,
-        typer.Option(
-            "--out-dir",
-            "-o",
-            path_type=Path,
-            file_okay=False,
-            help="Directory for output folders (frames, gifs, etc)",
-            rich_help_panel="Output",
-        ),
-    ] = Path("output/"),
-    no_frames: Annotated[
-        bool,
-        typer.Option(
-            "--no-frames",
-            "-N",
-            is_flag=True,
-            help="Don't save frames, only the animation",
-            rich_help_panel="Output",
-        ),
-    ] = False,
-    save_merged: Annotated[
-        bool,
-        typer.Option(
-            "--save-merged",
-            "-m",
-            is_flag=True,
-            help="Save a merged animation of all prompts",
-            rich_help_panel="Output",
-        ),
-    ] = False,
-    version: Annotated[
-        Optional[bool],
-        typer.Option(
-            "--version",
-            "-v",
-            callback=version_callback,
-            is_eager=True,
-            is_flag=True,
-            help="Show version",
-        ),
-    ] = None,
-    progress: Progress = ...,
+    config_path: Path,
+    width: int = 512,
+    height: int = 512,
+    length: int = 16,
+    context: int = 16,
+    overlap: int = 4,
+    stride: int = 0,
+    repeats: int = 1,
+    device = "cuda",
+    use_xformers = False,
+    force_half_vae = False,
+    out_dir: Path = Path("output/"),
+    no_frames: bool = False,
+    save_merged: bool = False,
 ):
     """Do the thing. Make the animation happen. Waow."""
     # be quiet, diffusers. we care not for your safety checker
