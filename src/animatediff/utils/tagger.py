@@ -159,7 +159,7 @@ def get_labels(
                 general_threshold, character_threshold, ignore_tokens, with_confidence, is_danbooru_format, is_cpu
             )
 
-            for i in tqdm(range(0, len(png_list), interval), desc=f"WD14tagger"):
+            for i in tqdm(range(0, len(png_list), interval), desc="WD14tagger"):
                 path = png_map[i]
 
                 # logger.info(f"{path=}")

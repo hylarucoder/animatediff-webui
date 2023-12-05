@@ -1,5 +1,4 @@
-"""cli.py
-"""
+"""cli.py."""
 import glob
 import logging
 import os.path
@@ -438,7 +437,7 @@ def tile_upscale(
         ),
     ] = False,
 ):
-    """Upscale frames using controlnet tile"""
+    """Upscale frames using controlnet tile."""
     # be quiet, diffusers. we care not for your safety checker
     set_diffusers_verbosity_error()
 
@@ -652,7 +651,7 @@ def civitai2config(
         ),
     ] = 0.75,
 ):
-    """Generate config file from *.civitai.info"""
+    """Generate config file from *.civitai.info."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Generate config files from: {lora_dir}")
@@ -684,7 +683,7 @@ def convert(
         ),
     ],
 ):
-    """Convert a StableDiffusion checkpoint into a Diffusers pipeline"""
+    """Convert a StableDiffusion checkpoint into a Diffusers pipeline."""
     logger.info(f"Converting checkpoint: {checkpoint}")
     _, pipeline_dir = checkpoint_to_pipeline(checkpoint, target_dir=out_dir)
     logger.info(f"Converted to HuggingFace pipeline at {pipeline_dir}")
@@ -706,7 +705,7 @@ def fix_checkpoint(
         ),
     ] = False,
 ):
-    """Fix checkpoint with error "AttributeError: 'Attention' object has no attribute 'to_to_k'" on loading"""
+    """Fix checkpoint with error "AttributeError: 'Attention' object has no attribute 'to_to_k'" on loading."""
     set_diffusers_verbosity_error()
 
     logger.info(f"Converting checkpoint: {checkpoint}")
@@ -737,7 +736,7 @@ def merge(
         ),
     ],
 ):
-    """Convert a StableDiffusion checkpoint into an AnimationPipeline"""
+    """Convert a StableDiffusion checkpoint into an AnimationPipeline."""
     raise NotImplementedError("Sorry, haven't implemented this yet!")
 
     # if we have a checkpoint, convert it to HF automagically
@@ -912,7 +911,7 @@ def refine(
         ),
     ] = Path("refine/"),
 ):
-    """Create upscaled or improved video using pre-generated frames"""
+    """Create upscaled or improved video using pre-generated frames."""
     import shutil
 
     from PIL import Image

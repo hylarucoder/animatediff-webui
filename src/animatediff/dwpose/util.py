@@ -1,9 +1,9 @@
 # https://github.com/IDEA-Research/DWPose
 import math
-import numpy as np
-import matplotlib
-import cv2
 
+import cv2
+import matplotlib
+import numpy as np
 
 eps = 0.01
 
@@ -278,7 +278,7 @@ def handDetect(candidate, subset, oriImg):
     """
     return value: [[x, y, w, True if left hand else False]].
     width=height since the network require squared input.
-    x, y is the coordinate of top left 
+    x, y is the coordinate of top left
     """
     return detect_result
 

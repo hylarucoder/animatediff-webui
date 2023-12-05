@@ -44,7 +44,7 @@ re_attention = re.compile(
 
 
 def parse_prompt_attention(text):
-    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    r"""Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
@@ -74,7 +74,7 @@ def parse_prompt_attention(text):
      ['hill', 0.55],
      [', sun, ', 1.1],
      ['sky', 1.4641000000000006],
-     ['.', 1.1]]
+     ['.', 1.1]].
     """
     res = []
     round_brackets = []

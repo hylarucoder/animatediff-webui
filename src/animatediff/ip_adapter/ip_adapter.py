@@ -2,7 +2,6 @@ import os
 from typing import List
 
 import torch
-from diffusers import StableDiffusionPipeline
 from PIL import Image
 from safetensors import safe_open
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -10,10 +9,12 @@ from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 from .utils import is_torch2_available
 
 if is_torch2_available():
-    from .attention_processor import AttnProcessor2_0 as AttnProcessor
-    from .attention_processor import IPAttnProcessor2_0 as IPAttnProcessor
+    from .attention_processor import (
+        AttnProcessor2_0 as AttnProcessor,
+        IPAttnProcessor2_0 as IPAttnProcessor,
+    )
 else:
-    from .attention_processor import IPAttnProcessor, AttnProcessor
+    from .attention_processor import AttnProcessor, IPAttnProcessor
 
 import logging
 
@@ -23,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class ImageProjModel(torch.nn.Module):
-    """Projection Model"""
+
+    """Projection Model."""
 
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
@@ -43,7 +45,8 @@ class ImageProjModel(torch.nn.Module):
 
 
 class MLPProjModel(torch.nn.Module):
-    """SD model with image prompt"""
+
+    """SD model with image prompt."""
 
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
         super().__init__()
@@ -219,7 +222,8 @@ class IPAdapter:
 
 
 class IPAdapterXL(IPAdapter):
-    """SDXL"""
+
+    """SDXL."""
 
     def generate(
         self,
@@ -286,7 +290,8 @@ class IPAdapterXL(IPAdapter):
 
 
 class IPAdapterPlus(IPAdapter):
-    """IP-Adapter with fine-grained features"""
+
+    """IP-Adapter with fine-grained features."""
 
     def init_proj(self):
         image_proj_model = Resampler(
@@ -317,7 +322,8 @@ class IPAdapterPlus(IPAdapter):
 
 
 class IPAdapterFull(IPAdapterPlus):
-    """IP-Adapter with full features"""
+
+    """IP-Adapter with full features."""
 
     def init_proj(self):
         image_proj_model = MLPProjModel(
@@ -328,7 +334,8 @@ class IPAdapterFull(IPAdapterPlus):
 
 
 class IPAdapterPlusXL(IPAdapter):
-    """SDXL"""
+
+    """SDXL."""
 
     def init_proj(self):
         image_proj_model = Resampler(

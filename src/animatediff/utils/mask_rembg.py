@@ -29,7 +29,7 @@ def rembg_create_fg(
 
     session = new_session(providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
 
-    for i, frame in tqdm(enumerate(frame_list), total=len(frame_list), desc=f"creating mask"):
+    for i, frame in tqdm(enumerate(frame_list), total=len(frame_list), desc="creating mask"):
         frame = Path(frame)
         file_name = frame.name
 

@@ -54,7 +54,7 @@ def generate_config_from_civitai_info(
                 info = json.load(f)
 
                 if not info:
-                    logger.info(f"empty civitai info -> skip")
+                    logger.info("empty civitai info -> skip")
                     continue
 
                 if info["model"]["type"] not in ("LORA", "lora"):

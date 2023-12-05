@@ -45,7 +45,7 @@ def maybe_bfloat16(
     device: Union[str, torch.device],
     fallback: torch.dtype = torch.float32,
 ) -> torch.dtype:
-    """Returns torch.bfloat16 if available, otherwise the fallback dtype (default float32)"""
+    """Returns torch.bfloat16 if available, otherwise the fallback dtype (default float32)."""
     device = torch.device(device)  # make sure device is a torch.device
     return torch.bfloat16 if supports_bfloat16(device) else fallback
 

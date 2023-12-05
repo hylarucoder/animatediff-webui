@@ -5,9 +5,8 @@ import torch.nn.functional as F
 
 
 class AttnProcessor(nn.Module):
-    r"""
-    Default processor for performing attention-related computations.
-    """
+
+    r"""Default processor for performing attention-related computations."""
 
     def __init__(
         self,
@@ -78,9 +77,11 @@ class AttnProcessor(nn.Module):
 
 
 class IPAttnProcessor(nn.Module):
-    r"""
-    Attention processor for IP-Adapater.
+
+    r"""Attention processor for IP-Adapater.
+
     Args:
+    ----
         hidden_size (`int`):
             The hidden size of the attention layer.
         cross_attention_dim (`int`):
@@ -183,9 +184,8 @@ class IPAttnProcessor(nn.Module):
 
 
 class AttnProcessor2_0(torch.nn.Module):
-    r"""
-    Processor for implementing scaled dot-product attention (enabled by default if you're using PyTorch 2.0).
-    """
+
+    r"""Processor for implementing scaled dot-product attention (enabled by default if you're using PyTorch 2.0)."""
 
     def __init__(
         self,
@@ -272,9 +272,11 @@ class AttnProcessor2_0(torch.nn.Module):
 
 
 class IPAttnProcessor2_0(torch.nn.Module):
-    r"""
-    Attention processor for IP-Adapater for PyTorch 2.0.
+
+    r"""Attention processor for IP-Adapater for PyTorch 2.0.
+
     Args:
+    ----
         hidden_size (`int`):
             The hidden size of the attention layer.
         cross_attention_dim (`int`):

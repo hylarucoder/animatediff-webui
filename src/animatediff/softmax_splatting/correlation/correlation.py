@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import cupy
 import re
+
+import cupy
 import torch
 
 kernel_Correlation_rearrange = """
@@ -39,15 +40,15 @@ kernel_Correlation_updateOutput = """
       float* top
     ) {
       extern __shared__ char patch_data_char[];
-      
+
       float *patch_data = (float *)patch_data_char;
-      
+
       // First (upper left) position of kernel upper-left corner in current center position of neighborhood in image 1
       int x1 = blockIdx.x + 4;
       int y1 = blockIdx.y + 4;
       int item = blockIdx.z;
       int ch_off = threadIdx.x;
-      
+
       // Load 3D patch into shared shared memory
       for (int j = 0; j < 1; j++) { // HEIGHT
         for (int i = 0; i < 1; i++) { // WIDTH
@@ -59,35 +60,35 @@ kernel_Correlation_updateOutput = """
           }
         }
       }
-      
+
       __syncthreads();
-      
+
       __shared__ float sum[32];
-      
+
       // Compute correlation
       for (int top_channel = 0; top_channel < SIZE_1(top); top_channel++) {
         sum[ch_off] = 0;
-      
+
         int s2o = top_channel % 9 - 4;
         int s2p = top_channel / 9 - 4;
-        
+
         for (int j = 0; j < 1; j++) { // HEIGHT
           for (int i = 0; i < 1; i++) { // WIDTH
             int ji_off = (j + i) * SIZE_3(rbot0);
             for (int ch = ch_off; ch < SIZE_3(rbot0); ch += 32) { // CHANNELS
               int x2 = x1 + s2o;
               int y2 = y1 + s2p;
-              
+
               int idxPatchData = ji_off + ch;
               int idx2 = ((item * SIZE_1(rbot0) + y2+j) * SIZE_2(rbot0) + x2+i) * SIZE_3(rbot0) + ch;
-              
+
               sum[ch_off] += patch_data[idxPatchData] * rbot1[idx2];
             }
           }
         }
-        
+
         __syncthreads();
-        
+
         if (ch_off == 0) {
           float total_sum = 0;
           for (int idx = 0; idx < 32; idx++) {
@@ -116,28 +117,28 @@ kernel_Correlation_updateGradOne = """
       int n = intIndex % SIZE_1(gradOne); // channels
       int l = (intIndex / SIZE_1(gradOne)) % SIZE_3(gradOne) + 4; // w-pos
       int m = (intIndex / SIZE_1(gradOne) / SIZE_3(gradOne)) % SIZE_2(gradOne) + 4; // h-pos
-      
+
       // round_off is a trick to enable integer division with ceil, even for negative numbers
       // We use a large offset, for the inner part not to become negative.
       const int round_off = ROUND_OFF;
       const int round_off_s1 = round_off;
-      
+
       // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
       int xmin = (l - 4 + round_off_s1 - 1) + 1 - round_off; // ceil (l - 4)
       int ymin = (m - 4 + round_off_s1 - 1) + 1 - round_off; // ceil (l - 4)
-      
+
       // Same here:
       int xmax = (l - 4 + round_off_s1) - round_off; // floor (l - 4)
       int ymax = (m - 4 + round_off_s1) - round_off; // floor (m - 4)
-      
+
       float sum = 0;
       if (xmax>=0 && ymax>=0 && (xmin<=SIZE_3(gradOutput)-1) && (ymin<=SIZE_2(gradOutput)-1)) {
         xmin = max(0,xmin);
         xmax = min(SIZE_3(gradOutput)-1,xmax);
-        
+
         ymin = max(0,ymin);
         ymax = min(SIZE_2(gradOutput)-1,ymax);
-        
+
         for (int p = -4; p <= 4; p++) {
           for (int o = -4; o <= 4; o++) {
             // Get rbot1 data:
@@ -145,11 +146,11 @@ kernel_Correlation_updateGradOne = """
             int s2p = p;
             int idxbot1 = ((intSample * SIZE_1(rbot0) + (m+s2p)) * SIZE_2(rbot0) + (l+s2o)) * SIZE_3(rbot0) + n;
             float bot1tmp = rbot1[idxbot1]; // rbot1[l+s2o,m+s2p,n]
-            
+
             // Index offset for gradOutput in following loops:
             int op = (p+4) * 9 + (o+4); // index[o,p]
             int idxopoffset = (intSample * SIZE_1(gradOutput) + op);
-            
+
             for (int y = ymin; y <= ymax; y++) {
               for (int x = xmin; x <= xmax; x++) {
                 int idxgradOutput = (idxopoffset * SIZE_2(gradOutput) + y) * SIZE_3(gradOutput) + x; // gradOutput[x,y,o,p]
@@ -180,42 +181,42 @@ kernel_Correlation_updateGradTwo = """
       int n = intIndex % SIZE_1(gradTwo); // channels
       int l = (intIndex / SIZE_1(gradTwo)) % SIZE_3(gradTwo) + 4; // w-pos
       int m = (intIndex / SIZE_1(gradTwo) / SIZE_3(gradTwo)) % SIZE_2(gradTwo) + 4; // h-pos
-      
+
       // round_off is a trick to enable integer division with ceil, even for negative numbers
       // We use a large offset, for the inner part not to become negative.
       const int round_off = ROUND_OFF;
       const int round_off_s1 = round_off;
-      
+
       float sum = 0;
       for (int p = -4; p <= 4; p++) {
         for (int o = -4; o <= 4; o++) {
           int s2o = o;
           int s2p = p;
-          
+
           //Get X,Y ranges and clamp
           // We add round_off before_s1 the int division and subtract round_off after it, to ensure the formula matches ceil behavior:
           int xmin = (l - 4 - s2o + round_off_s1 - 1) + 1 - round_off; // ceil (l - 4 - s2o)
           int ymin = (m - 4 - s2p + round_off_s1 - 1) + 1 - round_off; // ceil (l - 4 - s2o)
-          
+
           // Same here:
           int xmax = (l - 4 - s2o + round_off_s1) - round_off; // floor (l - 4 - s2o)
           int ymax = (m - 4 - s2p + round_off_s1) - round_off; // floor (m - 4 - s2p)
-          
+
           if (xmax>=0 && ymax>=0 && (xmin<=SIZE_3(gradOutput)-1) && (ymin<=SIZE_2(gradOutput)-1)) {
             xmin = max(0,xmin);
             xmax = min(SIZE_3(gradOutput)-1,xmax);
-            
+
             ymin = max(0,ymin);
             ymax = min(SIZE_2(gradOutput)-1,ymax);
-            
+
             // Get rbot0 data:
             int idxbot0 = ((intSample * SIZE_1(rbot0) + (m-s2p)) * SIZE_2(rbot0) + (l-s2o)) * SIZE_3(rbot0) + n;
             float bot0tmp = rbot0[idxbot0]; // rbot1[l+s2o,m+s2p,n]
-            
+
             // Index offset for gradOutput in following loops:
             int op = (p+4) * 9 + (o+4); // index[o,p]
             int idxopoffset = (intSample * SIZE_1(gradOutput) + op);
-            
+
             for (int y = ymin; y <= ymax; y++) {
               for (int x = xmin; x <= xmax; x++) {
                 int idxgradOutput = (idxopoffset * SIZE_2(gradOutput) + y) * SIZE_3(gradOutput) + x; // gradOutput[x,y,o,p]
@@ -236,7 +237,7 @@ def cupy_kernel(strFunction, objVariables):
     strKernel = globals()[strFunction]
 
     while True:
-        objMatch = re.search("(SIZE_)([0-4])(\()([^\)]*)(\))", strKernel)
+        objMatch = re.search(r"(SIZE_)([0-4])(\()([^\)]*)(\))", strKernel)
 
         if objMatch is None:
             break
@@ -249,11 +250,11 @@ def cupy_kernel(strFunction, objVariables):
 
         strKernel = strKernel.replace(
             objMatch.group(),
-            str(intSizes[intArg] if torch.is_tensor(intSizes[intArg]) == False else intSizes[intArg].item()),
+            str(intSizes[intArg] if torch.is_tensor(intSizes[intArg]) is False else intSizes[intArg].item()),
         )
 
     while True:
-        objMatch = re.search("(VALUE_)([0-4])(\()([^\)]+)(\))", strKernel)
+        objMatch = re.search(r"(VALUE_)([0-4])(\()([^\)]+)(\))", strKernel)
 
         if objMatch is None:
             break
@@ -268,7 +269,7 @@ def cupy_kernel(strFunction, objVariables):
             "(("
             + strArgs[intArg + 1].replace("{", "(").replace("}", ")").strip()
             + ")*"
-            + str(intStrides[intArg] if torch.is_tensor(intStrides[intArg]) == False else intStrides[intArg].item())
+            + str(intStrides[intArg] if torch.is_tensor(intStrides[intArg]) is False else intStrides[intArg].item())
             + ")"
             for intArg in range(intArgs)
         ]
@@ -297,13 +298,13 @@ class _FunctionCorrelation(torch.autograd.Function):
         rbot1 = one.new_zeros([one.shape[0], one.shape[2] + 8, one.shape[3] + 8, one.shape[1]])
 
         one = one.contiguous()
-        assert one.is_cuda == True
+        assert one.is_cuda is True
         two = two.contiguous()
-        assert two.is_cuda == True
+        assert two.is_cuda is True
 
         output = one.new_zeros([one.shape[0], 81, one.shape[2], one.shape[3]])
 
-        if one.is_cuda == True:
+        if one.is_cuda is True:
             n = one.shape[2] * one.shape[3]
             cupy_launch(
                 "kernel_Correlation_rearrange",
@@ -335,7 +336,7 @@ class _FunctionCorrelation(torch.autograd.Function):
                 args=[cupy.int32(n), rbot0.data_ptr(), rbot1.data_ptr(), output.data_ptr()],
             )
 
-        elif one.is_cuda == False:
+        elif one.is_cuda is False:
             raise NotImplementedError()
 
         # end
@@ -351,20 +352,20 @@ class _FunctionCorrelation(torch.autograd.Function):
         one, two, rbot0, rbot1 = self.saved_tensors
 
         gradOutput = gradOutput.contiguous()
-        assert gradOutput.is_cuda == True
+        assert gradOutput.is_cuda is True
 
         gradOne = (
             one.new_zeros([one.shape[0], one.shape[1], one.shape[2], one.shape[3]])
-            if self.needs_input_grad[0] == True
+            if self.needs_input_grad[0] is True
             else None
         )
         gradTwo = (
             one.new_zeros([one.shape[0], one.shape[1], one.shape[2], one.shape[3]])
-            if self.needs_input_grad[1] == True
+            if self.needs_input_grad[1] is True
             else None
         )
 
-        if one.is_cuda == True:
+        if one.is_cuda is True:
             if gradOne is not None:
                 for intSample in range(one.shape[0]):
                     n = one.shape[1] * one.shape[2] * one.shape[3]
@@ -427,7 +428,7 @@ class _FunctionCorrelation(torch.autograd.Function):
                 # end
             # end
 
-        elif one.is_cuda == False:
+        elif one.is_cuda is False:
             raise NotImplementedError()
 
         # end

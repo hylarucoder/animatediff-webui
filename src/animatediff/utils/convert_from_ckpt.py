@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Conversion script for the Stable Diffusion checkpoints."""
+"""Conversion script for the Stable Diffusion checkpoints."""
 
 import re
 from io import BytesIO
@@ -37,9 +37,7 @@ def is_safetensors_available():
 
 
 def shave_segments(path, n_shave_prefix_segments=1):
-    """
-    Removes segments. Positive values shave the first segments, negative shave the last segments.
-    """
+    """Removes segments. Positive values shave the first segments, negative shave the last segments."""
     if n_shave_prefix_segments >= 0:
         return ".".join(path.split(".")[n_shave_prefix_segments:])
     else:
@@ -47,9 +45,7 @@ def shave_segments(path, n_shave_prefix_segments=1):
 
 
 def renew_resnet_paths(old_list, n_shave_prefix_segments=0):
-    """
-    Updates paths inside resnets to the new naming scheme (local renaming)
-    """
+    """Updates paths inside resnets to the new naming scheme (local renaming)."""
     mapping = []
     for old_item in old_list:
         new_item = old_item.replace("in_layers.0", "norm1")
@@ -69,9 +65,7 @@ def renew_resnet_paths(old_list, n_shave_prefix_segments=0):
 
 
 def renew_vae_resnet_paths(old_list, n_shave_prefix_segments=0):
-    """
-    Updates paths inside resnets to the new naming scheme (local renaming)
-    """
+    """Updates paths inside resnets to the new naming scheme (local renaming)."""
     mapping = []
     for old_item in old_list:
         new_item = old_item
@@ -85,9 +79,7 @@ def renew_vae_resnet_paths(old_list, n_shave_prefix_segments=0):
 
 
 def renew_attention_paths(old_list, n_shave_prefix_segments=0):
-    """
-    Updates paths inside attentions to the new naming scheme (local renaming)
-    """
+    """Updates paths inside attentions to the new naming scheme (local renaming)."""
     mapping = []
     for old_item in old_list:
         new_item = old_item
@@ -106,9 +98,7 @@ def renew_attention_paths(old_list, n_shave_prefix_segments=0):
 
 
 def renew_vae_attention_paths(old_list, n_shave_prefix_segments=0):
-    """
-    Updates paths inside attentions to the new naming scheme (local renaming)
-    """
+    """Updates paths inside attentions to the new naming scheme (local renaming)."""
     mapping = []
     for old_item in old_list:
         new_item = old_item
@@ -143,8 +133,7 @@ def assign_to_checkpoint(
     additional_replacements=None,
     config=None,
 ):
-    """
-    This does the final conversion step: take locally converted weights and apply a global renaming to them. It splits
+    """This does the final conversion step: take locally converted weights and apply a global renaming to them. It splits
     attention layers, and takes into account additional replacements that may arise.
 
     Assigns the weights to the new checkpoint.
@@ -208,9 +197,7 @@ def conv_attn_to_linear(checkpoint):
 
 
 def create_unet_diffusers_config(original_config, image_size: int, controlnet=False):
-    """
-    Creates a config for the diffusers based on the config of the LDM model.
-    """
+    """Creates a config for the diffusers based on the config of the LDM model."""
     if controlnet:
         unet_params = original_config.model.params.control_stage_config.params
     else:
@@ -308,9 +295,7 @@ def create_unet_diffusers_config(original_config, image_size: int, controlnet=Fa
 
 
 def create_vae_diffusers_config(original_config, image_size: int):
-    """
-    Creates a config for the diffusers based on the config of the LDM model.
-    """
+    """Creates a config for the diffusers based on the config of the LDM model."""
     vae_params = original_config.model.params.first_stage_config.params.ddconfig
     _ = original_config.model.params.first_stage_config.params.embed_dim
 
@@ -344,10 +329,7 @@ def create_diffusers_schedular(original_config):
 def convert_ldm_unet_checkpoint(
     checkpoint, config, path=None, extract_ema=False, controlnet=False, skip_extract_state_dict=False
 ):
-    """
-    Takes a state dict and a config, and returns a converted checkpoint.
-    """
-
+    """Takes a state dict and a config, and returns a converted checkpoint."""
     if skip_extract_state_dict:
         unet_state_dict = checkpoint
     else:

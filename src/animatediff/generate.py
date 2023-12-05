@@ -380,7 +380,7 @@ def create_default_preprocessor(type_str):
 
 
 def get_preprocessor(controlnet_type, preprocessor_map: TPreprocessor, device_str="cpu"):
-    """TODO: memory usage profiling"""
+    """TODO: memory usage profiling."""
     if preprocessor_map and preprocessor_map.type:
         controlnet_preprocessor[controlnet_type] = create_preprocessor_from_name(preprocessor_map.type)
 
@@ -1116,7 +1116,7 @@ def region_preprocess(
         for r in project_setting.region_map:
             if r == "background":
                 continue
-            if project_setting.region_map[r]["enable"] != True:
+            if project_setting.region_map[r]["enable"] is not True:
                 continue
             region_dir = out_dir.joinpath(f"region_{int(r):05d}/")
             region_dir.mkdir(parents=True, exist_ok=True)
@@ -1126,7 +1126,7 @@ def region_preprocess(
             if not mask_map:
                 continue
 
-            if project_setting.region_map[r]["is_init_img"] == False:
+            if project_setting.region_map[r]["is_init_img"] is False:
                 ip_map = ip_adapter_preprocess(
                     project_dir,
                     region_dir,
@@ -1156,7 +1156,7 @@ def region_preprocess(
                 src = condi_index
                 condi_index += 1
             else:
-                if is_init_img_exist == False:
+                if is_init_img_exist is False:
                     logger.warn("'is_init_img' : true / BUT init_img is not exist -> ignore region")
                     continue
                 src = -1
@@ -1182,7 +1182,7 @@ def region_preprocess(
             "is_full_face": project_setting.ip_adapter_map.is_full_face,
         }
         for c in region_condi_list:
-            if c["ip_adapter_map"] == None:
+            if c["ip_adapter_map"] is None:
                 logger.info("fill map")
                 c["ip_adapter_map"] = prev_ip_map
 
@@ -1222,7 +1222,7 @@ def img2img_preprocess(
                 img2img_map["images"][frame_no] = get_resized_image(img_path, width, height)
                 processed = True
 
-        if (img2img_config_map["save_init_image"] == True) and processed:
+        if (img2img_config_map["save_init_image"] is True) and processed:
             det_dir = out_dir.joinpath(f"{0:02d}_img2img_init_img/")
             det_dir.mkdir(parents=True, exist_ok=True)
             for frame_no in tqdm(img2img_map["images"], desc="Saving Preprocessed images (img2img)"):

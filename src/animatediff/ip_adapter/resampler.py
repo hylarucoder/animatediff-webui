@@ -46,12 +46,12 @@ class PerceiverAttention(nn.Module):
         self.to_out = nn.Linear(inner_dim, dim, bias=False)
 
     def forward(self, x, latents):
-        """
-        Args:
+        """Args:
+        ----
             x (torch.Tensor): image features
                 shape (b, n1, D)
             latent (torch.Tensor): latent features
-                shape (b, n2, D)
+                shape (b, n2, D).
         """
         x = self.norm1(x)
         latents = self.norm2(latents)

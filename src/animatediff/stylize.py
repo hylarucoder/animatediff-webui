@@ -196,7 +196,7 @@ def create_config(
         ),
     ] = False,
 ):
-    """Create a config file for video stylization"""
+    """Create a config file for video stylization."""
     is_danbooru_format = not is_no_danbooru_format
     with_confidence = not without_confidence
     logger.info(f"{org_movie=}")
@@ -461,7 +461,7 @@ def generate(
         ),
     ] = 0,
 ):
-    """Run video stylization"""
+    """Run video stylization."""
     from animatediff.cli import generate
 
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -707,7 +707,7 @@ def interpolate(
         ),
     ] = 1,
 ):
-    """Interpolation with original frames. This function does not work well if the shape of the subject is changed from the original video. Large movements can also ruin the picture.(Since this command is experimental, it is better to use other interpolation methods in most cases.)"""
+    """Interpolation with original frames. This function does not work well if the shape of the subject is changed from the original video. Large movements can also ruin the picture.(Since this command is experimental, it is better to use other interpolation methods in most cases.)."""
     try:
         import cupy
     except:
@@ -975,7 +975,7 @@ def create_mask(
         ),
     ] = False,
 ):
-    """Create mask from prompt"""
+    """Create mask from prompt."""
     from animatediff.utils.mask import create_bg, create_fg, crop_frames, crop_mask_list, save_crop_info
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg
@@ -1278,7 +1278,7 @@ def composite(
         ),
     ] = False,
 ):
-    """Composite FG and BG"""
+    """Composite FG and BG."""
     from animatediff.utils.composite import composite, simple_composite
     from animatediff.utils.mask import create_fg, load_frame_list, load_mask_list, restore_position
     from animatediff.utils.mask_animseg import animseg_create_fg
@@ -1550,7 +1550,7 @@ def create_region(
         ),
     ] = False,
 ):
-    """Create region from prompt"""
+    """Create region from prompt."""
     from animatediff.utils.mask import create_bg, create_fg
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg

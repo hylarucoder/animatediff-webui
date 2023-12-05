@@ -49,7 +49,7 @@ def animseg_create_fg(
         mask = (mask * 255).astype(np.uint8)
         return mask
 
-    for i, frame in tqdm(enumerate(frame_list), total=len(frame_list), desc=f"creating mask"):
+    for i, frame in tqdm(enumerate(frame_list), total=len(frame_list), desc="creating mask"):
         frame = Path(frame)
         file_name = frame.name
 

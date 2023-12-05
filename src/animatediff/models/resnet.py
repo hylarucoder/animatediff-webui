@@ -152,7 +152,7 @@ class ResnetBlock3D(nn.Module):
         if groups_out is None:
             groups_out = groups
 
-        assert use_inflated_groupnorm != None
+        assert use_inflated_groupnorm is not None
         if use_inflated_groupnorm:
             self.norm1 = InflatedGroupNorm(num_groups=groups, num_channels=in_channels, eps=eps, affine=True)
         else:

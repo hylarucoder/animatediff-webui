@@ -12,10 +12,12 @@ def preprocess(
     """Do preprocessing for RTMPose model inference.
 
     Args:
+    ----
         img (np.ndarray): Input image in shape.
         input_size (tuple): Input image size in shape (w, h).
 
     Returns:
+    -------
         tuple:
         - resized_img (np.ndarray): Preprocessed image.
         - center (np.ndarray): Center of image.
@@ -55,10 +57,12 @@ def inference(sess: ort.InferenceSession, img: np.ndarray) -> np.ndarray:
     """Inference RTMPose model.
 
     Args:
+    ----
         sess (ort.InferenceSession): ONNXRuntime session.
         img (np.ndarray): Input image in shape.
 
     Returns:
+    -------
         outputs (np.ndarray): Output of RTMPose model.
     """
     all_out = []
@@ -89,6 +93,7 @@ def postprocess(
     """Postprocess for RTMPose model output.
 
     Args:
+    ----
         outputs (np.ndarray): Output of RTMPose model.
         model_input_size (tuple): RTMPose model Input image size.
         center (tuple): Center of bbox in shape (x, y).
@@ -96,6 +101,7 @@ def postprocess(
         simcc_split_ratio (float): Split ratio of simcc.
 
     Returns:
+    -------
         tuple:
         - keypoints (np.ndarray): Rescaled keypoints.
         - scores (np.ndarray): Model predict scores.
@@ -116,15 +122,17 @@ def postprocess(
 
 
 def bbox_xyxy2cs(bbox: np.ndarray, padding: float = 1.0) -> Tuple[np.ndarray, np.ndarray]:
-    """Transform the bbox format from (x,y,w,h) into (center, scale)
+    """Transform the bbox format from (x,y,w,h) into (center, scale).
 
     Args:
+    ----
         bbox (ndarray): Bounding box(es) in shape (4,) or (n, 4), formatted
             as (left, top, right, bottom)
         padding (float): BBox padding factor that will be multilied to scale.
             Default: 1.0
 
     Returns:
+    -------
         tuple: A tuple containing center and scale.
         - np.ndarray[float32]: Center (x, y) of the bbox in shape (2,) or
             (n, 2)
@@ -152,10 +160,12 @@ def _fix_aspect_ratio(bbox_scale: np.ndarray, aspect_ratio: float) -> np.ndarray
     """Extend the scale to match the given aspect ratio.
 
     Args:
+    ----
         scale (np.ndarray): The image scale (w, h) in shape (2, )
         aspect_ratio (float): The ratio of ``w/h``
 
     Returns:
+    -------
         np.ndarray: The reshaped image scale in (2, )
     """
     w, h = np.hsplit(bbox_scale, [1])
@@ -167,10 +177,12 @@ def _rotate_point(pt: np.ndarray, angle_rad: float) -> np.ndarray:
     """Rotate a point by an angle.
 
     Args:
+    ----
         pt (np.ndarray): 2D point coordinates (x, y) in shape (2, )
         angle_rad (float): rotation angle in radian
 
     Returns:
+    -------
         np.ndarray: Rotated point in shape (2, )
     """
     sn, cs = np.sin(angle_rad), np.cos(angle_rad)
@@ -186,10 +198,12 @@ def _get_3rd_point(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     anticlockwise, using b as the rotation center.
 
     Args:
+    ----
         a (np.ndarray): The 1st point (x,y) in shape (2, )
         b (np.ndarray): The 2nd point (x,y) in shape (2, )
 
     Returns:
+    -------
         np.ndarray: The 3rd point.
     """
     direction = a - b
@@ -209,6 +223,7 @@ def get_warp_matrix(
     in the input image to the output size.
 
     Args:
+    ----
         center (np.ndarray[2, ]): Center of the bounding box (x, y).
         scale (np.ndarray[2, ]): Scale of the bounding box
             wrt [width, height].
@@ -221,6 +236,7 @@ def get_warp_matrix(
             (inv=False: src->dst or inv=True: dst->src)
 
     Returns:
+    -------
         np.ndarray: A 2x3 transformation matrix
     """
     shift = np.array(shift)
@@ -259,12 +275,14 @@ def top_down_affine(
     """Get the bbox image as the model input by affine transform.
 
     Args:
+    ----
         input_size (dict): The input size of the model.
         bbox_scale (dict): The bbox scale of the img.
         bbox_center (dict): The bbox center of the img.
         img (np.ndarray): The original image.
 
     Returns:
+    -------
         tuple: A tuple containing center and scale.
         - np.ndarray[float32]: img after affine transform.
         - np.ndarray[float32]: bbox scale after affine transform.
@@ -291,16 +309,19 @@ def get_simcc_maximum(simcc_x: np.ndarray, simcc_y: np.ndarray) -> Tuple[np.ndar
     """Get maximum response location and value from simcc representations.
 
     Note:
+    ----
         instance number: N
         num_keypoints: K
         heatmap height: H
         heatmap width: W
 
     Args:
+    ----
         simcc_x (np.ndarray): x-axis SimCC in shape (K, Wx) or (N, K, Wx)
         simcc_y (np.ndarray): y-axis SimCC in shape (K, Wy) or (N, K, Wy)
 
     Returns:
+    -------
         tuple:
         - locs (np.ndarray): locations of maximum heatmap responses in shape
             (K, 2) or (N, K, 2)
@@ -335,11 +356,13 @@ def decode(simcc_x: np.ndarray, simcc_y: np.ndarray, simcc_split_ratio) -> Tuple
     """Modulate simcc distribution with Gaussian.
 
     Args:
+    ----
         simcc_x (np.ndarray[K, Wx]): model predicted simcc in x.
         simcc_y (np.ndarray[K, Wy]): model predicted simcc in y.
         simcc_split_ratio (int): The split ratio of simcc.
 
     Returns:
+    -------
         tuple: A tuple containing center and scale.
         - np.ndarray[float32]: keypoints in shape (K, 2) or (n, K, 2)
         - np.ndarray[float32]: scores in shape (K,) or (n, K)

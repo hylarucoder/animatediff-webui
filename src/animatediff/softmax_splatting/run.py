@@ -348,7 +348,7 @@ class Synthesis(torch.nn.Module):
 
                 self.boolSkip = boolSkip
 
-                if boolSkip == True:
+                if boolSkip is True:
                     if intChannels[0] == intChannels[2]:
                         self.netShortcut = None
 
@@ -368,7 +368,7 @@ class Synthesis(torch.nn.Module):
             # end
 
             def forward(self, tenInput):
-                if self.boolSkip == False:
+                if self.boolSkip is False:
                     return self.netMain(tenInput)
                 # end
 

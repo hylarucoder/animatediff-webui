@@ -1,5 +1,6 @@
-import pydantic as pt
 import enum
+
+import pydantic as pt
 
 from animatediff.adw.contrib import PtBaseModel
 
@@ -47,7 +48,7 @@ class TPreset(PtBaseModel):
     prompt: str = "1girl"
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
 
-    checkpoint: str = "dynamicwang\AWPainting_v1.2.safetensors"
+    checkpoint: str = r"dynamicwang\AWPainting_v1.2.safetensors"
     loras: list[list] = pt.Field(default_factory=lora_arr)
     motion: str = "mm_sd_v15_v2.ckpt"
     motion_lora: str | None = None

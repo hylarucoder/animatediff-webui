@@ -2,7 +2,8 @@ import tqdm
 
 
 class ProgressBar:
-    """two level depth"""
+
+    """two level depth."""
 
     pbar: tqdm.tqdm | None = None
 

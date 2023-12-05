@@ -3,9 +3,9 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
+from ..consts import path_mgr
 from .onnxdet import inference_detector
 from .onnxpose import inference_pose
-from ..consts import path_mgr
 
 
 class Wholebody:
