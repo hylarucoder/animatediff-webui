@@ -5,10 +5,11 @@ import pydantic as pt
 from rich.progress import Progress
 
 from animatediff.adw.contrib import PtBaseModel
-from animatediff.adw.schema import TStatusEnum, TTask, TPerformance
+from animatediff.adw.schema import TPerformance, TStatusEnum, TTask
 from animatediff.consts import path_mgr
 from animatediff.schema import TProjectSetting
 from animatediff.utils.progressbar import pbar
+from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import read_json
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i: i + n]
+        yield l[i : i + n]
 
 
 def lora_arr():
@@ -84,13 +85,13 @@ def resize_to_768(width, height):
 
 
 def do_render_video(
-        data: TParamsRenderVideo,
-        on_config_start=lambda: None,
-        on_config_end=lambda: None,
-        on_render_start=lambda: None,
-        on_render_success=lambda: None,
-        on_render_failed=lambda: None,
-        on_render_end=lambda: None,
+    data: TParamsRenderVideo,
+    on_config_start=lambda: None,
+    on_config_end=lambda: None,
+    on_render_start=lambda: None,
+    on_render_success=lambda: None,
+    on_render_failed=lambda: None,
+    on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()
@@ -165,7 +166,7 @@ def do_render_video(
             overlap=overlap,
             stride=0,
             repeats=1,
-            device="cuda",
+            device=get_torch_device(),
             use_xformers=False,
             force_half_vae=False,
             out_dir=project_dir / "draft",
@@ -177,6 +178,7 @@ def do_render_video(
             on_render_success(save_dir / "video.mp4")
     except Exception as e:
         import traceback
+
         print(traceback.format_exc())
         if on_render_failed:
             on_render_failed()

@@ -1,16 +1,25 @@
 import os
 
 from animatediff.adw.schema import TStatusEnum
-from animatediff.adw.service import do_render_video, TParamsRenderVideo, get_task_by_id, push_task_by_id
+from animatediff.adw.service import TParamsRenderVideo, do_render_video, get_task_by_id, push_task_by_id
 from animatediff.consts import path_mgr
 from animatediff.utils.progressbar import pbar
 
 os.chdir(path_mgr.repo)
 
 
+def clean_draft_cache(project):
+    p = path_mgr.projects / project / "draft"
+    import shutil
+
+    shutil.rmtree(p, ignore_errors=True)
+    p.mkdir(exist_ok=True, parents=True)
+
+
 def test_video_prompt():
+    project = "999-test-prompt"
     params = TParamsRenderVideo(
-        project="999-test",
+        project=project,
         duration=1,
         aspect_radio="432x768 | 9:16",
         prompt="masterpiece, best quality, 1girl, walk,",
@@ -18,10 +27,7 @@ def test_video_prompt():
     task_id = 1
     push_task_by_id(task_id)
     bg_task = get_task_by_id(task_id)
-    # delete
-
-    import shutil
-    shutil.rmtree(path_mgr.projects / "999-test-prompt/draft")
+    clean_draft_cache(project)
 
     def on_config_start():
         pbar.init_pbar(task_id)
@@ -70,10 +76,8 @@ def test_video_test_cn_ipadapter():
     task_id = 1
     push_task_by_id(task_id)
     bg_task = get_task_by_id(task_id)
-    # delete
 
-    import shutil
-    shutil.rmtree(path_mgr.projects / project / "draft")
+    clean_draft_cache(project)
 
     def on_config_start():
         pbar.init_pbar(task_id)

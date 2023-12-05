@@ -48,6 +48,7 @@ from animatediff.pipelines.animation import PromptEncoder, RegionMask
 from animatediff.pipelines.context import get_context_scheduler, get_total_steps
 from animatediff.sdxl_models.unet import UNet3DConditionModel
 from animatediff.utils.lpw_stable_diffusion_xl import get_weighted_text_embeddings_sdxl2
+from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
     get_tensor_interpolation_method,
     show_gpu,
@@ -317,6 +318,7 @@ class PromptEncoderSDXL(PromptEncoder):
 
 @dataclass
 class AnimatePipelineOutput(BaseOutput):
+
     """Output class for Stable Diffusion pipelines.
 
     Args:
@@ -363,6 +365,7 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
 
 
 class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin, TextualInversionLoaderMixin):
+
     r"""Pipeline for text-to-image generation using Stable Diffusion XL.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
@@ -1024,8 +1027,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         video = []
         for frame_idx in range(latents.shape[0]):
             video.append(
-                #                self.vae.decode(latents[frame_idx : frame_idx + 1].to(self.vae.device, self.vae.dtype)).sample.cpu()
-                self.vae.decode(latents[frame_idx : frame_idx + 1].to("cuda", self.vae.dtype)).sample.cpu()
+                self.vae.decode(latents[frame_idx : frame_idx + 1].to(get_torch_device(), self.vae.dtype)).sample.cpu()
             )
         video = torch.cat(video)
         video = rearrange(video, "(b f) c h w -> b c f h w", f=video_length)

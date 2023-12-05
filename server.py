@@ -4,12 +4,12 @@ from pathlib import Path
 import fastapi
 from fastapi import BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import Response, FileResponse
+from starlette.responses import FileResponse, Response
 
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
-from animatediff.adw.schema import TTask, TPreset, TStatusEnum, TPerformance
-from animatediff.adw.service import get_projects, TParamsRenderVideo, tasks_store, push_task_by_id, do_render_video
+from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TTask
+from animatediff.adw.service import TParamsRenderVideo, do_render_video, get_projects, push_task_by_id, tasks_store
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
 from animatediff.utils.progressbar import pbar
@@ -134,8 +134,8 @@ def serialize_task(task: TTask):
 
 @app.post("/api/tasks/submit")
 def render_submit(
-        data: TParamsRenderVideo,
-        background_tasks: BackgroundTasks,
+    data: TParamsRenderVideo,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(

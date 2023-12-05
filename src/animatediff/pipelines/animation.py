@@ -40,6 +40,7 @@ from animatediff.schema import TGradualLatentHiresFixMap
 from animatediff.utils.model import nop_train
 from animatediff.utils.pipeline import get_memory_format
 from animatediff.utils.progressbar import pbar
+from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
     end_profile,
     get_tensor_interpolation_method,
@@ -927,8 +928,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         video = []
         for frame_idx in range(latents.shape[0]):
             video.append(
-                # self.vae.decode(latents[frame_idx: frame_idx + 1].to(self.vae.device, self.vae.dtype)).sample.cpu()
-                self.vae.decode(latents[frame_idx : frame_idx + 1].to("cuda", self.vae.dtype)).sample.cpu(),
+                self.vae.decode(latents[frame_idx : frame_idx + 1].to(get_torch_device(), self.vae.dtype)).sample.cpu(),
             )
         video = torch.cat(video)
         video = rearrange(video, "(b f) c h w -> b c f h w", f=video_length)
