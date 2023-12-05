@@ -38,17 +38,11 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i: i + n]
+        yield l[i : i + n]
 
 
 def lora_arr():
-    return [
-        [
-            None, 0.7
-        ] for _ in range(5)
-    ]
-
-
+    return [[None, 0.7] for _ in range(5)]
 
 
 class TParams(PtBaseModel):
@@ -128,9 +122,7 @@ def do_render_video(data: TParams, task_id):
     project_setting.tail_prompt = data.prompt
     project_setting.n_prompt = [data.negative_prompt]
 
-    project_setting.lora_map = {
-        lora[0]: lora[1] for lora in data.lora_items if lora[0]
-    }
+    project_setting.lora_map = {lora[0]: lora[1] for lora in data.lora_items if lora[0]}
     project_setting.seed = [data.seed]
     project_setting.checkpoint = data.checkpoint
     project_setting.motion = data.motion
@@ -148,6 +140,7 @@ def do_render_video(data: TParams, task_id):
     pbar.pbar_config.update(100)
     pbar.pbar.update(10)
     from animatediff.cli import generate
+
     video_len = data.fps * data.duration
     context = 16 if video_len > 16 else 8
     overlap = context // 4
@@ -172,5 +165,6 @@ def do_render_video(data: TParams, task_id):
         bg_task.status = TStatusEnum.success
     except Exception as e:
         import traceback
+
         print(traceback.format_exc())
         bg_task.status = TStatusEnum.error

@@ -8,16 +8,16 @@ class ApiException(HTTPException):
 
 
 def raise_if(
-        condition: bool,
-        message: str,
+    condition: bool,
+    message: str,
 ):
     if condition:
         raise ApiException(message)
 
 
 def raise_unless(
-        condition: bool,
-        message: str,
+    condition: bool,
+    message: str,
 ):
     if not condition:
         raise ApiException(message)

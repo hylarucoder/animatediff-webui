@@ -28,11 +28,7 @@ class TTask(PtBaseModel):
 
 
 def lora_arr():
-    return [
-        [
-            None, 0.7
-        ] for _ in range(5)
-    ]
+    return [[None, 0.7] for _ in range(5)]
 
 
 class TPerformance(str, enum.Enum):

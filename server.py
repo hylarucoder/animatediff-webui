@@ -23,9 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_exception_handler(ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({
-    "message": e.detail
-})))
+app.add_exception_handler(
+    ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({"message": e.detail}))
+)
 
 
 @app.get("/")
@@ -101,14 +101,16 @@ def get_checkpoints() -> TOptions:
         path_mgr.loras,
     )
     presets = gen_presets()
-    return TOptions(**{
-        "projects": get_projects(),
-        "checkpoints": checkpoints,
-        "loras": loras,
-        "motions": motions,
-        "motion_loras": motion_loras,
-        "presets": presets,
-    })
+    return TOptions(
+        **{
+            "projects": get_projects(),
+            "checkpoints": checkpoints,
+            "loras": loras,
+            "motions": motions,
+            "motion_loras": motion_loras,
+            "presets": presets,
+        }
+    )
 
 
 def validate_data(data: TParams):
@@ -132,12 +134,13 @@ def serialize_task(task: TTask):
 
 @app.post("/api/tasks/submit")
 def render_submit(
-        data: TParams,
-        background_tasks: BackgroundTasks,
+    data: TParams,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(
-        filter(lambda x: x.status in [TStatusEnum.pending, TStatusEnum.running], tasks_store))
+        filter(lambda x: x.status in [TStatusEnum.pending, TStatusEnum.running], tasks_store)
+    )
     if pending_or_running_tasks:
         return pending_or_running_tasks[-1]
     task_id = len(tasks_store) + 1
@@ -165,10 +168,7 @@ def render_status():
             "subtasks": bg_task.subtasks,
             "videoPath": bg_task.video_path,
         },
-        "progress": {
-            "main": pbar.status[0] if pbar.status else None,
-            "tasks": pbar.status[1:]
-        }
+        "progress": {"main": pbar.status[0] if pbar.status else None, "tasks": pbar.status[1:]},
     }
 
 
@@ -196,7 +196,7 @@ def image_proxy(path: str):
     return FileResponse(str(absolute_path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, reload=True, host="0.0.0.0", port=7860)

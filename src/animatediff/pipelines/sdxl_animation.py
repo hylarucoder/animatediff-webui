@@ -59,17 +59,17 @@ from animatediff.utils.util import (
 
 class PromptEncoderSDXL(PromptEncoder):
     def __init__(
-            self,
-            pipe,
-            device,
-            latents_device,
-            num_videos_per_prompt,
-            do_classifier_free_guidance,
-            region_condi_list,
-            negative_prompt,
-            is_signle_prompt_mode,
-            clip_skip,
-            multi_uncond_mode,
+        self,
+        pipe,
+        device,
+        latents_device,
+        num_videos_per_prompt,
+        do_classifier_free_guidance,
+        region_condi_list,
+        negative_prompt,
+        is_signle_prompt_mode,
+        clip_skip,
+        multi_uncond_mode,
     ):
         self.pipe = pipe
         self.is_single_prompt_mode = is_signle_prompt_mode
@@ -128,8 +128,8 @@ class PromptEncoderSDXL(PromptEncoder):
         for prompt_map, num in zip(prompt_map_list, prompt_nums):
             prompt_embeds_map = {}
             pooled_embeds_map = {}
-            pos = positive[pos_index: pos_index + num]
-            pos_pooled = positive_pooled[pos_index: pos_index + num]
+            pos = positive[pos_index : pos_index + num]
+            pos_pooled = positive_pooled[pos_index : pos_index + num]
 
             for i, key_frame in enumerate(prompt_map):
                 prompt_embeds_map[key_frame] = pos[i]
@@ -187,7 +187,7 @@ class PromptEncoderSDXL(PromptEncoder):
             pos_index = 0
             for ip_im_map, num in zip(ip_im_map_list, ip_im_nums):
                 im_prompt_embeds_map = {}
-                pos = positive[pos_index: pos_index + num]
+                pos = positive[pos_index : pos_index + num]
 
                 for i, key_frame in enumerate(ip_im_map):
                     im_prompt_embeds_map[key_frame] = pos[i]
@@ -202,7 +202,7 @@ class PromptEncoderSDXL(PromptEncoder):
             self.im_prompt_embeds_region_list = im_prompt_embeds_region_list
 
     def _get_current_prompt_embeds_from_text(
-            self, prompt_map, prompt_embeds_map, pooled_embeds_map, center_frame=None, video_length: int = 0
+        self, prompt_map, prompt_embeds_map, pooled_embeds_map, center_frame=None, video_length: int = 0
     ):
         key_prev = list(prompt_map.keys())[-1]
         key_next = list(prompt_map.keys())[0]
@@ -234,7 +234,7 @@ class PromptEncoderSDXL(PromptEncoder):
         outputs = ()
         outputs2 = ()
         for prompt_map, prompt_embeds_map, pooled_embeds_map in zip(
-                self.prompt_map_list, self.prompt_embeds_region_list, self.pooled_embeds_region_list
+            self.prompt_map_list, self.prompt_embeds_region_list, self.pooled_embeds_region_list
         ):
             embs, embs2 = self._get_current_prompt_embeds_from_text(
                 prompt_map, prompt_embeds_map, pooled_embeds_map, center_frame, video_length
@@ -404,17 +404,17 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
     model_cpu_offload_seq = "text_encoder->text_encoder_2->unet->vae"
 
     def __init__(
-            self,
-            vae: AutoencoderKL,
-            text_encoder: CLIPTextModel,
-            text_encoder_2: CLIPTextModelWithProjection,
-            tokenizer: CLIPTokenizer,
-            tokenizer_2: CLIPTokenizer,
-            unet: UNet3DConditionModel,
-            scheduler: KarrasDiffusionSchedulers,
-            force_zeros_for_empty_prompt: bool = True,
-            add_watermarker: Optional[bool] = None,
-            controlnet_map: Optional[Dict[str, ControlNetModel]] = None,
+        self,
+        vae: AutoencoderKL,
+        text_encoder: CLIPTextModel,
+        text_encoder_2: CLIPTextModelWithProjection,
+        tokenizer: CLIPTokenizer,
+        tokenizer_2: CLIPTokenizer,
+        unet: UNet3DConditionModel,
+        scheduler: KarrasDiffusionSchedulers,
+        force_zeros_for_empty_prompt: bool = True,
+        add_watermarker: Optional[bool] = None,
+        controlnet_map: Optional[Dict[str, ControlNetModel]] = None,
     ):
         super().__init__()
 
@@ -496,19 +496,19 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         self.final_offload_hook = hook
 
     def encode_prompt(
-            self,
-            prompt: str,
-            prompt_2: Optional[str] = None,
-            device: Optional[torch.device] = None,
-            num_videos_per_prompt: int = 1,
-            do_classifier_free_guidance: bool = True,
-            negative_prompt: Optional[str] = None,
-            negative_prompt_2: Optional[str] = None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            lora_scale: Optional[float] = None,
+        self,
+        prompt: str,
+        prompt_2: Optional[str] = None,
+        device: Optional[torch.device] = None,
+        num_videos_per_prompt: int = 1,
+        do_classifier_free_guidance: bool = True,
+        negative_prompt: Optional[str] = None,
+        negative_prompt_2: Optional[str] = None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        lora_scale: Optional[float] = None,
     ):
         r"""Encodes the prompt into text encoder hidden states.
 
@@ -590,9 +590,9 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                 untruncated_ids = tokenizer(prompt, padding="longest", return_tensors="pt").input_ids
 
                 if untruncated_ids.shape[-1] >= text_input_ids.shape[-1] and not torch.equal(
-                        text_input_ids, untruncated_ids
+                    text_input_ids, untruncated_ids
                 ):
-                    removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1: -1])
+                    removed_text = tokenizer.batch_decode(untruncated_ids[:, tokenizer.model_max_length - 1 : -1])
                     logger.warning(
                         "The following part of your input was truncated because CLIP can only handle sequences up to"
                         f" {tokenizer.model_max_length} tokens: {removed_text}"
@@ -706,16 +706,16 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         return extra_step_kwargs
 
     def prepare_image(
-            self,
-            image,
-            width,
-            height,
-            batch_size,
-            num_images_per_prompt,
-            device,
-            dtype,
-            do_classifier_free_guidance=False,
-            guess_mode=False,
+        self,
+        image,
+        width,
+        height,
+        batch_size,
+        num_images_per_prompt,
+        device,
+        dtype,
+        do_classifier_free_guidance=False,
+        guess_mode=False,
     ):
         image = self.control_image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
         image_batch_size = image.shape[0]
@@ -736,18 +736,18 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         return image
 
     def check_inputs(
-            self,
-            prompt,
-            prompt_2,
-            height,
-            width,
-            callback_steps,
-            negative_prompt=None,
-            negative_prompt_2=None,
-            prompt_embeds=None,
-            negative_prompt_embeds=None,
-            pooled_prompt_embeds=None,
-            negative_pooled_prompt_embeds=None,
+        self,
+        prompt,
+        prompt_2,
+        height,
+        width,
+        callback_steps,
+        negative_prompt=None,
+        negative_prompt_2=None,
+        prompt_embeds=None,
+        negative_prompt_embeds=None,
+        pooled_prompt_embeds=None,
+        negative_pooled_prompt_embeds=None,
     ):
         if height % 8 != 0 or width % 8 != 0:
             raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
@@ -818,16 +818,16 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_latents
     def __prepare_latents(
-            self,
-            batch_size,
-            single_model_length,
-            num_channels_latents,
-            height,
-            width,
-            dtype,
-            device,
-            generator,
-            latents=None,
+        self,
+        batch_size,
+        single_model_length,
+        num_channels_latents,
+        height,
+        width,
+        dtype,
+        device,
+        generator,
+        latents=None,
     ):
         shape = (
             batch_size,
@@ -852,21 +852,21 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         return latents
 
     def prepare_latents(
-            self,
-            batch_size,
-            num_channels_latents,
-            video_length,
-            height,
-            width,
-            dtype,
-            device,
-            generator,
-            img2img_map,
-            timestep,
-            latents=None,
-            is_strength_max=True,
-            return_noise=True,
-            return_image_latents=True,
+        self,
+        batch_size,
+        num_channels_latents,
+        video_length,
+        height,
+        width,
+        dtype,
+        device,
+        generator,
+        img2img_map,
+        timestep,
+        latents=None,
+        is_strength_max=True,
+        return_noise=True,
+        return_image_latents=True,
     ):
         shape = (
             batch_size,
@@ -924,7 +924,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         return outputs
 
     def __prepare_latents(
-            self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None, add_noise=True
+        self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None, add_noise=True
     ):
         image = image.to(device=device, dtype=dtype)
 
@@ -947,7 +947,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
             elif isinstance(generator, list):
                 init_latents = [
-                    self.vae.encode(image[i: i + 1]).latent_dist.sample(generator[i]) for i in range(batch_size)
+                    self.vae.encode(image[i : i + 1]).latent_dist.sample(generator[i]) for i in range(batch_size)
                 ]
                 init_latents = torch.cat(init_latents, dim=0)
             else:
@@ -984,7 +984,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         add_time_ids = list(original_size + crops_coords_top_left + target_size)
 
         passed_add_embed_dim = (
-                self.unet.config.addition_time_embed_dim * len(add_time_ids) + self.text_encoder_2.config.projection_dim
+            self.unet.config.addition_time_embed_dim * len(add_time_ids) + self.text_encoder_2.config.projection_dim
         )
         expected_add_embed_dim = self.unet.add_embedding.linear_1.in_features
 
@@ -1025,7 +1025,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         for frame_idx in range(latents.shape[0]):
             video.append(
                 #                self.vae.decode(latents[frame_idx : frame_idx + 1].to(self.vae.device, self.vae.dtype)).sample.cpu()
-                self.vae.decode(latents[frame_idx: frame_idx + 1].to("cuda", self.vae.dtype)).sample.cpu()
+                self.vae.decode(latents[frame_idx : frame_idx + 1].to("cuda", self.vae.dtype)).sample.cpu()
             )
         video = torch.cat(video)
         video = rearrange(video, "(b f) c h w -> b c f h w", f=video_length)
@@ -1040,63 +1040,63 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         init_timestep = min(int(num_inference_steps * strength), num_inference_steps)
 
         t_start = max(num_inference_steps - init_timestep, 0)
-        timesteps = self.scheduler.timesteps[t_start * self.scheduler.order:]
+        timesteps = self.scheduler.timesteps[t_start * self.scheduler.order :]
 
         return timesteps, num_inference_steps - t_start
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
-            self,
-            prompt: Optional[Union[str, List[str]]] = None,
-            prompt_2: Optional[Union[str, List[str]]] = None,
-            single_model_length: Optional[int] = 16,
-            height: Optional[int] = None,
-            width: Optional[int] = None,
-            num_inference_steps: int = 50,
-            denoising_end: Optional[float] = None,
-            guidance_scale: float = 5.0,
-            negative_prompt: Optional[Union[str, List[str]]] = None,
-            negative_prompt_2: Optional[Union[str, List[str]]] = None,
-            num_videos_per_prompt: Optional[int] = 1,
-            eta: float = 0.0,
-            generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-            latents: Optional[torch.FloatTensor] = None,
-            prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-            pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
-            output_type: Optional[str] = "tensor",
-            return_dict: bool = True,
-            callback: Optional[Callable[[int, torch.FloatTensor], None]] = None,
-            callback_steps: Optional[List[int]] = None,
-            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
-            guidance_rescale: float = 0.0,
-            original_size: Optional[Tuple[int, int]] = None,
-            crops_coords_top_left: Tuple[int, int] = (0, 0),
-            target_size: Optional[Tuple[int, int]] = None,
-            unet_batch_size: int = 1,
-            video_length: Optional[int] = None,
-            context_frames: int = -1,
-            context_stride: int = 3,
-            context_overlap: int = 4,
-            context_schedule: str = "uniform",
-            clip_skip: int = 1,
-            controlnet_type_map: Optional[Dict[str, Dict[str, float]]] = None,
-            controlnet_image_map: Optional[Dict[int, Dict[str, Any]]] = None,
-            controlnet_ref_map: Optional[Dict[str, Any]] = None,
-            controlnet_max_samples_on_vram: int = 999,
-            controlnet_max_models_on_vram: int = 99,
-            controlnet_is_loop: bool = True,
-            img2img_map: Optional[Dict[str, Any]] = None,
-            ip_adapter_config_map: Optional[Dict[str, Any]] = None,
-            region_list: Optional[List[Any]] = None,
-            region_condi_list: Optional[List[Any]] = None,
-            interpolation_factor=1,
-            is_single_prompt_mode=False,
-            apply_lcm_lora=False,
-            gradual_latent_map=None,
-            **kwargs,
+        self,
+        prompt: Optional[Union[str, List[str]]] = None,
+        prompt_2: Optional[Union[str, List[str]]] = None,
+        single_model_length: Optional[int] = 16,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
+        num_inference_steps: int = 50,
+        denoising_end: Optional[float] = None,
+        guidance_scale: float = 5.0,
+        negative_prompt: Optional[Union[str, List[str]]] = None,
+        negative_prompt_2: Optional[Union[str, List[str]]] = None,
+        num_videos_per_prompt: Optional[int] = 1,
+        eta: float = 0.0,
+        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+        latents: Optional[torch.FloatTensor] = None,
+        prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+        pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None,
+        output_type: Optional[str] = "tensor",
+        return_dict: bool = True,
+        callback: Optional[Callable[[int, torch.FloatTensor], None]] = None,
+        callback_steps: Optional[List[int]] = None,
+        cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+        guidance_rescale: float = 0.0,
+        original_size: Optional[Tuple[int, int]] = None,
+        crops_coords_top_left: Tuple[int, int] = (0, 0),
+        target_size: Optional[Tuple[int, int]] = None,
+        unet_batch_size: int = 1,
+        video_length: Optional[int] = None,
+        context_frames: int = -1,
+        context_stride: int = 3,
+        context_overlap: int = 4,
+        context_schedule: str = "uniform",
+        clip_skip: int = 1,
+        controlnet_type_map: Optional[Dict[str, Dict[str, float]]] = None,
+        controlnet_image_map: Optional[Dict[int, Dict[str, Any]]] = None,
+        controlnet_ref_map: Optional[Dict[str, Any]] = None,
+        controlnet_max_samples_on_vram: int = 999,
+        controlnet_max_models_on_vram: int = 99,
+        controlnet_is_loop: bool = True,
+        img2img_map: Optional[Dict[str, Any]] = None,
+        ip_adapter_config_map: Optional[Dict[str, Any]] = None,
+        region_list: Optional[List[Any]] = None,
+        region_condi_list: Optional[List[Any]] = None,
+        interpolation_factor=1,
+        is_single_prompt_mode=False,
+        apply_lcm_lora=False,
+        gradual_latent_map=None,
+        **kwargs,
     ):
         r"""Function invoked when calling the pipeline for generation.
 
@@ -1371,8 +1371,8 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                         controlnet_scale_map[str(key_frame_no) + "_" + type_str] = {
                             "scales": scale_list[:key_frame_no][::-1]
-                                      + [1.0]
-                                      + scale_list[: video_length - key_frame_no - 1],
+                            + [1.0]
+                            + scale_list[: video_length - key_frame_no - 1],
                             "frames": frames,
                         }
 
@@ -1382,9 +1382,9 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
             return controlnet_affected_list[frame_index]
 
         def get_controlnet_scale(
-                type: str,
-                cur_step: int,
-                step_length: int,
+            type: str,
+            cur_step: int,
+            step_length: int,
         ):
             s = controlnet_type_map[type]["control_guidance_start"]
             e = controlnet_type_map[type]["control_guidance_end"]
@@ -1395,10 +1395,10 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
             return keep * scale
 
         def get_controlnet_variable(
-                type_str: str,
-                cur_step: int,
-                step_length: int,
-                target_frames: List[int],
+            type_str: str,
+            cur_step: int,
+            step_length: int,
+            target_frames: List[int],
         ):
             cont_vars = []
 
@@ -1552,18 +1552,16 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
         def unsharp_mask(img):
             imgf = img.float()
             k = 0.05  # strength
-            kernel = torch.FloatTensor([[0, -k, 0],
-                                        [-k, 1 + 4 * k, -k],
-                                        [0, -k, 0]])
+            kernel = torch.FloatTensor([[0, -k, 0], [-k, 1 + 4 * k, -k], [0, -k, 0]])
             conv_kernel = torch.eye(4)[..., None, None] * kernel[None, None, ...]
             imgf = torch.nn.functional.conv2d(imgf, conv_kernel.to(img.device), padding=1)
             return imgf.to(img.dtype)
 
         def resize_tensor(ten, size, do_unsharp_mask=False):
             ten = rearrange(ten, "b c f h w -> (b f) c h w")
-            ten = torch.nn.functional.interpolate(
-                ten.float(), size=size, mode="bicubic", align_corners=False
-            ).to(ten.dtype)
+            ten = torch.nn.functional.interpolate(ten.float(), size=size, mode="bicubic", align_corners=False).to(
+                ten.dtype
+            )
             if do_unsharp_mask:
                 ten = unsharp_mask(ten)
             return rearrange(ten, "(b f) c h w -> b c f h w", f=video_length)
@@ -1572,8 +1570,9 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
             latents = resize_tensor(latents, gradual_latent_size(0))
             reverse_steps = gradual_latent_map.reverse_steps
             noise_add_count = gradual_latent_map.noise_add_count
-            total_steps = ((total_steps / num_inference_steps) * (
-                    reverse_steps * (len(gradual_latent_map.scale.keys()) - 1))) + total_steps
+            total_steps = (
+                (total_steps / num_inference_steps) * (reverse_steps * (len(gradual_latent_map.scale.keys()) - 1))
+            ) + total_steps
             total_steps = int(total_steps)
         prev_gradient_latent_size = gradual_latent_size(0)
 
@@ -1667,13 +1666,13 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                             add = cur_mid * mod[None, None, :, None, None]
                             _mid_block_res_samples[:, :, loc_index, :, :] = (
-                                    _mid_block_res_samples[:, :, loc_index, :, :] + add
+                                _mid_block_res_samples[:, :, loc_index, :, :] + add
                             )
 
                             for ii in range(len(cur_down)):
                                 add = cur_down[ii] * mod[None, None, :, None, None]
                                 _down_block_res_samples[ii][:, :, loc_index, :, :] = (
-                                        _down_block_res_samples[ii][:, :, loc_index, :, :] + add
+                                    _down_block_res_samples[ii][:, :, loc_index, :, :] + add
                                 )
 
                     return _down_block_res_samples, _mid_block_res_samples
@@ -1754,8 +1753,10 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                             if gradual_latent:
                                 cur_lat_height, cur_lat_width = latents.shape[-2:]
                                 cont_var_img = torch.nn.functional.interpolate(
-                                    cont_var_img.float(), size=(cur_lat_height * 8, cur_lat_width * 8), mode="bicubic",
-                                    align_corners=False
+                                    cont_var_img.float(),
+                                    size=(cur_lat_height * 8, cur_lat_width * 8),
+                                    mode="bicubic",
+                                    align_corners=False,
                                 ).to(cont_var_img.dtype)
 
                             down_samples, mid_sample = self.controlnet_map[type_str](
@@ -1784,7 +1785,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                             )
 
                 for context in context_scheduler(
-                        i, num_inference_steps, latents.shape[2], context_frames, context_stride, context_overlap
+                    i, num_inference_steps, latents.shape[2], context_frames, context_stride, context_overlap
                 ):
                     if self.lora_map:
                         self.lora_map.unapply()
@@ -1794,9 +1795,9 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                             controlnet_target = context
                         else:
                             controlnet_target = (
-                                    list(range(context[0] - context_frames, context[0]))
-                                    + context
-                                    + list(range(context[-1] + 1, context[-1] + 1 + context_frames))
+                                list(range(context[0] - context_frames, context[0]))
+                                + context
+                                + list(range(context[-1] + 1, context[-1] + 1 + context_frames))
                             )
                             controlnet_target = [f % video_length for f in controlnet_target]
                             controlnet_target = list(set(controlnet_target))
@@ -1827,31 +1828,31 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                         layer_width = 1 if is_single_prompt_mode else context_frames
 
-                        __lat = latent_model_input[layer_index: layer_index + unet_batch_size]
+                        __lat = latent_model_input[layer_index : layer_index + unet_batch_size]
                         __cur_prompt = cur_prompt[
-                                       layer_index * layer_width: (layer_index + unet_batch_size) * layer_width
-                                       ]
+                            layer_index * layer_width : (layer_index + unet_batch_size) * layer_width
+                        ]
                         __added_cond_kwargs = {
                             "text_embeds": add_text_embeds[
-                                           layer_index * layer_width: (layer_index + unet_batch_size) * layer_width
-                                           ],
-                            "time_ids": add_time_ids[layer_index: layer_index + unet_batch_size],
+                                layer_index * layer_width : (layer_index + unet_batch_size) * layer_width
+                            ],
+                            "time_ids": add_time_ids[layer_index : layer_index + unet_batch_size],
                         }
 
                         __do = []
                         if down_block_res_samples is not None:
                             for do in down_block_res_samples:
-                                __do.append(do[layer_index: layer_index + unet_batch_size])
+                                __do.append(do[layer_index : layer_index + unet_batch_size])
                         else:
                             __do = None
 
                         __mid = None
                         if mid_block_res_sample is not None:
-                            __mid = mid_block_res_sample[layer_index: layer_index + unet_batch_size]
+                            __mid = mid_block_res_sample[layer_index : layer_index + unet_batch_size]
 
                         pred_layer = self.unet(
                             __lat,
-                            ts[layer_index: layer_index + unet_batch_size],
+                            ts[layer_index : layer_index + unet_batch_size],
                             encoder_hidden_states=__cur_prompt,
                             cross_attention_kwargs=cross_attention_kwargs,
                             added_cond_kwargs=__added_cond_kwargs,
@@ -1863,7 +1864,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                         wh = None
 
                         if i < len(timesteps) * region_mask.get_crop_generation_rate(
-                                layer_index, latent_model_input.shape[0]
+                            layer_index, latent_model_input.shape[0]
                         ):
                             wh, xy_list = region_mask.get_area(layer_index, latent_model_input.shape[0], context)
                             if wh:
@@ -1871,7 +1872,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                                 __lat_list = []
                                 for c_index, xy in enumerate(xy_list):
                                     a_x, a_y = xy
-                                    __lat_list.append(__lat[:, :, [c_index], a_y: a_y + a_h, a_x: a_x + a_w])
+                                    __lat_list.append(__lat[:, :, [c_index], a_y : a_y + a_h, a_x : a_x + a_w])
 
                                 __lat = torch.cat(__lat_list, dim=2)
 
@@ -1883,11 +1884,11 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                                             a_x, a_y = xy
                                             _inner_do_list.append(
                                                 _d[
-                                                :,
-                                                :,
-                                                [c_index],
-                                                a_y // rate: (a_y + a_h) // rate,
-                                                a_x // rate: (a_x + a_w) // rate,
+                                                    :,
+                                                    :,
+                                                    [c_index],
+                                                    a_y // rate : (a_y + a_h) // rate,
+                                                    a_x // rate : (a_x + a_w) // rate,
                                                 ]
                                             )
 
@@ -1901,18 +1902,18 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                                         a_x, a_y = xy
                                         _mid_list.append(
                                             __mid[
-                                            :,
-                                            :,
-                                            [c_index],
-                                            a_y // rate: (a_y + a_h) // rate,
-                                            a_x // rate: (a_x + a_w) // rate,
+                                                :,
+                                                :,
+                                                [c_index],
+                                                a_y // rate : (a_y + a_h) // rate,
+                                                a_x // rate : (a_x + a_w) // rate,
                                             ]
                                         )
                                     __mid = torch.cat(_mid_list, dim=2)
 
                             crop_pred_layer = self.unet(
                                 __lat,
-                                ts[layer_index: layer_index + unet_batch_size],
+                                ts[layer_index : layer_index + unet_batch_size],
                                 encoder_hidden_states=__cur_prompt,
                                 cross_attention_kwargs=cross_attention_kwargs,
                                 added_cond_kwargs=__added_cond_kwargs,
@@ -1925,9 +1926,9 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                                 a_w, a_h = wh
                                 for c_index, xy in enumerate(xy_list):
                                     a_x, a_y = xy
-                                    pred_layer[:, :, [c_index], a_y: a_y + a_h, a_x: a_x + a_w] = crop_pred_layer[
-                                                                                                  :, :, [c_index], :, :
-                                                                                                  ]
+                                    pred_layer[:, :, [c_index], a_y : a_y + a_h, a_x : a_x + a_w] = crop_pred_layer[
+                                        :, :, [c_index], :, :
+                                    ]
 
                         __pred.append(pred_layer)
 
@@ -1949,7 +1950,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                     if multi_uncond_mode:
                         uc_noise_list = noise_list[: len(noise_list) // 2]
-                        noise_list = noise_list[len(noise_list) // 2:]
+                        noise_list = noise_list[len(noise_list) // 2 :]
                         for n in range(len(noise_list)):
                             noise_list[n] = uc_noise_list[n] + guidance_scale * (noise_list[n] - uc_noise_list[n])
                     else:
@@ -1969,7 +1970,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
                 # call the callback, if provided
                 if (
-                        i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0)
+                    i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0)
                 ) and (callback is not None and (callback_steps is not None and i in callback_steps)):
                     denoised = latents - noise_pred
                     # denoised = self.interpolate_latents(denoised, interpolation_factor, device)
@@ -2019,9 +2020,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                         _noise = resize_tensor(noise, cur_gradient_latent_size)
                         for count in range(i, i + noise_add_count):
                             count = min(count, len(timesteps) - 1)
-                            latents = self.scheduler.add_noise(
-                                latents, _noise, torch.tensor([timesteps[count]])
-                            )
+                            latents = self.scheduler.add_noise(latents, _noise, torch.tensor([timesteps[count]]))
                         i -= reverse
                         torch.cuda.empty_cache()
                 prev_gradient_latent_size = cur_gradient_latent_size
@@ -2118,15 +2117,15 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
 
     @classmethod
     def save_lora_weights(
-            self,
-            save_directory: Union[str, os.PathLike],
-            unet_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
-            text_encoder_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
-            text_encoder_2_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
-            is_main_process: bool = True,
-            weight_name: Optional[str] = None,
-            save_function: Optional[Callable] = None,
-            safe_serialization: bool = True,
+        self,
+        save_directory: Union[str, os.PathLike],
+        unet_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        text_encoder_2_lora_layers: Optional[Dict[str, Union[torch.nn.Module, torch.Tensor]]] = None,
+        is_main_process: bool = True,
+        weight_name: Optional[str] = None,
+        save_function: Optional[Callable] = None,
+        safe_serialization: bool = True,
     ):
         state_dict = {}
 

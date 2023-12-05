@@ -129,7 +129,7 @@ def checkpoint_to_pipeline(
         pretrained_model_link_or_path=str(checkpoint.absolute()),
         local_files_only=True,
         load_safety_checker=False,
-        original_config_file=str(path_mgr.config / "inference/v1-inference.yaml")
+        original_config_file=str(path_mgr.config / "inference/v1-inference.yaml"),
     )
 
     if save:

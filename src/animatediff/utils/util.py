@@ -363,7 +363,7 @@ def prepare_softsplat():
 
 
 def extract_frames(
-        movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
+    movie_file_path, fps, out_dir, aspect_ratio, duration, offset, size_of_short_edge=-1, low_vram_mode=False
 ):
     import ffmpeg
 

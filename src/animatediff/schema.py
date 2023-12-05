@@ -342,11 +342,8 @@ class TImg2imgMap(BaseModel):
 
 
 class TGradualLatentHiresFixMap(BaseModel):
-    enable: bool = True,
-    scale: dict[str, float] = Field({
-        "0": 0.5,
-        "0.7": 1.0
-    })
+    enable: bool = (True,)
+    scale: dict[str, float] = Field({"0": 0.5, "0.7": 1.0})
     reverse_steps: int = 5
     noise_add_count: int = 3
 
@@ -362,7 +359,8 @@ class TProjectSetting(BaseModel):
     motion: str = "mm_sd_v15_v2.ckpt"
     compile: bool = False
     gradual_latent_hires_fix_map: TGradualLatentHiresFixMap = pt.Field(
-        default_factory=lambda: TGradualLatentHiresFixMap())
+        default_factory=lambda: TGradualLatentHiresFixMap()
+    )
     tensor_interpolation_slerp: bool = Field(False)
     seed: list[int] = pt.Field(default_factory=lambda: [-1])
     scheduler: str = "k_dpmpp_sde"
