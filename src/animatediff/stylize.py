@@ -732,13 +732,13 @@ def interpolate(
         offset = model_config.stylize_config["original_video"]["offset"]
         aspect_ratio = model_config.stylize_config["original_video"]["aspect_ratio"]
     else:
-        logger.warn("!!! The following parameters are required !!!")
-        logger.warn('"stylize_config": {')
-        logger.warn('    "original_video": {')
-        logger.warn('        "path": "C:\\my_movie\\test.mp4",')
-        logger.warn('        "aspect_ratio": 0.6666,')
-        logger.warn('        "offset": 0')
-        logger.warn("    },")
+        logger.warning("!!! The following parameters are required !!!")
+        logger.warning('"stylize_config": {')
+        logger.warning('    "original_video": {')
+        logger.warning('        "path": "C:\\my_movie\\test.mp4",')
+        logger.warning('        "aspect_ratio": 0.6666,')
+        logger.warning('        "offset": 0')
+        logger.warning("    },")
         raise ValueError('model_config.stylize_config["original_video"] not found')
 
     save_dir = frame_dir.parent.joinpath(f"optflow_{time_str}")
@@ -1322,7 +1322,7 @@ def composite(
         mask_token = fg_param["mask_prompt"]
         frame_dir = Path(fg_param["path"])
         if not frame_dir.is_dir():
-            logger.warn(f"{frame_dir=} not valid -> skip")
+            logger.warning(f"{frame_dir=} not valid -> skip")
             continue
 
         mask_dir = Path(fg_param["mask_path"])

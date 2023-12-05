@@ -8,7 +8,7 @@ from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
 from einops import rearrange
 from torch import Tensor, nn
 
-from animatediff.utils.torch_compact import auto_scale_float32, is_macos
+from animatediff.utils.torch_compact import auto_scale_float32, is_macos, auto_half
 
 
 # class InflatedConv3d(nn.Conv2d):
@@ -75,8 +75,7 @@ class Upsample3D(nn.Module):
             hidden_states = F.interpolate(hidden_states, scale_factor=[1.0, 2.0, 2.0], mode="nearest")
         else:
             hidden_states = F.interpolate(auto_scale_float32(hidden_states), size=output_size, mode="nearest")
-            if is_macos():
-                hidden_states = hidden_states.half()
+            hidden_states = auto_half(hidden_states)
 
         # If the input is bfloat16, we cast back to bfloat16
         if dtype == torch.bfloat16:

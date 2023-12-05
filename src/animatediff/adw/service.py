@@ -167,7 +167,6 @@ def do_render_video(
             stride=0,
             repeats=1,
             device=get_torch_device(),
-            use_xformers=False,
             force_half_vae=False,
             out_dir=project_dir / "draft",
             no_frames=False,

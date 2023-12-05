@@ -141,7 +141,7 @@ def interpolate(
     if out_file is None:
         out_file = frames_dir.parent.joinpath(f"{frames_dir.name}-rife.{file_extn}")
     elif out_file.suffix != file_extn:
-        logger.warn("Output file extension does not match codec, changing extension")
+        logger.warning("Output file extension does not match codec, changing extension")
         out_file = out_file.with_suffix(file_extn)
 
     # build RIFE command and get args

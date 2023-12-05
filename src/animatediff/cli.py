@@ -133,7 +133,6 @@ def generate(
     stride: int = 0,
     repeats: int = 1,
     device="cuda",
-    use_xformers=False,
     force_half_vae=False,
     out_dir: Path = Path("output/"),
     no_frames: bool = False,
@@ -219,7 +218,6 @@ def generate(
             base_model=base_model_path,
             project_setting=project_setting,
             infer_config=infer_config,
-            use_xformers=use_xformers,
             video_length=length,
             is_sdxl=is_sdxl,
         )
@@ -396,16 +394,6 @@ def tile_upscale(
         str,
         typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
     ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
     force_half_vae: Annotated[
         bool,
         typer.Option(
@@ -522,7 +510,6 @@ def tile_upscale(
     us_pipeline = create_us_pipeline(
         model_config=project_setting,
         infer_config=infer_config,
-        use_xformers=use_xformers,
         use_controlnet_ref=use_controlnet_ref,
         use_controlnet_tile=use_controlnet_tile,
         use_controlnet_line_anime=use_controlnet_line_anime,
@@ -880,16 +867,6 @@ def refine(
         str,
         typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
     ] = "cuda",
-    use_xformers: Annotated[
-        bool,
-        typer.Option(
-            "--xformers",
-            "-x",
-            is_flag=True,
-            help="Use XFormers instead of SDP Attention",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
     force_half_vae: Annotated[
         bool,
         typer.Option(
@@ -1045,7 +1022,6 @@ def refine(
             overlap=overlap,
             stride=stride,
             device=device,
-            use_xformers=use_xformers,
             force_half_vae=force_half_vae,
             out_dir=save_dir,
         )

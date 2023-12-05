@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import getopt
-import math
 import sys
-import typing
 
-import numpy
 import PIL
 import PIL.Image
+import numpy
 import torch
 
 from . import softsplat  # the custom softmax splatting layer

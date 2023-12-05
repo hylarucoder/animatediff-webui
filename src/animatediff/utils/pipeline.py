@@ -70,8 +70,8 @@ def send_to_device(
     if compile:
         if not isinstance(pipeline.unet, dynamo.OptimizedModule):
             allow_ops_in_compiled_graph()  # make einops behave
-            logger.warn("Enabling model compilation with TorchDynamo, this may take a while...")
-            logger.warn("Model compilation is experimental and may not work as expected!")
+            logger.warning("Enabling model compilation with TorchDynamo, this may take a while...")
+            logger.warning("Model compilation is experimental and may not work as expected!")
             pipeline.unet = torch.compile(
                 pipeline.unet,
                 backend="inductor",
@@ -101,7 +101,6 @@ def send_to_device_sdxl(
     else:
         pipeline.enable_model_cpu_offload()
 
-    pipeline.enable_xformers_memory_efficient_attention()
     pipeline.enable_vae_slicing()
     pipeline.enable_vae_tiling()
 

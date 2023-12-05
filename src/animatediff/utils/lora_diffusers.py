@@ -554,7 +554,6 @@ if __name__ == "__main__":
     else:
         pipe = StableDiffusionPipeline.from_pretrained(args.model_id, variant="fp16", torch_dtype=torch.float16)
     pipe.to(device)
-    pipe.set_use_memory_efficient_attention_xformers(True)
 
     text_encoders = [pipe.text_encoder, pipe.text_encoder_2] if args.sdxl else [pipe.text_encoder]
 

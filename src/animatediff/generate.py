@@ -417,7 +417,6 @@ def create_pipeline_sdxl(
     base_model: Union[str, PathLike],
     model_config: ModelConfig,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     video_length: int = 16,
     motion_module_path=...,
 ) -> AnimationPipeline:
@@ -510,11 +509,6 @@ def create_pipeline_sdxl(
     del tenc2_state_dict
     del vae_state_dict
 
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        unet.enable_xformers_memory_efficient_attention()
-
     # motion lora
     for l in model_config.motion_lora_map:
         lora_path = path_mgr.motion_loras / l
@@ -563,7 +557,6 @@ def create_pipeline(
     base_model: Union[str, PathLike],
     project_setting: TProjectSetting,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     video_length: int = 16,
     is_sdxl: bool = False,
 ) -> AnimationPipeline:
@@ -590,7 +583,6 @@ def create_pipeline(
             base_model=base_model,
             model_config=project_setting,
             infer_config=infer_config,
-            use_xformers=use_xformers,
             video_length=video_length,
             motion_module_path=motion_module,
         )
@@ -660,11 +652,6 @@ def create_pipeline(
             tensors = convert_ldm_vae_checkpoint(tensors, vae.config)
             vae.load_state_dict(tensors)
 
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        unet.enable_xformers_memory_efficient_attention()
-
     # motion lora
     for l in project_setting.motion_lora_map:
         lora_path = path_mgr.loras / l
@@ -731,7 +718,6 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 def create_us_pipeline(
     model_config: ModelConfig,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
     use_controlnet_line_anime: bool = False,
@@ -820,11 +806,6 @@ def create_us_pipeline(
         raise ValueError("model_config.path is invalid")
 
     pipeline.scheduler = scheduler
-
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        pipeline.enable_xformers_memory_efficient_attention()
 
     # lora
     for l in model_config.lora_map:
@@ -1157,7 +1138,7 @@ def region_preprocess(
                 condi_index += 1
             else:
                 if is_init_img_exist is False:
-                    logger.warn("'is_init_img' : true / BUT init_img is not exist -> ignore region")
+                    logger.warning("'is_init_img' : true / BUT init_img is not exist -> ignore region")
                     continue
                 src = -1
 
