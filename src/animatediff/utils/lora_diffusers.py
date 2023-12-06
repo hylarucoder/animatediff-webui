@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 import numpy as np
 import torch
 from diffusers import UNet2DConditionModel
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 from transformers import CLIPTextModel
 
 logger = logging.getLogger(__name__)

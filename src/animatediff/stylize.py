@@ -10,12 +10,12 @@ from typing import Annotated, Optional
 import torch
 import typer
 from PIL import Image
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
-from animatediff import __version__, get_dir
+from animatediff import get_dir
 from animatediff.consts import path_mgr
 from animatediff.schema import TIPAdapterMap
-from animatediff.settings import ModelConfig, get_project_setting
+from animatediff.settings import get_project_setting
 from animatediff.utils.tagger import get_labels
 from animatediff.utils.util import (
     extract_frames,
@@ -469,7 +469,7 @@ def generate(
     config_org = stylize_dir.joinpath("prompt.json")
     project_dir = config_org.parent
 
-    project_setting: ModelConfig = get_project_setting(config_org)
+    project_setting = get_project_setting(config_org)
 
     if length == -1:
         length = project_setting.stylize_config["0"]["length"]
@@ -725,7 +725,7 @@ def interpolate(
 
     config_org = frame_dir.parent.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if "original_video" in model_config.stylize_config:
         org_video = Path(model_config.stylize_config["original_video"]["path"])
@@ -997,7 +997,7 @@ def create_mask(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"
@@ -1295,7 +1295,7 @@ def composite(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     composite_config = {}
     if "composite" in model_config.stylize_config:
@@ -1572,7 +1572,7 @@ def create_region(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"

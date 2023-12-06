@@ -9,7 +9,7 @@ import onnxruntime as rt
 import torch
 from PIL import Image
 from rembg import new_session, remove
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
 

@@ -2,8 +2,20 @@
 const optionsStore = useOptionsStore()
 const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
-const { performance, checkpoint, aspectRatio, prompt, negativePrompt, seed, duration, fps, loras, motion, motionLora } =
-  storeToRefs(formStore)
+const {
+  performance,
+  highRes,
+  checkpoint,
+  aspectRatio,
+  prompt,
+  negativePrompt,
+  seed,
+  duration,
+  fps,
+  loras,
+  motion,
+  motionLora,
+} = storeToRefs(formStore)
 
 const advanced = ref({
   cfg: 1,
@@ -21,19 +33,22 @@ const activeKey = ref("1")
             </a-radio>
           </a-radio-group>
         </a-form-item>
-        <a-form-item label="Aspect Radios">
-          <a-radio-group v-model:value="aspectRatio">
-            <a-radio
-              v-for="ar in optAspectRadios"
-              :key="ar.value"
-              class="font-mono"
-              :value="ar.value"
-              :label="ar.label"
-            >
-              {{ ar.value }}
-            </a-radio>
-          </a-radio-group>
-        </a-form-item>
+        <div class="flex w-full items-start">
+          <a-form-item label="Aspect Radios">
+            <a-radio-group v-model:value="aspectRatio">
+              <a-radio
+                v-for="ar in optAspectRadios"
+                :key="ar.value"
+                class="font-mono"
+                :value="ar.value"
+                :label="ar.label"
+              >
+                {{ ar.value }}
+              </a-radio>
+            </a-radio-group>
+          </a-form-item>
+          <a-checkbox v-model:checked="highRes">HiRes</a-checkbox>
+        </div>
         <a-form-item label="Prompt">
           <a-textarea v-model:value="prompt" />
         </a-form-item>

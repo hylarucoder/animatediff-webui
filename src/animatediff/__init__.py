@@ -4,7 +4,7 @@ from pathlib import Path
 from warnings import filterwarnings
 
 from rich.console import Console
-from tqdm.auto import TqdmExperimentalWarning
+from tqdm.rich import TqdmExperimentalWarning
 
 __version__ = "unknown (no version information available)"
 version_tuple = (0, 0, "unknown", "noinfo")

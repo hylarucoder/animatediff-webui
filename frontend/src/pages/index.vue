@@ -13,7 +13,6 @@ await optionsStore.init()
       <VMainPlayer />
       <VRightSidebar />
     </div>
-    <VTimeline />
-    <!--    <VStatusbar />-->
+    <VTimelineWindow />
   </div>
 </template>

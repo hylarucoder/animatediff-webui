@@ -12,7 +12,7 @@ from groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
 from PIL import Image
 from segment_anything_hq import SamPredictor, build_sam_vit_b, build_sam_vit_h, build_sam_vit_l
 from segment_anything_hq.build_sam import build_sam_vit_t
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
 

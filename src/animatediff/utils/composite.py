@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 logger = logging.getLogger(__name__)
 

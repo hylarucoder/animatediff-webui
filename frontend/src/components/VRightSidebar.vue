@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { projectSetting, controlnet, prompt } = usePanelView()
+const panelView = usePanelView()
+const { projectSetting, controlnet, prompt } = storeToRefs(panelView)
 </script>
 <template>
   <div class="relative w-[400px] overflow-auto border-b-[1px] border-r-[1px] border-gray-200 px-5 py-2">

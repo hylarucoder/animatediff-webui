@@ -129,11 +129,8 @@ def generate(
     height: int = 512,
     length: int = 16,
     context: int = 16,
-    overlap: int = 4,
-    stride: int = 0,
     repeats: int = 1,
     device="cuda",
-    force_half_vae=False,
     out_dir: Path = Path("output/"),
     no_frames: bool = False,
     save_merged: bool = False,
@@ -159,8 +156,8 @@ def generate(
 
     set_tensor_interpolation_method(project_setting.tensor_interpolation_slerp)
 
-    # set sane defaults for context, overlap, and stride if not supplied
-    context, overlap, stride = get_context_params(length, context, overlap, stride)
+    overlap = context // 4
+    stride = 0
 
     if (not is_v2) and (not is_sdxl) and (context > 24):
         logger.warning("For motion module v1, the maximum value of context is 24. Set to 24")
@@ -194,7 +191,7 @@ def generate(
         width,
         height,
         length,
-        torch_device,
+        device,
         is_sdxl,
     )
     pbar.pbar_preprocess_image.update(100)
@@ -240,7 +237,6 @@ def generate(
             g_pipeline,
             torch_device,
             freeze=True,
-            force_half=force_half_vae,
             compile=project_setting.compile,
             is_sdxl=is_sdxl,
         )
@@ -394,15 +390,6 @@ def tile_upscale(
         str,
         typer.Option("--device", "-d", help="Device to run on (cpu, cuda, cuda:id)", rich_help_panel="Advanced"),
     ] = "cuda",
-    force_half_vae: Annotated[
-        bool,
-        typer.Option(
-            "--half-vae",
-            is_flag=True,
-            help="Force VAE to use fp16 (not recommended)",
-            rich_help_panel="Advanced",
-        ),
-    ] = False,
     out_dir: Annotated[
         Path,
         typer.Option(
@@ -519,9 +506,7 @@ def tile_upscale(
     if us_pipeline.device == torch_device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
     else:
-        us_pipeline = send_to_device(
-            us_pipeline, torch_device, freeze=True, force_half=force_half_vae, compile=project_setting.compile
-        )
+        us_pipeline = send_to_device(us_pipeline, torch_device, freeze=True, compile=project_setting.compile)
 
     project_setting.result = {"original_frames": str(frames_dir)}
 
@@ -1019,10 +1004,7 @@ def refine(
             height=height,
             length=length,
             context=context,
-            overlap=overlap,
-            stride=stride,
             device=device,
-            force_half_vae=force_half_vae,
             out_dir=save_dir,
         )
 

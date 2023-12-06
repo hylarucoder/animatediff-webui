@@ -35,8 +35,8 @@ const pullVideoPath = async () => {
   }
   player.video_url.value = formatProxyMedia(res.task.videoPath)
   player.status.value = TStatus.SUCCESS
-  player.reloadVideo()
   clearInterval(pullInter)
+  player.reloadVideo()
 }
 let pullInter = null
 
@@ -52,6 +52,7 @@ const generate = async () => {
     loras: formStore.loras,
     motion: formStore.motion,
     motionLora: formStore.motionLora,
+    highRes: formStore.highRes,
     fps: formStore.fps,
     duration: formStore.duration,
     seed: formStore.seed,

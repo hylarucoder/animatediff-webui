@@ -5,7 +5,7 @@ from typing import Union
 
 import torch
 
-from animatediff.utils.torch_compact import is_macos, auto_scale_float32
+from animatediff.utils.torch_compact import auto_scale_float32, is_macos
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,6 @@ def dtype_for_model(model: str, device: torch.device) -> torch.dtype:
 
 def get_model_dtypes(
     device: Union[str, torch.device],
-    force_half_vae: bool = False,
 ) -> tuple[torch.dtype, torch.dtype, torch.dtype]:
     device = torch.device(device)  # make sure device is a torch.device
     unet_dtype = dtype_for_model("unet", device)
@@ -77,20 +76,6 @@ def get_model_dtypes(
     if device.type == "cpu":
         logger.warning("Device explicitly set to CPU, will run everything in fp32")
         logger.warning("This is likely to be *incredibly* slow, but I don't tell you how to live.")
-
-    if force_half_vae:
-        if device.type == "cpu":
-            logger.critical("Can't force VAE to fp16 mode on CPU! Exiting...")
-            raise RuntimeError("Can't force VAE to fp16 mode on CPU!")
-        if vae_dtype == torch.bfloat16:
-            logger.warning("Forcing VAE to use fp16 despite bfloat16 support! This is a bad idea!")
-            logger.warning("If you're not sure why you're doing this, you probably shouldn't be.")
-            vae_dtype = torch.float16
-        else:
-            logger.warning("Forcing VAE to use fp16 instead of fp32 on CUDA! This may result in black outputs!")
-            logger.warning("Running a VAE in fp16 can result in black images or poor output quality.")
-            logger.warning("I don't tell you how to live, but you probably shouldn't do this.")
-            vae_dtype = torch.float16
 
     logger.info(f"Selected data types: {unet_dtype=}, {tenc_dtype=}, {vae_dtype=}")
     return unet_dtype, tenc_dtype, vae_dtype

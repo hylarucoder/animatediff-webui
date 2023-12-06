@@ -31,9 +31,7 @@ from diffusers import (
 )
 from PIL import Image
 from torchvision.datasets.folder import IMG_EXTENSIONS
-
-# from tqdm.rich import tqdm
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 from transformers import (
     AutoImageProcessor,
     CLIPImageProcessor,
@@ -58,7 +56,6 @@ from animatediff.schema import (
     TAnyControlnet,
     TControlnetMap,
     TControlnetRef,
-    TControlnetTile,
     TGradualLatentHiresFixMap,
     TImg2imgMap,
     TIPAdapterMap,
@@ -67,10 +64,9 @@ from animatediff.schema import (
     TProjectSetting,
     TUpscaleConfig,
 )
-from animatediff.settings import InferenceConfig, ModelConfig
+from animatediff.settings import InferenceConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights, get_checkpoint_weights_sdxl
-from animatediff.utils.progressbar import pbar
 from animatediff.utils.util import (
     get_resized_image,
     get_resized_image2,
@@ -96,29 +92,11 @@ except:
 
 logger = logging.getLogger(__name__)
 
-default_base_path = MODELS_DIR / "huggingface/stable-diffusion-v1-5"
+default_base_path = path_mgr.huggingface_pipeline / "stable-diffusion-v1-5"
 
 re_clean_prompt = re.compile(r"[^\w\-, ]")
 
 controlnet_preprocessor = {}
-
-
-def load_safetensors_lora(text_encoder, unet, lora_path, alpha=0.75, is_animatediff=True):
-    from safetensors.torch import load_file
-
-    from animatediff.utils.lora_diffusers import LoRANetwork, create_network_from_weights
-
-    sd = load_file(lora_path)
-
-    logger.debug("create LoRA network")
-    lora_network: LoRANetwork = create_network_from_weights(
-        text_encoder, unet, sd, multiplier=alpha, is_animatediff=is_animatediff
-    )
-    logger.debug("load LoRA network weights")
-    lora_network.load_state_dict(sd, False)
-    # lora_network.merge_to(alpha)
-    lora_network.apply_to(alpha)
-    return lora_network
 
 
 def load_safetensors_lora2(text_encoder, unet, lora_path, alpha=0.75, is_animatediff=True):
@@ -415,7 +393,7 @@ def clear_controlnet_preprocessor(type_str=None):
 
 def create_pipeline_sdxl(
     base_model: Union[str, PathLike],
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
     infer_config: InferenceConfig,
     video_length: int = 16,
     motion_module_path=...,
@@ -587,10 +565,7 @@ def create_pipeline(
             motion_module_path=motion_module,
         )
 
-    logger.info("Loading tokenizer...")
-    logger.info("Loading text encoder...")
-    logger.info("Loading VAE...")
-    logger.info("Loading UNet...")
+    logger.info("Loading tokenizer...text encoder...VAE...UNet...")
     tokenizer: CLIPTokenizer = CLIPTokenizer.from_pretrained(base_model, subfolder="tokenizer")
     text_encoder: CLIPSkipTextModel = CLIPSkipTextModel.from_pretrained(base_model, subfolder="text_encoder")
     vae: AutoencoderKL = AutoencoderKL.from_pretrained(base_model, subfolder="vae")
@@ -716,7 +691,7 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 
 
 def create_us_pipeline(
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
     infer_config: InferenceConfig,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
@@ -1264,7 +1239,7 @@ def mask_preprocess(
 
 
 def wild_card_conversion(
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
 ):
     from animatediff.utils.wild_card import replace_wild_card
 

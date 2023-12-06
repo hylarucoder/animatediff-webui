@@ -5,7 +5,7 @@ import pydantic as pt
 from rich.progress import Progress
 
 from animatediff.adw.contrib import PtBaseModel
-from animatediff.adw.schema import TPerformance, TStatusEnum, TTask
+from animatediff.adw.schema import TPerformance, TPromptBlock, TStatusEnum, TTask, default_prompt_points
 from animatediff.consts import path_mgr
 from animatediff.schema import TProjectSetting
 from animatediff.utils.progressbar import pbar
@@ -51,7 +51,9 @@ class TParamsRenderVideo(PtBaseModel):
     performance: TPerformance = TPerformance.SPEED
     aspect_radio: str = "432x768 | 9:16"
     prompt: str = "masterpiece, best quality"
+    prompt_points: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
+    high_res: bool = False
     fps: int = 8
     duration: int = 4
     seed: int = -1
@@ -84,6 +86,42 @@ def resize_to_768(width, height):
     return width // 8 * 8, height // 8 * 8
 
 
+def sub_render_video(data, task_id):
+    bg_task = get_task_by_id(task_id)
+
+    def on_config_start():
+        pbar.init_pbar(task_id)
+        ...
+
+    def on_config_end():
+        pbar.pbar_config.update(100)
+
+    def on_render_start():
+        pbar.pbar.update(10)
+        ...
+
+    def on_render_success(path):
+        bg_task.video_path = path
+        bg_task.status = TStatusEnum.success
+        ...
+
+    def on_render_failed():
+        bg_task.status = TStatusEnum.error
+
+    def on_render_end():
+        ...
+
+    do_render_video(
+        data=data,
+        on_config_start=on_config_start,
+        on_config_end=on_config_end,
+        on_render_start=on_render_start,
+        on_render_success=on_render_success,
+        on_render_failed=on_render_failed,
+        on_render_end=on_render_end,
+    )
+
+
 def do_render_video(
     data: TParamsRenderVideo,
     on_config_start=lambda: None,
@@ -111,18 +149,13 @@ def do_render_video(
         project_setting.apply_lcm_lora = False
         project_setting.steps = 20
         project_setting.guidance_scale = 10
-    elif performance == TPerformance.SPEED_HI_RES:
-        project_setting.lcm_lora_scale = 1
-        project_setting.apply_lcm_lora = False
-        project_setting.steps = 20
-        project_setting.guidance_scale = 10
-        project_setting.gradual_latent_hires_fix_map.enable = True
-        width, height = resize_to_768(width, height)
-    elif performance == TPerformance.EXTREME_SPEED_HI_RES:
+    elif performance == TPerformance.EXTREME_SPEED:
         project_setting.lcm_lora_scale = 1
         project_setting.apply_lcm_lora = True
         project_setting.steps = 8
         project_setting.guidance_scale = 1.8
+
+    if data.high_res:
         project_setting.gradual_latent_hires_fix_map.enable = True
         width, height = resize_to_768(width, height)
 
@@ -136,9 +169,7 @@ def do_render_video(
     project_setting.checkpoint = data.checkpoint
     project_setting.motion = data.motion
     project_setting.motion_lora_map = {}
-    project_setting.prompt_map = {
-        "0": project_setting.tail_prompt,
-    }
+    project_setting.prompt_map = {p.point: p.prompt for p in data.prompt_points}
     project_setting.output = {"format": "mp4", "fps": 8, "encode_param": {"crf": 10}}
     open(project_dir / "prompts.json", "wt", encoding="utf-8").write(
         project_setting.model_dump_json(
@@ -152,8 +183,8 @@ def do_render_video(
     from animatediff.cli import generate
 
     video_len = data.fps * data.duration
-    context = 16 if video_len > 16 else 8
-    overlap = context // 4
+    # context = 16 if video_len > 16 else 8
+    context = 8 if video_len > 8 else 8
     if on_render_start:
         on_render_start()
     try:
@@ -163,11 +194,8 @@ def do_render_video(
             height=height,
             length=data.fps * data.duration,
             context=context,
-            overlap=overlap,
-            stride=0,
             repeats=1,
             device=get_torch_device(),
-            force_half_vae=False,
             out_dir=project_dir / "draft",
             no_frames=False,
             save_merged=False,

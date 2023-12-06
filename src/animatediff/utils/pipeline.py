@@ -16,7 +16,6 @@ def send_to_device(
     pipeline: DiffusionPipeline,
     device: torch.device,
     freeze: bool = True,
-    force_half: bool = False,
     compile: bool = False,
     is_sdxl: bool = False,
 ) -> DiffusionPipeline:
@@ -25,13 +24,12 @@ def send_to_device(
             pipeline=pipeline,
             device=device,
             freeze=freeze,
-            force_half=force_half,
             compile=compile,
         )
 
     logger.info(f"Sending pipeline to device \"{device.type}{device.index if device.index else ''}\"")
 
-    unet_dtype, tenc_dtype, vae_dtype = get_model_dtypes(device, force_half)
+    unet_dtype, tenc_dtype, vae_dtype = get_model_dtypes(device)
     model_memory_format = get_memory_format(device)
 
     if hasattr(pipeline, "controlnet"):
@@ -87,7 +85,6 @@ def send_to_device_sdxl(
     pipeline: StableDiffusionXLPipeline,
     device: torch.device,
     freeze: bool = True,
-    force_half: bool = False,
     compile: bool = False,
 ) -> StableDiffusionXLPipeline:
     logger.info(f"Sending pipeline to device \"{device.type}{device.index if device.index else ''}\"")
@@ -110,13 +107,7 @@ def send_to_device_sdxl(
 def get_context_params(
     length: int,
     context: Optional[int] = None,
-    overlap: Optional[int] = None,
-    stride: Optional[int] = None,
 ):
-    if context is None:
-        context = min(length, 16)
-    if overlap is None:
-        overlap = context // 4
-    if stride is None:
-        stride = 0
+    overlap = context // 4
+    stride = 0
     return context, overlap, stride
