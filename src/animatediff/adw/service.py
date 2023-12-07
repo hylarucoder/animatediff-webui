@@ -37,7 +37,7 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 def lora_arr():
@@ -49,7 +49,7 @@ class TParamsRenderVideo(PtBaseModel):
     performance: TPerformance = TPerformance.SPEED
     aspect_radio: str = "432x768 | 9:16"
     prompt: str = "masterpiece, best quality"
-    prompt_points: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
+    prompt_blocks: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
     high_res: bool = False
     fps: int = 8
@@ -120,13 +120,13 @@ def sub_render_video(data, task_id):
 
 
 def do_render_video(
-    data: TParamsRenderVideo,
-    on_config_start=lambda: None,
-    on_config_end=lambda: None,
-    on_render_start=lambda: None,
-    on_render_success=lambda: None,
-    on_render_failed=lambda: None,
-    on_render_end=lambda: None,
+        data: TParamsRenderVideo,
+        on_config_start=lambda: None,
+        on_config_end=lambda: None,
+        on_render_start=lambda: None,
+        on_render_success=lambda: None,
+        on_render_failed=lambda: None,
+        on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()
@@ -183,7 +183,7 @@ def do_render_video(
         }
     )
 
-    project_setting.prompt_map = {p.start: p.prompt for p in data.prompt_points}
+    project_setting.prompt_map = {p.start: p.prompt for p in data.prompt_blocks}
     project_setting.output = {"format": "mp4", "fps": 8, "encode_param": {"crf": 10}}
     open(project_dir / "prompts.json", "wt", encoding="utf-8").write(
         project_setting.model_dump_json(

@@ -2,6 +2,9 @@
 import { TStatus, usePlayer } from "~/composables/usePlayer"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
 
+const timelineStore = useTimeline()
+const { promptBlocks } = timelineStore
+
 const videoPlayerStore = useVideoPlayer()
 
 const unpackStore = (store) => {
@@ -59,6 +62,12 @@ const generate = async () => {
     fps: formStore.fps,
     duration: formStore.duration,
     seed: formStore.seed,
+    promptBlocks: promptBlocks.map((x) => {
+      return {
+        start: x.start,
+        prompt: x.prompt,
+      }
+    }),
   }
   try {
     const res = await submitTask(data)
