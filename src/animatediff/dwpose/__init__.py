@@ -7,6 +7,8 @@
 
 import os
 
+from ..utils.torch_compact import get_torch_device
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import cv2
 import numpy as np
@@ -50,7 +52,7 @@ class DWposeDetector:
         input_image = resize_image(input_image, detect_resolution)
         H, W, C = input_image.shape
         if not hasattr(self, "pose_estimation"):
-            self.to(torch.device("cpu"))
+            self.to(torch.device(get_torch_device()))
         with torch.no_grad():
             candidate, subset = self.pose_estimation(input_image)
             nums, keys, locs = candidate.shape

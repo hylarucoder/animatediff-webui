@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -126,12 +126,12 @@ def composite(bg_dir, fg_list, output_dir, masked_area_list, device="cuda"):
         save_path = output_dir / name
 
         if fg_array is None:
-            logger.info(f"composite fg_array is None -> skip")
+            logger.info("composite fg_array is None -> skip")
             shutil.copy(bg, save_path)
             continue
 
         if mask is None:
-            logger.info(f"mask is None -> skip")
+            logger.info("mask is None -> skip")
             shutil.copy(bg, save_path)
             continue
 
@@ -165,12 +165,12 @@ def simple_composite(bg_dir, fg_list, output_dir, masked_area_list, device="cuda
         save_path = output_dir / name
 
         if fg_array is None:
-            logger.info(f"composite fg_array is None -> skip")
+            logger.info("composite fg_array is None -> skip")
             shutil.copy(bg, save_path)
             continue
 
         if mask is None:
-            logger.info(f"mask is None -> skip")
+            logger.info("mask is None -> skip")
             shutil.copy(bg, save_path)
             continue
 

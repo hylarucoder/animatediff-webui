@@ -145,7 +145,7 @@ class LoraMap:
         neg 2
         pos 0 (bg)
         pos 1
-        pos 2
+        pos 2.
         """
         region_index = cond_index if cond_index < cond_nums // 2 else cond_index - cond_nums // 2
         #        logger.info(f"{cond_index=}")

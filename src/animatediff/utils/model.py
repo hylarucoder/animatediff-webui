@@ -24,7 +24,7 @@ T = TypeVar("T", bound=nn.Module)
 
 
 def nop_train(self: T, mode: bool = True) -> T:
-    """No-op for monkeypatching train() call to prevent unfreezing module"""
+    """No-op for monkeypatching train() call to prevent unfreezing module."""
     return self
 
 

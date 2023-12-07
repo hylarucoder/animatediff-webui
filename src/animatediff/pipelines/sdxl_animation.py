@@ -281,7 +281,7 @@ class PromptEncoderSDXL(PromptEncoder):
             pooled_emb.append(emb)
         pooled_emb = torch.cat(pooled_emb)
 
-        if self.pipe.ip_adapter == None:
+        if self.pipe.ip_adapter is None:
             return text_emb, pooled_emb
 
         emb_list = []
@@ -353,7 +353,7 @@ EXAMPLE_DOC_STRING = """
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
 def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
     """Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
-    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
+    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4.
     """
     std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
     std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
@@ -1606,7 +1606,7 @@ class AnimationPipeline(DiffusionPipeline, FromSingleFileMixin, LoraLoaderMixin,
                         if controlnet_is_affected(n):
                             hit = True
                             break
-                    if hit == False:
+                    if hit is False:
                         return None, None
 
                     _down_block_res_samples = []

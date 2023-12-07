@@ -9,7 +9,14 @@ from starlette.responses import FileResponse, Response
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import ApiException, raise_unless
 from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TTask
-from animatediff.adw.service import TParamsRenderVideo, do_render_video, get_projects, push_task_by_id, tasks_store
+from animatediff.adw.service import (
+    TParamsRenderVideo,
+    do_render_video,
+    get_projects,
+    push_task_by_id,
+    sub_render_video,
+    tasks_store,
+)
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
 from animatediff.utils.progressbar import pbar
@@ -62,9 +69,10 @@ def gen_presets():
     )
     preset_color.loras[0] = ["釉彩·麻袋调色盘_v1.0.safetensors", 0.8]
     preset_quality_default = TPreset(
-        name="speed hi res",
+        name="Speed",
         duration=1,
-        performance=TPerformance.SPEED_HI_RES,
+        performance=TPerformance.SPEED,
+        high_res=True,
     )
     presets = [
         preset_quality_default,
@@ -116,7 +124,7 @@ def get_checkpoints() -> TOptions:
 def validate_data(data: TParamsRenderVideo):
     raise_unless((path_mgr.checkpoints / data.checkpoint).exists(), "Checkpoint not Exist!")
     # loras
-    raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
+    # raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
     # motion
     # motion loras
 
@@ -145,7 +153,7 @@ def render_submit(
         return pending_or_running_tasks[-1]
     task_id = len(tasks_store) + 1
     bg_task = push_task_by_id(task_id)
-    background_tasks.add_task(do_render_video, data)
+    background_tasks.add_task(sub_render_video, data, task_id)
     return {
         "task": serialize_task(bg_task),
     }

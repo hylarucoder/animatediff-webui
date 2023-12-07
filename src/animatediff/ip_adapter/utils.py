@@ -1,6 +1,4 @@
-import inspect
-import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import PIL.Image
@@ -10,8 +8,6 @@ from diffusers.models import ControlNetModel
 from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.utils.torch_utils import is_compiled_module
-
-from animatediff.utils.progressbar import pbar
 
 
 def is_torch2_available():

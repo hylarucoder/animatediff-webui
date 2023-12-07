@@ -40,7 +40,7 @@ if is_invisible_watermark_available():
 
 
 def parse_prompt_attention(text):
-    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    r"""Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
@@ -50,7 +50,7 @@ def parse_prompt_attention(text):
       \\) - literal character ')'
       \\] - literal character ']'
       \\ - literal character '\'
-      anything else - just text
+      anything else - just text.
 
     >>> parse_prompt_attention('normal text')
     [['normal text', 1.0]]
@@ -141,7 +141,7 @@ def parse_prompt_attention(text):
 
 
 def get_prompts_tokens_with_weights(clip_tokenizer: CLIPTokenizer, prompt: str):
-    """Get prompt token ids and weights, this function works for both prompt and negative prompt
+    """Get prompt token ids and weights, this function works for both prompt and negative prompt.
 
     Args:
     ----
@@ -193,7 +193,7 @@ def get_prompts_tokens_with_weights(clip_tokenizer: CLIPTokenizer, prompt: str):
 
 
 def group_tokens_and_weights(token_ids: list, weights: list, pad_last_block=False):
-    """Produce tokens and weights in groups and pad the missing tokens
+    """Produce tokens and weights in groups and pad the missing tokens.
 
     Args:
     ----
@@ -253,7 +253,7 @@ def get_weighted_text_embeddings_sdxl(
     neg_prompt_2: Optional[str] = None,
 ):
     """This function can process long prompt with weights, no length limitation
-    for Stable Diffusion XL
+    for Stable Diffusion XL.
 
     Args:
     ----
@@ -395,7 +395,7 @@ def get_weighted_text_embeddings_sdxl2(
     device: str = "",
 ):
     """This function can process long prompt with weights, no length limitation
-    for Stable Diffusion XL
+    for Stable Diffusion XL.
 
     Args:
     ----
@@ -618,7 +618,7 @@ EXAMPLE_DOC_STRING = """
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
 def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
     """Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
-    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
+    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4.
     """
     std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
     std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)

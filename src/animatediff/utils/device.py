@@ -5,7 +5,7 @@ from typing import Union
 
 import torch
 
-from animatediff.utils.torch_compact import is_macos
+from animatediff.utils.torch_compact import auto_scale_float32, is_macos
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,9 @@ def supports_bfloat16(device: Union[str, torch.device]) -> bool:
         case "xla":
             ret = True
         case "mps":
-            ret = True
+            # ret = True
+            # TODO: Does MPS support bfloat16?
+            ret = False
         case _:
             ret = False
     return ret
@@ -45,7 +47,7 @@ def maybe_bfloat16(
     device: Union[str, torch.device],
     fallback: torch.dtype = torch.float32,
 ) -> torch.dtype:
-    """Returns torch.bfloat16 if available, otherwise the fallback dtype (default float32)"""
+    """Returns torch.bfloat16 if available, otherwise the fallback dtype (default float32)."""
     device = torch.device(device)  # make sure device is a torch.device
     return torch.bfloat16 if supports_bfloat16(device) else fallback
 
@@ -57,9 +59,7 @@ def dtype_for_model(model: str, device: torch.device) -> torch.dtype:
         case "tenc":
             return torch.float32 if device.type == "cpu" else torch.float16
         case "vae":
-            if not is_macos():
-                return maybe_bfloat16(device, fallback=torch.float32)
-            return torch.float32
+            return maybe_bfloat16(device, fallback=torch.float32)
 
         case unknown:
             raise ValueError(f"Invalid model {unknown}")
@@ -67,7 +67,6 @@ def dtype_for_model(model: str, device: torch.device) -> torch.dtype:
 
 def get_model_dtypes(
     device: Union[str, torch.device],
-    force_half_vae: bool = False,
 ) -> tuple[torch.dtype, torch.dtype, torch.dtype]:
     device = torch.device(device)  # make sure device is a torch.device
     unet_dtype = dtype_for_model("unet", device)
@@ -75,22 +74,8 @@ def get_model_dtypes(
     vae_dtype = dtype_for_model("vae", device)
 
     if device.type == "cpu":
-        logger.warn("Device explicitly set to CPU, will run everything in fp32")
-        logger.warn("This is likely to be *incredibly* slow, but I don't tell you how to live.")
-
-    if force_half_vae:
-        if device.type == "cpu":
-            logger.critical("Can't force VAE to fp16 mode on CPU! Exiting...")
-            raise RuntimeError("Can't force VAE to fp16 mode on CPU!")
-        if vae_dtype == torch.bfloat16:
-            logger.warn("Forcing VAE to use fp16 despite bfloat16 support! This is a bad idea!")
-            logger.warn("If you're not sure why you're doing this, you probably shouldn't be.")
-            vae_dtype = torch.float16
-        else:
-            logger.warn("Forcing VAE to use fp16 instead of fp32 on CUDA! This may result in black outputs!")
-            logger.warn("Running a VAE in fp16 can result in black images or poor output quality.")
-            logger.warn("I don't tell you how to live, but you probably shouldn't do this.")
-            vae_dtype = torch.float16
+        logger.warning("Device explicitly set to CPU, will run everything in fp32")
+        logger.warning("This is likely to be *incredibly* slow, but I don't tell you how to live.")
 
     logger.info(f"Selected data types: {unet_dtype=}, {tenc_dtype=}, {vae_dtype=}")
     return unet_dtype, tenc_dtype, vae_dtype

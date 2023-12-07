@@ -2,7 +2,7 @@ import glob
 import os
 
 from animatediff.consts import path_mgr
-from animatediff.utils.mask import create_fg, create_bg
+from animatediff.utils.mask import create_bg, create_fg
 from animatediff.utils.util import extract_frames
 
 basedir = path_mgr.motions / "./../../resources/R01_jinitaimei"

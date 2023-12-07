@@ -1,5 +1,4 @@
 import { defineNuxtConfig } from "nuxt/config"
-import { siteConfig } from "./src/config/site"
 
 function getGitCommitDateYMD() {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -38,6 +37,7 @@ export default defineNuxtConfig({
     "@ant-design-vue/nuxt",
     "@nuxtjs/device",
     "@vueuse/nuxt",
+    "@vueuse/motion/nuxt",
     "@pinia/nuxt",
     "@nuxt/ui",
     "@nuxt/content",
@@ -88,12 +88,7 @@ export default defineNuxtConfig({
           href: "/apple-touch-icon.png",
         },
       ],
-      script: [
-        {
-          src: "https://cdnjs.cloudflare.com/ajax/libs/artalk/2.6.3/Artalk.js",
-          async: true,
-        },
-      ],
+      script: [],
       meta: [
         {
           name: "charset",
@@ -102,10 +97,6 @@ export default defineNuxtConfig({
         {
           name: "viewport",
           content: "width=device-width, initial-scale=1, maximum-scale=5",
-        },
-        {
-          name: "description",
-          content: siteConfig.description,
         },
         {
           name: "apple-mobile-web-app-status-bar-style",

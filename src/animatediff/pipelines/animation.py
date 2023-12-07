@@ -26,7 +26,7 @@ from diffusers.utils import BaseOutput, deprecate, is_accelerate_available, is_a
 from diffusers.utils.torch_utils import is_compiled_module, randn_tensor
 from einops import rearrange
 from packaging import version
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 from transformers import CLIPImageProcessor, CLIPTokenizer
 
 from animatediff.consts import path_mgr
@@ -297,7 +297,7 @@ class PromptEncoder:
             text_emb.append(emb)
         text_emb = torch.cat(text_emb)
 
-        if self.pipe.ip_adapter == None:
+        if self.pipe.ip_adapter is None:
             return text_emb
 
         emb_list = []
@@ -2714,7 +2714,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                         if controlnet_is_affected(n):
                             hit = True
                             break
-                    if hit == False:
+                    if hit is False:
                         return None, None
 
                     _down_block_res_samples = []

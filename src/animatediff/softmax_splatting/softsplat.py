@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import collections
-import cupy
 import os
 import re
-import torch
 import typing
 
+import cupy
+import torch
 
 ##########################################################
 
@@ -118,7 +118,7 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
         # end
 
         while True:
-            objMatch = re.search("(SIZE_)([0-4])(\()([^\)]*)(\))", strKernel)
+            objMatch = re.search(r"(SIZE_)([0-4])(\()([^\)]*)(\))", strKernel)
 
             if objMatch is None:
                 break
@@ -131,12 +131,12 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
 
             strKernel = strKernel.replace(
                 objMatch.group(),
-                str(intSizes[intArg] if torch.is_tensor(intSizes[intArg]) == False else intSizes[intArg].item()),
+                str(intSizes[intArg] if torch.is_tensor(intSizes[intArg]) is False else intSizes[intArg].item()),
             )
         # end
 
         while True:
-            objMatch = re.search("(OFFSET_)([0-4])(\()", strKernel)
+            objMatch = re.search(r"(OFFSET_)([0-4])(\()", strKernel)
 
             if objMatch is None:
                 break
@@ -174,7 +174,7 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
                     + ")*"
                     + str(
                         intStrides[intArg]
-                        if torch.is_tensor(intStrides[intArg]) == False
+                        if torch.is_tensor(intStrides[intArg]) is False
                         else intStrides[intArg].item()
                     )
                     + ")"
@@ -187,7 +187,7 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
         # end
 
         while True:
-            objMatch = re.search("(VALUE_)([0-4])(\()", strKernel)
+            objMatch = re.search(r"(VALUE_)([0-4])(\()", strKernel)
 
             if objMatch is None:
                 break
@@ -225,7 +225,7 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
                     + ")*"
                     + str(
                         intStrides[intArg]
-                        if torch.is_tensor(intStrides[intArg]) == False
+                        if torch.is_tensor(intStrides[intArg]) is False
                         else intStrides[intArg].item()
                     )
                     + ")"
@@ -322,7 +322,7 @@ class softsplat_func(torch.autograd.Function):
     def forward(self, tenIn, tenFlow):
         tenOut = tenIn.new_zeros([tenIn.shape[0], tenIn.shape[1], tenIn.shape[2], tenIn.shape[3]])
 
-        if tenIn.is_cuda == True:
+        if tenIn.is_cuda is True:
             cuda_launch(
                 cuda_kernel(
                     "softsplat_out",
@@ -388,7 +388,7 @@ class softsplat_func(torch.autograd.Function):
                 stream=collections.namedtuple("Stream", "ptr")(torch.cuda.current_stream().cuda_stream),
             )
 
-        elif tenIn.is_cuda != True:
+        elif tenIn.is_cuda is not True:
             assert False
 
         # end
@@ -405,16 +405,16 @@ class softsplat_func(torch.autograd.Function):
         tenIn, tenFlow = self.saved_tensors
 
         tenOutgrad = tenOutgrad.contiguous()
-        assert tenOutgrad.is_cuda == True
+        assert tenOutgrad.is_cuda is True
 
         tenIngrad = (
             tenIn.new_zeros([tenIn.shape[0], tenIn.shape[1], tenIn.shape[2], tenIn.shape[3]])
-            if self.needs_input_grad[0] == True
+            if self.needs_input_grad[0] is True
             else None
         )
         tenFlowgrad = (
             tenFlow.new_zeros([tenFlow.shape[0], tenFlow.shape[1], tenFlow.shape[2], tenFlow.shape[3]])
-            if self.needs_input_grad[1] == True
+            if self.needs_input_grad[1] is True
             else None
         )
 

@@ -38,9 +38,9 @@ def get_text_embeddings(return_tensors: bool = True, is_sdxl: bool = False) -> d
 
     # warn the user if there are duplicates we skipped
     if skipped:
-        logger.warn(f"Skipped {len(skipped)} embeddings with duplicate tokens!")
-        logger.warn(f"Skipped paths: {[x.relative_to(embed_dir) for x in skipped.values()]}")
-        logger.warn("Rename these files to avoid collisions!")
+        logger.warning(f"Skipped {len(skipped)} embeddings with duplicate tokens!")
+        logger.warning(f"Skipped paths: {[x.relative_to(embed_dir) for x in skipped.values()]}")
+        logger.warning("Rename these files to avoid collisions!")
 
     # we can optionally return the tensors instead of the paths
     if return_tensors:
@@ -49,8 +49,8 @@ def get_text_embeddings(return_tensors: bool = True, is_sdxl: bool = False) -> d
         # filter out the ones that failed to load
         loaded_embeds = {k: v for k, v in embeds.items() if v is not None}
         if len(loaded_embeds) != len(embeds):
-            logger.warn(f"Failed to load {len(embeds) - len(loaded_embeds)} embeddings!")
-            logger.warn(f"Skipped embeddings: {[x for x in embeds.keys() if x not in loaded_embeds]}")
+            logger.warning(f"Failed to load {len(embeds) - len(loaded_embeds)} embeddings!")
+            logger.warning(f"Skipped embeddings: {[x for x in embeds.keys() if x not in loaded_embeds]}")
 
     # return a dict of {token: path | embedding}
     return embeds
@@ -84,12 +84,12 @@ def load_embed_weights(path: Path, key: Optional[str] = None) -> Optional[Tensor
         embedding = next(iter(state_dict["string_to_param"].values()))
     else:
         # we couldn't find the embedding key, warn the user and just use the first key that's a Tensor
-        logger.warn(f"Could not find embedding key in {path.stem}!")
-        logger.warn("Taking a wild guess and using the first Tensor we find...")
+        logger.warning(f"Could not find embedding key in {path.stem}!")
+        logger.warning("Taking a wild guess and using the first Tensor we find...")
         for key, value in state_dict.items():
             if torch.is_tensor(value):
                 embedding = value
-                logger.warn(f"Using key: {key}")
+                logger.warning(f"Using key: {key}")
                 break
 
     return embedding
@@ -125,4 +125,4 @@ def load_text_embeddings(
     logger.info(f"Available embeddings: {', '.join(loaded + skipped)}")
     if len(failed) > 0:
         # only print failed if there were failures
-        logger.warn(f"Failed to load embeddings: {', '.join(failed)}")
+        logger.warning(f"Failed to load embeddings: {', '.join(failed)}")

@@ -1,7 +1,6 @@
 # https://github.com/IDEA-Research/DWPose
 import cv2
 import numpy as np
-import onnxruntime
 
 
 def nms(boxes, scores, nms_thr):

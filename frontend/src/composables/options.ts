@@ -1,15 +1,23 @@
 import { getOptions } from "~/client"
 
+export interface TPromptBlock {
+  start: number
+  duration: number
+  prompt: string
+}
+
 export interface TPreset {
   name: string
   performance: string
   aspectRatio: string
   prompt: string
+  promptBlocks: TPromptBlock[]
+  highRes: boolean
   negativePrompt: string
   checkpoint: string
   loras: (null | number | string)[][]
   motion: string
-  motionLora?: any
+  cameraControl: any
   fps: number
   duration: number
   seed: number
@@ -29,7 +37,7 @@ export interface TOptions {
   checkpoints: TCheckpoint[]
   loras: TCheckpoint[]
   motions: TCheckpoint[]
-  motionLoras: TCheckpoint[]
+  cameraControl: any
   presets: TPreset[]
   aspectRatios: string[]
   performances: string[]
@@ -41,38 +49,17 @@ const performanceMapping = new Map([
   ["Speed", "SPEED"],
   ["Quality", "QUALITY"],
   ["Extreme Speed", "EXTREME_SPEED"],
-  ["Speed Hi-Res", "SPEED_HI_RES"],
-  // ["Extreme Speed Hi-Res", "EXTREME_SPEED_HI_RES"],
 ])
 export const performances = [...performanceMapping.keys()]
 
-const checkpoint = ref("")
-const performance = ref(performances[0])
-
 export const useFormStore = defineStore("form", () => {
-  const loadPreset = (_preset: TPreset) => {
-    console.log("-----> load preset", _preset)
-    preset.value = _preset.name
-    checkpoint.value = _preset.checkpoint
-    motion.value = _preset.motion
-    loras.value = (_preset.loras || []).map((x) => {
-      return {
-        name: x[0],
-        weight: x[1],
-      }
-    })
-    motionLora.value = _preset.motionLora
-    performance.value = _preset.performance
-    aspectRatio.value = _preset.aspectRatio
-    prompt.value = _preset.prompt
-    negativePrompt.value = _preset.negativePrompt
-    fps.value = _preset.fps
-    duration.value = _preset.duration
-  }
   const videoUrl = ref("")
   const videoStatus = ref("")
+  const checkpoint = ref("")
+  const performance = ref(performances[0])
   const motion = ref("")
   const aspectRatio = ref(aspectRatios[3])
+  const highRes = ref(false)
   const duration = ref(4)
   const seed = ref(-1)
   const prompt = ref("")
@@ -80,7 +67,16 @@ export const useFormStore = defineStore("form", () => {
   const preset = ref("default")
   const fps = ref(8)
   const project = ref("001-demo")
-  const motionLora = ref([])
+  const cameraControl = ref({
+    panLeft: 0,
+    panRight: 0,
+    rollingAnticlockwise: 0,
+    rollingClockwise: 0,
+    tileDown: 0,
+    tileUp: 0,
+    zoomIn: 0,
+    zoomOut: 0,
+  })
   const loras = ref([
     {
       name: null,
@@ -103,10 +99,32 @@ export const useFormStore = defineStore("form", () => {
       weight: 0.7,
     },
   ])
+  const { promptBlocks } = storeToRefs(useTimeline())
+  const loadPreset = (_preset: TPreset) => {
+    preset.value = _preset.name
+    checkpoint.value = _preset.checkpoint
+    motion.value = _preset.motion
+    loras.value = (_preset.loras || []).map((x) => {
+      return {
+        name: x[0],
+        weight: x[1],
+      }
+    })
+
+    cameraControl.value = _preset.cameraControl
+    performance.value = _preset.performance
+    aspectRatio.value = _preset.aspectRatio
+    prompt.value = _preset.prompt
+    negativePrompt.value = _preset.negativePrompt
+    fps.value = _preset.fps
+    duration.value = _preset.duration
+    promptBlocks.value = _preset.promptBlocks
+  }
   return {
     videoUrl,
     videoStatus,
     checkpoint,
+    highRes,
     motion,
     performance,
     aspectRatio,
@@ -117,8 +135,9 @@ export const useFormStore = defineStore("form", () => {
     preset,
     fps,
     project,
-    motionLora,
+    cameraControl,
     loras,
+    promptBlocks,
     loadPreset,
   }
 })
@@ -158,8 +177,8 @@ export const useOptionsStore = defineStore("options", () => {
     projects: [],
     checkpoints: [],
     loras: [],
+    cameraControl: {},
     motions: [],
-    motionLoras: [],
     presets: [],
     aspectRatios,
     performances,
@@ -182,9 +201,6 @@ export const useOptionsStore = defineStore("options", () => {
   const optMotions = computed(() => {
     return unflattenCheckpoint(options.value.motions)
   })
-  const optMotionLoras = computed(() => {
-    return unflattenCheckpoint(options.value.motionLoras)
-  })
   const optPresets = computed(() => {
     return unflattenCheckpoint(options.value.presets)
   })
@@ -197,11 +213,10 @@ export const useOptionsStore = defineStore("options", () => {
     options.value.checkpoints = _options.checkpoints
     options.value.loras = _options.loras
     options.value.motions = _options.motions
-    options.value.motionLoras = _options.motionLoras
+    options.value.cameraControl = _options.cameraControl
   }
   const init = async () => {
     const res = await getOptions()
-    console.log("res", res)
     loadOptions(res)
     const preset_name = res.presets[0].name
     const _preset = res.presets.find((p) => p.name === preset_name)
@@ -218,7 +233,6 @@ export const useOptionsStore = defineStore("options", () => {
     optCheckpoints,
     optLoras,
     optMotions,
-    optMotionLoras,
     loadOptions,
     init,
   }

@@ -17,6 +17,7 @@
     "reverse_steps": 5,
     "noise_add_count": 3
   },
+  "vae": "vae-ft-mse-840000-ema-pruned.ckpt",
   "motion": "models/motion-module/mm_sd_v15_v2.ckpt",
   "compile": false,
   "seed": [

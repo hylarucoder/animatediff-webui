@@ -5,8 +5,8 @@ export enum TStatus {
   ERROR = "ERROR",
 }
 
-const video_url = ref("")
-const status = ref(TStatus.PENDING)
+const video_url = ref()
+const status = ref(TStatus.SUCCESS)
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 type TProgress = {

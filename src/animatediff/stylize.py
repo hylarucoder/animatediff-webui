@@ -10,12 +10,12 @@ from typing import Annotated, Optional
 import torch
 import typer
 from PIL import Image
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
-from animatediff import __version__, get_dir
+from animatediff import get_dir
 from animatediff.consts import path_mgr
 from animatediff.schema import TIPAdapterMap
-from animatediff.settings import ModelConfig, get_project_setting
+from animatediff.settings import get_project_setting
 from animatediff.utils.tagger import get_labels
 from animatediff.utils.util import (
     extract_frames,
@@ -196,7 +196,7 @@ def create_config(
         ),
     ] = False,
 ):
-    """Create a config file for video stylization"""
+    """Create a config file for video stylization."""
     is_danbooru_format = not is_no_danbooru_format
     with_confidence = not without_confidence
     logger.info(f"{org_movie=}")
@@ -461,7 +461,7 @@ def generate(
         ),
     ] = 0,
 ):
-    """Run video stylization"""
+    """Run video stylization."""
     from animatediff.cli import generate
 
     time_str = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -469,7 +469,7 @@ def generate(
     config_org = stylize_dir.joinpath("prompt.json")
     project_dir = config_org.parent
 
-    project_setting: ModelConfig = get_project_setting(config_org)
+    project_setting = get_project_setting(config_org)
 
     if length == -1:
         length = project_setting.stylize_config["0"]["length"]
@@ -707,7 +707,7 @@ def interpolate(
         ),
     ] = 1,
 ):
-    """Interpolation with original frames. This function does not work well if the shape of the subject is changed from the original video. Large movements can also ruin the picture.(Since this command is experimental, it is better to use other interpolation methods in most cases.)"""
+    """Interpolation with original frames. This function does not work well if the shape of the subject is changed from the original video. Large movements can also ruin the picture.(Since this command is experimental, it is better to use other interpolation methods in most cases.)."""
     try:
         import cupy
     except:
@@ -725,20 +725,20 @@ def interpolate(
 
     config_org = frame_dir.parent.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if "original_video" in model_config.stylize_config:
         org_video = Path(model_config.stylize_config["original_video"]["path"])
         offset = model_config.stylize_config["original_video"]["offset"]
         aspect_ratio = model_config.stylize_config["original_video"]["aspect_ratio"]
     else:
-        logger.warn("!!! The following parameters are required !!!")
-        logger.warn('"stylize_config": {')
-        logger.warn('    "original_video": {')
-        logger.warn('        "path": "C:\\my_movie\\test.mp4",')
-        logger.warn('        "aspect_ratio": 0.6666,')
-        logger.warn('        "offset": 0')
-        logger.warn("    },")
+        logger.warning("!!! The following parameters are required !!!")
+        logger.warning('"stylize_config": {')
+        logger.warning('    "original_video": {')
+        logger.warning('        "path": "C:\\my_movie\\test.mp4",')
+        logger.warning('        "aspect_ratio": 0.6666,')
+        logger.warning('        "offset": 0')
+        logger.warning("    },")
         raise ValueError('model_config.stylize_config["original_video"] not found')
 
     save_dir = frame_dir.parent.joinpath(f"optflow_{time_str}")
@@ -975,7 +975,7 @@ def create_mask(
         ),
     ] = False,
 ):
-    """Create mask from prompt"""
+    """Create mask from prompt."""
     from animatediff.utils.mask import create_bg, create_fg, crop_frames, crop_mask_list, save_crop_info
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg
@@ -997,7 +997,7 @@ def create_mask(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"
@@ -1278,7 +1278,7 @@ def composite(
         ),
     ] = False,
 ):
-    """Composite FG and BG"""
+    """Composite FG and BG."""
     from animatediff.utils.composite import composite, simple_composite
     from animatediff.utils.mask import create_fg, load_frame_list, load_mask_list, restore_position
     from animatediff.utils.mask_animseg import animseg_create_fg
@@ -1295,7 +1295,7 @@ def composite(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     composite_config = {}
     if "composite" in model_config.stylize_config:
@@ -1322,7 +1322,7 @@ def composite(
         mask_token = fg_param["mask_prompt"]
         frame_dir = Path(fg_param["path"])
         if not frame_dir.is_dir():
-            logger.warn(f"{frame_dir=} not valid -> skip")
+            logger.warning(f"{frame_dir=} not valid -> skip")
             continue
 
         mask_dir = Path(fg_param["mask_path"])
@@ -1550,7 +1550,7 @@ def create_region(
         ),
     ] = False,
 ):
-    """Create region from prompt"""
+    """Create region from prompt."""
     from animatediff.utils.mask import create_bg, create_fg
     from animatediff.utils.mask_animseg import animseg_create_fg
     from animatediff.utils.mask_rembg import rembg_create_fg
@@ -1572,7 +1572,7 @@ def create_region(
 
     config_org = stylize_dir.joinpath("prompt.json")
 
-    model_config: ModelConfig = get_project_setting(config_org)
+    model_config = get_project_setting(config_org)
 
     if frame_dir is None:
         frame_dir = stylize_dir / "00_img2img"

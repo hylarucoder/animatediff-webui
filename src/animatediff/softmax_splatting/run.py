@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import getopt
-import math
 import sys
-import typing
 
-import numpy
 import PIL
 import PIL.Image
+import numpy
 import torch
 
 from . import softsplat  # the custom softmax splatting layer
@@ -348,7 +346,7 @@ class Synthesis(torch.nn.Module):
 
                 self.boolSkip = boolSkip
 
-                if boolSkip == True:
+                if boolSkip is True:
                     if intChannels[0] == intChannels[2]:
                         self.netShortcut = None
 
@@ -368,7 +366,7 @@ class Synthesis(torch.nn.Module):
             # end
 
             def forward(self, tenInput):
-                if self.boolSkip == False:
+                if self.boolSkip is False:
                     return self.netMain(tenInput)
                 # end
 

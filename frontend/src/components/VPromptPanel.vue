@@ -1,12 +1,21 @@
+<script setup lang="ts">
+import { useActiveBlockStore } from "~/composables/block"
+
+const activeBlock = useActiveBlockStore()
+const { block } = storeToRefs(activeBlock)
+</script>
 <template>
-  <div class="min-h-full w-full p-5">
-    <h1>prompt</h1>
-    <div class="min-h-[400px]">
-      <a-form-item label="Prompt">
-        <a-input />
-      </a-form-item>
+  <div class="timeline-track-block-editor min-h-full w-full p-5">
+    <div v-if="!block">error</div>
+
+    <div v-if="block">
+      <a-form layout="vertical">
+        <a-form-item label="Time"> {{ block.start / 1000 }}s</a-form-item>
+        <a-form-item label="Prompt">
+          <v-prompt-input ref="refInput" auto-focus v-model:value="block.prompt" />
+        </a-form-item>
+        <a-button @click.prevent="activeBlock.deleteBlock()">Save</a-button>
+      </a-form>
     </div>
-    <a-button>Save</a-button>
   </div>
 </template>
-<script setup lang="ts"></script>

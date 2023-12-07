@@ -1,19 +1,13 @@
 import math
-import pdb
-import random
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.attention import FeedForward
 from diffusers.models.attention_processor import Attention
-from diffusers.models.modeling_utils import ModelMixin
 from diffusers.utils import BaseOutput, logging
-from diffusers.utils.import_utils import is_xformers_available
-from einops import rearrange, repeat
+from einops import rearrange
 from torch import nn
 
 from animatediff.utils.util import zero_rank_print
@@ -317,18 +311,14 @@ class TemporalTransformerBlock(nn.Module):
 
 
 def get_emb(sin_inp):
-    """
-    Gets a base embedding for one dimension with sin and cos intertwined
-    """
+    """Gets a base embedding for one dimension with sin and cos intertwined."""
     emb = torch.stack((sin_inp.sin(), sin_inp.cos()), dim=-1)
     return torch.flatten(emb, -2, -1)
 
 
 class PositionalEncoding2D(nn.Module):
     def __init__(self, channels):
-        """
-        :param channels: The last dimension of the tensor you want to apply pos emb to.
-        """
+        """:param channels: The last dimension of the tensor you want to apply pos emb to."""
         super(PositionalEncoding2D, self).__init__()
         self.org_channels = channels
         channels = int(np.ceil(channels / 4) * 2)
@@ -338,8 +328,7 @@ class PositionalEncoding2D(nn.Module):
         self.register_buffer("cached_penc", None)
 
     def forward(self, tensor):
-        """
-        :param tensor: A 4d tensor of size (batch_size, x, y, ch)
+        """:param tensor: A 4d tensor of size (batch_size, x, y, ch)
         :return: Positional Encoding Matrix of size (batch_size, x, y, ch)
         """
         if len(tensor.shape) != 4:

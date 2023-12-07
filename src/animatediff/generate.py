@@ -31,9 +31,7 @@ from diffusers import (
 )
 from PIL import Image
 from torchvision.datasets.folder import IMG_EXTENSIONS
-
-# from tqdm.rich import tqdm
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 from transformers import (
     AutoImageProcessor,
     CLIPImageProcessor,
@@ -58,7 +56,6 @@ from animatediff.schema import (
     TAnyControlnet,
     TControlnetMap,
     TControlnetRef,
-    TControlnetTile,
     TGradualLatentHiresFixMap,
     TImg2imgMap,
     TIPAdapterMap,
@@ -67,10 +64,9 @@ from animatediff.schema import (
     TProjectSetting,
     TUpscaleConfig,
 )
-from animatediff.settings import InferenceConfig, ModelConfig
+from animatediff.settings import InferenceConfig
 from animatediff.utils.convert_from_ckpt import convert_ldm_vae_checkpoint
 from animatediff.utils.model import ensure_motion_modules, get_checkpoint_weights, get_checkpoint_weights_sdxl
-from animatediff.utils.progressbar import pbar
 from animatediff.utils.util import (
     get_resized_image,
     get_resized_image2,
@@ -96,29 +92,11 @@ except:
 
 logger = logging.getLogger(__name__)
 
-default_base_path = MODELS_DIR / "huggingface/stable-diffusion-v1-5"
+default_base_path = path_mgr.huggingface_pipeline / "stable-diffusion-v1-5"
 
 re_clean_prompt = re.compile(r"[^\w\-, ]")
 
 controlnet_preprocessor = {}
-
-
-def load_safetensors_lora(text_encoder, unet, lora_path, alpha=0.75, is_animatediff=True):
-    from safetensors.torch import load_file
-
-    from animatediff.utils.lora_diffusers import LoRANetwork, create_network_from_weights
-
-    sd = load_file(lora_path)
-
-    logger.debug("create LoRA network")
-    lora_network: LoRANetwork = create_network_from_weights(
-        text_encoder, unet, sd, multiplier=alpha, is_animatediff=is_animatediff
-    )
-    logger.debug("load LoRA network weights")
-    lora_network.load_state_dict(sd, False)
-    # lora_network.merge_to(alpha)
-    lora_network.apply_to(alpha)
-    return lora_network
 
 
 def load_safetensors_lora2(text_encoder, unet, lora_path, alpha=0.75, is_animatediff=True):
@@ -380,7 +358,7 @@ def create_default_preprocessor(type_str):
 
 
 def get_preprocessor(controlnet_type, preprocessor_map: TPreprocessor, device_str="cpu"):
-    """TODO: memory usage profiling"""
+    """TODO: memory usage profiling."""
     if preprocessor_map and preprocessor_map.type:
         controlnet_preprocessor[controlnet_type] = create_preprocessor_from_name(preprocessor_map.type)
 
@@ -415,9 +393,8 @@ def clear_controlnet_preprocessor(type_str=None):
 
 def create_pipeline_sdxl(
     base_model: Union[str, PathLike],
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     video_length: int = 16,
     motion_module_path=...,
 ) -> AnimationPipeline:
@@ -510,11 +487,6 @@ def create_pipeline_sdxl(
     del tenc2_state_dict
     del vae_state_dict
 
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        unet.enable_xformers_memory_efficient_attention()
-
     # motion lora
     for l in model_config.motion_lora_map:
         lora_path = path_mgr.motion_loras / l
@@ -563,7 +535,6 @@ def create_pipeline(
     base_model: Union[str, PathLike],
     project_setting: TProjectSetting,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     video_length: int = 16,
     is_sdxl: bool = False,
 ) -> AnimationPipeline:
@@ -590,15 +561,11 @@ def create_pipeline(
             base_model=base_model,
             model_config=project_setting,
             infer_config=infer_config,
-            use_xformers=use_xformers,
             video_length=video_length,
             motion_module_path=motion_module,
         )
 
-    logger.info("Loading tokenizer...")
-    logger.info("Loading text encoder...")
-    logger.info("Loading VAE...")
-    logger.info("Loading UNet...")
+    logger.info("Loading tokenizer...text encoder...VAE...UNet...")
     tokenizer: CLIPTokenizer = CLIPTokenizer.from_pretrained(base_model, subfolder="tokenizer")
     text_encoder: CLIPSkipTextModel = CLIPSkipTextModel.from_pretrained(base_model, subfolder="text_encoder")
     vae: AutoencoderKL = AutoencoderKL.from_pretrained(base_model, subfolder="vae")
@@ -660,14 +627,9 @@ def create_pipeline(
             tensors = convert_ldm_vae_checkpoint(tensors, vae.config)
             vae.load_state_dict(tensors)
 
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        unet.enable_xformers_memory_efficient_attention()
-
     # motion lora
     for l in project_setting.motion_lora_map:
-        lora_path = path_mgr.loras / l
+        lora_path = path_mgr.motion_loras / l
         logger.info(f"loading motion lora {lora_path=}")
         if lora_path.is_file():
             logger.info(f"Loading motion lora {lora_path}")
@@ -729,9 +691,8 @@ def unload_controlnet_models(pipe: AnimationPipeline):
 
 
 def create_us_pipeline(
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
     infer_config: InferenceConfig,
-    use_xformers: bool = True,
     use_controlnet_ref: bool = False,
     use_controlnet_tile: bool = False,
     use_controlnet_line_anime: bool = False,
@@ -820,11 +781,6 @@ def create_us_pipeline(
         raise ValueError("model_config.path is invalid")
 
     pipeline.scheduler = scheduler
-
-    # enable xformers if available
-    if use_xformers:
-        logger.info("Enabling xformers memory-efficient attention")
-        pipeline.enable_xformers_memory_efficient_attention()
 
     # lora
     for l in model_config.lora_map:
@@ -1116,7 +1072,7 @@ def region_preprocess(
         for r in project_setting.region_map:
             if r == "background":
                 continue
-            if project_setting.region_map[r]["enable"] != True:
+            if project_setting.region_map[r]["enable"] is not True:
                 continue
             region_dir = out_dir.joinpath(f"region_{int(r):05d}/")
             region_dir.mkdir(parents=True, exist_ok=True)
@@ -1126,7 +1082,7 @@ def region_preprocess(
             if not mask_map:
                 continue
 
-            if project_setting.region_map[r]["is_init_img"] == False:
+            if project_setting.region_map[r]["is_init_img"] is False:
                 ip_map = ip_adapter_preprocess(
                     project_dir,
                     region_dir,
@@ -1156,8 +1112,8 @@ def region_preprocess(
                 src = condi_index
                 condi_index += 1
             else:
-                if is_init_img_exist == False:
-                    logger.warn("'is_init_img' : true / BUT init_img is not exist -> ignore region")
+                if is_init_img_exist is False:
+                    logger.warning("'is_init_img' : true / BUT init_img is not exist -> ignore region")
                     continue
                 src = -1
 
@@ -1182,7 +1138,7 @@ def region_preprocess(
             "is_full_face": project_setting.ip_adapter_map.is_full_face,
         }
         for c in region_condi_list:
-            if c["ip_adapter_map"] == None:
+            if c["ip_adapter_map"] is None:
                 logger.info("fill map")
                 c["ip_adapter_map"] = prev_ip_map
 
@@ -1222,7 +1178,7 @@ def img2img_preprocess(
                 img2img_map["images"][frame_no] = get_resized_image(img_path, width, height)
                 processed = True
 
-        if (img2img_config_map["save_init_image"] == True) and processed:
+        if (img2img_config_map["save_init_image"] is True) and processed:
             det_dir = out_dir.joinpath(f"{0:02d}_img2img_init_img/")
             det_dir.mkdir(parents=True, exist_ok=True)
             for frame_no in tqdm(img2img_map["images"], desc="Saving Preprocessed images (img2img)"):
@@ -1283,7 +1239,7 @@ def mask_preprocess(
 
 
 def wild_card_conversion(
-    model_config: ModelConfig,
+    model_config: TProjectSetting,
 ):
     from animatediff.utils.wild_card import replace_wild_card
 

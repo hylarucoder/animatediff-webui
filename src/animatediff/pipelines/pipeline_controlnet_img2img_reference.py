@@ -630,7 +630,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
             for image_ in image:
                 self.check_image(image_, prompt, prompt_embeds)
         else:
-            if self.controlnet == None:
+            if self.controlnet is None:
                 return
             assert False
 
@@ -1012,7 +1012,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
 
-        if self.controlnet == None:
+        if self.controlnet is None:
             pass
         else:
             controlnet = self.controlnet._orig_mod if is_compiled_module(self.controlnet) else self.controlnet
@@ -1046,7 +1046,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
         image = self.image_processor.preprocess(image).to(dtype=torch.float32)
 
         # 5. Prepare controlnet_conditioning_image
-        if self.controlnet == None:
+        if self.controlnet is None:
             pass
         else:
             if isinstance(controlnet, ControlNetModel):
@@ -1488,7 +1488,7 @@ class StableDiffusionControlNetImg2ImgReferencePipeline(
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
-                if self.controlnet == None:
+                if self.controlnet is None:
                     down_block_res_samples = None
                     mid_block_res_sample = None
                 else:

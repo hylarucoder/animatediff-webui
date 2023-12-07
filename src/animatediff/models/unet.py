@@ -248,13 +248,13 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         self.conv_out = InflatedConv3d(block_out_channels[0], out_channels, kernel_size=3, padding=1)
 
     def set_attention_slice(self, slice_size):
-        r"""
-        Enable sliced attention computation.
+        r"""Enable sliced attention computation.
 
         When this option is enabled, the attention module will split the input tensor in slices, to compute attention
         in several steps. This is useful to save some memory in exchange for a small speed decrease.
 
         Args:
+        ----
             slice_size (`str` or `int` or `list(int)`, *optional*, defaults to `"auto"`):
                 When `"auto"`, halves the input to the attention heads, so attention will be computed in two steps. If
                 `"max"`, maxium amount of memory will be saved by running only one slice at a time. If a number is
@@ -330,15 +330,16 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         encoder_attention_mask: Optional[torch.Tensor] = None,
         return_dict: bool = True,
     ) -> Union[UNet3DConditionOutput, Tuple]:
-        r"""
-        Args:
+        r"""Args:
+        ----
             sample (`torch.FloatTensor`): (batch, channel, height, width) noisy inputs tensor
             timestep (`torch.FloatTensor` or `float` or `int`): (batch) timesteps
             encoder_hidden_states (`torch.FloatTensor`): (batch, sequence_length, feature_dim) encoder hidden states
             return_dict (`bool`, *optional*, defaults to `True`):
                 Whether or not to return a [`models.unet_2d_condition.UNet2DConditionOutput`] instead of a plain tuple.
 
-        Returns:
+        Returns
+        -------
             [`~models.unet_2d_condition.UNet2DConditionOutput`] or `tuple`:
             [`~models.unet_2d_condition.UNet2DConditionOutput`] if `return_dict` is True, otherwise a `tuple`. When
             returning a tuple, the first element is the sample tensor.
@@ -585,10 +586,9 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
 
     @property
     def attn_processors(self) -> Dict[str, AttentionProcessor]:
-        r"""
-        Returns:
-            `dict` of attention processors: A dictionary containing all attention processors used in the model with
-            indexed by its weight name.
+        r"""Returns
+        `dict` of attention processors: A dictionary containing all attention processors used in the model with
+        indexed by its weight name.
         """
         # set recursively
         processors = {}
@@ -610,9 +610,10 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         return processors
 
     def set_attn_processor(self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]]):
-        r"""
-        Sets the attention processor to use to compute attention.
-        Parameters:
+        r"""Sets the attention processor to use to compute attention.
+
+        Parameters
+        ----------
             processor (`dict` of `AttentionProcessor` or only `AttentionProcessor`):
                 The instantiated processor class or a dictionary of processor classes that will be set as the processor
                 for **all** `Attention` layers.

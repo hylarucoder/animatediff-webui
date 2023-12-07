@@ -16,5 +16,7 @@ help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 format: ## lint
-	pdm run ruff format .
+	pdm run ruff --target-version py310 --fix format .
 	
+test: ## lint
+  pytest tests/functional/test_render_video.py -s

@@ -12,7 +12,7 @@ from groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
 from PIL import Image
 from segment_anything_hq import SamPredictor, build_sam_vit_b, build_sam_vit_h, build_sam_vit_l
 from segment_anything_hq.build_sam import build_sam_vit_t
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
 
@@ -118,7 +118,7 @@ class MaskPredictor:
         boxes_filt, pred_phrases = self.get_grounding_output(transformed_img, text_prompt)
 
         if boxes_filt.shape[0] == 0:
-            logger.info(f"object not found")
+            logger.info("object not found")
             w, h = image_pil.size
             return np.zeros(shape=(1, h, w), dtype=bool)
 
@@ -186,7 +186,7 @@ def crop_mask_list(mask_list):
             area_list.append(None)
             continue
         m = m > 127
-        area = np.where(m[0] == True)
+        area = np.where(m[0] is True)
         if area[0].size == 0:
             area_list.append(None)
             continue
@@ -331,7 +331,7 @@ def load_frame_list(frame_dir, frame_array_list, crop_info):
         frame_array_list[cur] = np.asarray(Image.open(f))
 
     if not crop_info:
-        logger.info(f"crop_info is not exists -> skip restore")
+        logger.info("crop_info is not exists -> skip restore")
         return frame_array_list
 
     for i, f in enumerate(frame_array_list):
