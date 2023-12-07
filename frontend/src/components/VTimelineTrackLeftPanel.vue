@@ -5,12 +5,12 @@ const optTimelines = [
   {
     title: "prompt",
   },
-  {
-    title: "ip-adapter",
-  },
-  {
-    title: "depth",
-  },
+  // {
+  //   title: "ip-adapter",
+  // },
+  // {
+  //   title: "depth",
+  // },
 ]
 </script>
 <template>

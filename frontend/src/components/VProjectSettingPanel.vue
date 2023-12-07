@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const optionsStore = useOptionsStore()
-const { optPerformances, optLoras, optMotions, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
+const { optPerformances, optLoras, optCheckpoints, optAspectRadios, optMotionLoras } = optionsStore
 const formStore = useFormStore()
 const {
   performance,
@@ -13,8 +13,7 @@ const {
   duration,
   fps,
   loras,
-  motion,
-  motionLora,
+  cameraControl,
 } = storeToRefs(formStore)
 
 const advanced = ref({
@@ -25,7 +24,7 @@ const activeKey = ref("1")
 <template>
   <a-tabs v-model:activeKey="activeKey" class="relative z-10">
     <a-tab-pane key="1" tab="Setting" class="max-w-[500px]">
-      <AForm layout="vertical">
+      <AForm layout="vertical" class="form-compact">
         <a-form-item label="Performance">
           <a-radio-group v-model:value="performance">
             <a-radio v-for="opt in optPerformances" :key="opt.value" :value="opt.value" :label="opt.label">
@@ -47,13 +46,13 @@ const activeKey = ref("1")
               </a-radio>
             </a-radio-group>
           </a-form-item>
-          <a-checkbox v-model:checked="highRes">HiRes</a-checkbox>
+          <a-checkbox v-model:checked="highRes"> HiRes</a-checkbox>
         </div>
         <a-form-item label="Prompt">
-          <a-textarea v-model:value="prompt" />
+          <v-prompt-input v-model:value="prompt" />
         </a-form-item>
         <a-form-item label="Negative Prompt">
-          <a-textarea v-model:value="negativePrompt" />
+          <v-prompt-input v-model:value="negativePrompt" />
         </a-form-item>
         <a-form-item label="Seed">
           <a-input-number v-model:value="seed" step="1" />
@@ -74,19 +73,47 @@ const activeKey = ref("1")
           <v-preview-select v-model:value="checkpoint" :options="optCheckpoints" />
         </a-form-item>
       </a-form>
-      <a-form layout="vertical">
-        <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-no-feedback" :label="`LoRA ${idx + 1}`">
+      <a-form size="small" layout="vertical">
+        <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-thin-margin" :label="`LoRA ${idx + 1}`">
           <div class="flex">
             <v-preview-select v-model:value="opt.name" class="w-[150px] min-w-[150px]" :options="optLoras" />
             <a-input-number v-model:value="opt.weight" size="small" min="0" max="2" step="0.1" class="ml-2" />
           </div>
         </a-form-item>
-        <a-form class="pt-5" layout="vertical">
-          <a-form-item label="Motion">
-            <a-select v-model:value="motion" show-search :options="optMotions" />
-          </a-form-item>
-          <a-form-item label="Motion LoRAs">
-            <a-select v-model:value="motionLora" show-search :options="optMotionLoras" />
+        <a-form class="pt-5" layout="vertical" size="small">
+          <a-form-item label="Camera Control" class="camera-control-title">
+            <div class="mt-5 flex justify-between space-x-8">
+              <a-form-item label="Pan Left" class="w-1/2">
+                <a-slider v-model:value="cameraControl.panLeft" :min="0" :max="1" :step="0.1" reverse />
+              </a-form-item>
+              <a-form-item label="Pan Right" class="w-1/2">
+                <a-slider v-model:value="cameraControl.panRight" :min="0" :max="1" :step="0.1" />
+              </a-form-item>
+            </div>
+            <div class="flex justify-between space-x-8">
+              <a-form-item label="Tile Up" class="w-1/2">
+                <a-slider v-model:value="cameraControl.tileUp" :min="0" :max="1" :step="0.1" reverse />
+              </a-form-item>
+              <a-form-item label="Tile Down" class="w-1/2">
+                <a-slider v-model:value="cameraControl.tileDown" :min="0" :max="1" :step="0.1" />
+              </a-form-item>
+            </div>
+            <div class="flex justify-between space-x-8">
+              <a-form-item label="Rolling Clockwise" class="w-1/2">
+                <a-slider v-model:value="cameraControl.rollingClockwise" :min="0" :max="1" :step="0.1" reverse />
+              </a-form-item>
+              <a-form-item label="Anti Clockwise" class="w-1/2">
+                <a-slider v-model:value="cameraControl.rollingAnticlockwise" :min="0" :max="1" :step="0.1" />
+              </a-form-item>
+            </div>
+            <div class="flex justify-between space-x-8">
+              <a-form-item label="Zoom In" class="w-1/2">
+                <a-slider v-model:value="cameraControl.zoomIn" :min="0" :max="1" :step="0.1" reverse />
+              </a-form-item>
+              <a-form-item label="Zoom Out" class="w-1/2">
+                <a-slider v-model:value="cameraControl.zoomOut" :min="0" :max="1" :step="0.1" />
+              </a-form-item>
+            </div>
           </a-form-item>
         </a-form>
       </a-form>
@@ -99,9 +126,33 @@ const activeKey = ref("1")
   </a-tabs>
 </template>
 
-<style>
-.form-item-no-feedback .n-form-item-feedback-wrapper {
-  display: none;
-  margin-bottom: 0 !important;
+<style lang="scss">
+.form-item-thin-margin.ant-form-item {
+  margin-bottom: 5px !important;
+}
+
+.form-compact {
+  .ant-form-item-label {
+    margin-bottom: 0 !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 8px !important;
+  }
+}
+
+.camera-control-title {
+  .ant-form-item-label {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 0 !important;
+
+    label {
+      font-size: 12px !important;
+    }
+  }
 }
 </style>

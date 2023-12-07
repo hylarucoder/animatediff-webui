@@ -124,7 +124,7 @@ def get_checkpoints() -> TOptions:
 def validate_data(data: TParamsRenderVideo):
     raise_unless((path_mgr.checkpoints / data.checkpoint).exists(), "Checkpoint not Exist!")
     # loras
-    raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
+    # raise_unless((path_mgr.motions / data.motion).exists(), "Motion not Exist!")
     # motion
     # motion loras
 

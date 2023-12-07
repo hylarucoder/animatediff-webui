@@ -2,6 +2,8 @@
 import { TStatus, usePlayer } from "~/composables/usePlayer"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
 
+const videoPlayerStore = useVideoPlayer()
+
 const unpackStore = (store) => {
   return {
     state: storeToRefs(store),
@@ -35,6 +37,7 @@ const pullVideoPath = async () => {
   }
   player.video_url.value = formatProxyMedia(res.task.videoPath)
   player.status.value = TStatus.SUCCESS
+  videoPlayerStore.loadVideo(formatProxyMedia(res.task.videoPath))
   clearInterval(pullInter)
   player.reloadVideo()
 }
@@ -51,7 +54,7 @@ const generate = async () => {
     checkpoint: formStore.checkpoint,
     loras: formStore.loras,
     motion: formStore.motion,
-    motionLora: formStore.motionLora,
+    cameraControl: formStore.cameraControl,
     highRes: formStore.highRes,
     fps: formStore.fps,
     duration: formStore.duration,

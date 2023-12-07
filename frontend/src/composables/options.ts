@@ -17,7 +17,7 @@ export interface TPreset {
   checkpoint: string
   loras: (null | number | string)[][]
   motion: string
-  motionLora?: any
+  cameraControl: any
   fps: number
   duration: number
   seed: number
@@ -37,7 +37,7 @@ export interface TOptions {
   checkpoints: TCheckpoint[]
   loras: TCheckpoint[]
   motions: TCheckpoint[]
-  motionLoras: TCheckpoint[]
+  cameraControl: any
   presets: TPreset[]
   aspectRatios: string[]
   performances: string[]
@@ -67,7 +67,16 @@ export const useFormStore = defineStore("form", () => {
   const preset = ref("default")
   const fps = ref(8)
   const project = ref("001-demo")
-  const motionLora = ref([])
+  const cameraControl = ref({
+    panLeft: 0,
+    panRight: 0,
+    rollingAnticlockwise: 0,
+    rollingClockwise: 0,
+    tileDown: 0,
+    tileUp: 0,
+    zoomIn: 0,
+    zoomOut: 0,
+  })
   const loras = ref([
     {
       name: null,
@@ -102,7 +111,7 @@ export const useFormStore = defineStore("form", () => {
       }
     })
 
-    motionLora.value = _preset.motionLora
+    cameraControl.value = _preset.cameraControl
     performance.value = _preset.performance
     aspectRatio.value = _preset.aspectRatio
     prompt.value = _preset.prompt
@@ -126,7 +135,7 @@ export const useFormStore = defineStore("form", () => {
     preset,
     fps,
     project,
-    motionLora,
+    cameraControl,
     loras,
     promptBlocks,
     loadPreset,
@@ -168,8 +177,8 @@ export const useOptionsStore = defineStore("options", () => {
     projects: [],
     checkpoints: [],
     loras: [],
+    cameraControl: {},
     motions: [],
-    motionLoras: [],
     presets: [],
     aspectRatios,
     performances,
@@ -192,9 +201,6 @@ export const useOptionsStore = defineStore("options", () => {
   const optMotions = computed(() => {
     return unflattenCheckpoint(options.value.motions)
   })
-  const optMotionLoras = computed(() => {
-    return unflattenCheckpoint(options.value.motionLoras)
-  })
   const optPresets = computed(() => {
     return unflattenCheckpoint(options.value.presets)
   })
@@ -207,7 +213,7 @@ export const useOptionsStore = defineStore("options", () => {
     options.value.checkpoints = _options.checkpoints
     options.value.loras = _options.loras
     options.value.motions = _options.motions
-    options.value.motionLoras = _options.motionLoras
+    options.value.cameraControl = _options.cameraControl
   }
   const init = async () => {
     const res = await getOptions()
@@ -227,7 +233,6 @@ export const useOptionsStore = defineStore("options", () => {
     optCheckpoints,
     optLoras,
     optMotions,
-    optMotionLoras,
     loadOptions,
     init,
   }

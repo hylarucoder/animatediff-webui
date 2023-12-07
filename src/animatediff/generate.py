@@ -629,7 +629,7 @@ def create_pipeline(
 
     # motion lora
     for l in project_setting.motion_lora_map:
-        lora_path = path_mgr.loras / l
+        lora_path = path_mgr.motion_loras / l
         logger.info(f"loading motion lora {lora_path=}")
         if lora_path.is_file():
             logger.info(f"Loading motion lora {lora_path}")

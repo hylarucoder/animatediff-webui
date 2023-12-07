@@ -1,11 +1,9 @@
-import enum
 import logging
 
 import pydantic as pt
-from rich.progress import Progress
 
 from animatediff.adw.contrib import PtBaseModel
-from animatediff.adw.schema import TPerformance, TPromptBlock, TStatusEnum, TTask, default_prompt_points
+from animatediff.adw.schema import TCameraControl, TPerformance, TPromptBlock, TStatusEnum, TTask, default_prompt_points
 from animatediff.consts import path_mgr
 from animatediff.schema import TProjectSetting
 from animatediff.utils.progressbar import pbar
@@ -56,10 +54,9 @@ class TParamsRenderVideo(PtBaseModel):
     high_res: bool = False
     fps: int = 8
     duration: int = 4
+    camera_control: TCameraControl = pt.Field(default_factory=lambda: TCameraControl())
     seed: int = -1
     checkpoint: str = "majicmix/majicmixRealistic_v7.safetensors"
-    motion: str = "mm_sd_v15_v2.ckpt"
-    motion_loras: str | None = None
     lora_items: list[list] = pt.Field(default_factory=lora_arr)
 
 
@@ -167,9 +164,26 @@ def do_render_video(
     project_setting.lora_map = {lora[0]: lora[1] for lora in data.lora_items if lora[0]}
     project_setting.seed = [data.seed]
     project_setting.checkpoint = data.checkpoint
-    project_setting.motion = data.motion
-    project_setting.motion_lora_map = {}
-    project_setting.prompt_map = {p.point: p.prompt for p in data.prompt_points}
+    project_setting.motion = "mm_sd_v15_v2.ckpt"
+    camera_control = data.camera_control
+
+    def filter_zero_dict(d):
+        return {k: v for k, v in d.items() if round(v, 1)}
+
+    project_setting.motion_lora_map = filter_zero_dict(
+        {
+            "v2_lora_PanLeft.ckpt": camera_control.pan_left,
+            "v2_lora_PanRight.ckpt": camera_control.pan_right,
+            "v2_lora_RollingAnticlockwise.ckpt": camera_control.rolling_anticlockwise,
+            "v2_lora_RollingClockwise.ckpt": camera_control.rolling_clockwise,
+            "v2_lora_TiltDown.ckpt": camera_control.tile_down,
+            "v2_lora_TiltUp.ckpt": camera_control.tile_up,
+            "v2_lora_ZoomIn.ckpt": camera_control.zoom_in,
+            "v2_lora_ZoomOut.ckpt": camera_control.zoom_out,
+        }
+    )
+
+    project_setting.prompt_map = {p.start: p.prompt for p in data.prompt_points}
     project_setting.output = {"format": "mp4", "fps": 8, "encode_param": {"crf": 10}}
     open(project_dir / "prompts.json", "wt", encoding="utf-8").write(
         project_setting.model_dump_json(
@@ -183,8 +197,8 @@ def do_render_video(
     from animatediff.cli import generate
 
     video_len = data.fps * data.duration
-    # context = 16 if video_len > 16 else 8
-    context = 8 if video_len > 8 else 8
+    context = 16 if video_len > 16 else 8
+    # context = 8 if video_len > 8 else 8
     if on_render_start:
         on_render_start()
     try:

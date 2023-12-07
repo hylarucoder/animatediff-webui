@@ -3,13 +3,13 @@ import { TStatus, usePlayer } from "~/composables/usePlayer"
 import { formatProxyMedia } from "~/client"
 
 const videoPlayerStore = useVideoPlayer()
-const { playing, videoRef } = storeToRefs(videoPlayerStore)
+const { videoRef } = storeToRefs(videoPlayerStore)
 const { loadVideo } = videoPlayerStore
 
-const { status, video_url } = usePlayer()
+const { status } = usePlayer()
 onMounted(() => {
   const src = formatProxyMedia(
-    "C:\\AIGC\\App\\animatediff-webui\\projects\\001-demo\\draft\\2023-12-05T21-59-53\\video.mp4",
+    "C:\\AIGC\\App\\animatediff-webui\\projects\\001-demo\\draft\\2023-12-07T13-52-47\\video.mp4",
   )
   loadVideo(src)
 })

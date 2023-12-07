@@ -1,14 +1,12 @@
 <script lang="ts" setup>
 import type { TTrackBlock } from "~/composables/timeline"
 
-const panelView = usePanelView()
-// TODO: type: prompt, controlnet openpose .... , ip-adapater
 const props = defineProps<{
   block: TTrackBlock
   isVirtual: Boolean
 }>()
 const emit = defineEmits<{
-  (e: "blockSelect", value: number): void
+  (e: "blockSelect", block: TTrackBlock): void
   (e: "dragStart", value: number): void
   (e: "dragEnd", value: number): void
 }>()
@@ -25,18 +23,16 @@ const selected = ref(false)
 onClickOutside(refBlock, (event) => {
   selected.value = false
 })
-// 定义点击打开面板的处理函数
-const openPanel = () => {
+
+const onClickBlock = (block: TTrackBlock) => {
   selected.value = true
-  console.log("panelView", panelView.prompt)
-  panelView.showPromptPanel()
-  emit("blockSelect", props.block.start)
+  emit("blockSelect", block)
 }
 </script>
 <template>
   <div
     ref="refBlock"
-    class="absolute m-0 flex h-[40px] items-center justify-center p-0 text-center"
+    class="timeline-track-block absolute m-0 flex h-[40px] items-center justify-center p-0 text-center"
     :class="{
       'border-2 border-white ': selected && !isVirtual,
     }"
@@ -47,7 +43,7 @@ const openPanel = () => {
     draggable="true"
     @dragstart="emit('dragStart', block.start)"
     @dragend="emit('dragEnd', block.start)"
-    @click="openPanel"
+    @click.prevent="onClickBlock(block)"
   >
     <div
       class="mx-[1px] h-full text-xs"
@@ -60,7 +56,7 @@ const openPanel = () => {
         width: 'calc(100% - 4px)',
       }"
     >
-      {{ block.start }}
+      T
     </div>
   </div>
 </template>

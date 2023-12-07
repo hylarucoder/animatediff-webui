@@ -46,9 +46,23 @@ class TPromptBlock(PtBaseModel):
 
 def default_prompt_points():
     return [
-        TPromptBlock(start=0, duration=125, prompt="masterpiece, best quality"),
-        TPromptBlock(start=1000, duration=125, prompt="1girl"),
+        TPromptBlock(start=0, duration=125, prompt="walk"),
+        TPromptBlock(start=1000, duration=125, prompt="run"),
+        TPromptBlock(start=2000, duration=125, prompt="sit"),
+        TPromptBlock(start=3000, duration=125, prompt="sunny"),
+        TPromptBlock(start=4000, duration=125, prompt="sit"),
     ]
+
+
+class TCameraControl(PtBaseModel):
+    pan_left: float = 0
+    pan_right: float = 0
+    rolling_anticlockwise: float = 0
+    rolling_clockwise: float = 0
+    tile_down: float = 0
+    tile_up: float = 0
+    zoom_in: float = 0
+    zoom_out: float = 0
 
 
 class TPreset(PtBaseModel):
@@ -63,8 +77,7 @@ class TPreset(PtBaseModel):
 
     checkpoint: str = r"dynamicwang\AWPainting_v1.2.safetensors"
     loras: list[list] = pt.Field(default_factory=lora_arr)
-    motion: str = "mm_sd_v15_v2.ckpt"
-    motion_lora: str | None = None
+    camera_control: TCameraControl = pt.Field(default_factory=lambda: TCameraControl())
 
     fps: int = 8
     duration: int = 2

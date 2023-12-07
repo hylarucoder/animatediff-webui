@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { useActiveBlockStore, useVirtualBlockStore } from "~/composables/block"
+import type { TTrackBlock } from "~/composables/timeline"
+
 const timelineStore = useTimeline()
-const { unitWidth, fps, promptBlocks } = storeToRefs(timelineStore)
+const { unitWidth, promptBlocks } = storeToRefs(timelineStore)
+const activeBlockStore = useActiveBlockStore()
+const { block: activeBlock } = storeToRefs(activeBlockStore)
+
+const virtualBlockStore = useVirtualBlockStore()
+const { block: virtualBlock } = storeToRefs(virtualBlockStore)
 
 const { addPromptBlocks, hasPromptBlocks, removePromptBlocks } = timelineStore
 
-const virtualBlock = ref(null)
 const refTimelineTrack = ref(null)
 
 const getAlignedStart = (x: number) => {
@@ -17,18 +24,18 @@ const getAlignedStart = (x: number) => {
 const updateVirtualBlock = (x) => {
   const start = getAlignedStart(x)
   if (x <= 0) {
-    virtualBlock.value = null
+    virtualBlockStore.deleteBlock()
     return
   }
   if (hasPromptBlocks(start)) {
-    virtualBlock.value = null
+    virtualBlockStore.deleteBlock()
     return
   }
-  virtualBlock.value = {
+  virtualBlockStore.activeBlock({
     start,
     duration: 125,
     prompt: "",
-  }
+  })
 }
 
 const { elementX, isOutside } = useMouseInElement(refTimelineTrack)
@@ -36,7 +43,7 @@ watch([elementX, isOutside], ([elementX, isOutside]) => {
   if (!isOutside) {
     updateVirtualBlock(elementX)
   } else {
-    virtualBlock.value = null
+    virtualBlockStore.deleteBlock()
   }
 })
 const confirmVirtualBlock = (event) => {
@@ -46,17 +53,23 @@ const confirmVirtualBlock = (event) => {
     duration: 125,
     prompt: "",
   })
-  virtualBlock.value = null
+  virtualBlockStore.deleteBlock()
 }
-const selectedBlock = ref(null)
 onKeyStroke("Backspace", (e) => {
-  if (selectedBlock.value) {
-    removePromptBlocks(selectedBlock.value)
+  if (!activeBlock.value) {
+    return
+  }
+  if (activeBlockStore.checkFocused()) {
+    return
+  }
+  if (activeBlock.value.start) {
+    removePromptBlocks(activeBlock.value.start)
+    activeBlockStore.deleteBlock()
   }
   console.log("Key Delete pressed")
 })
-const onBlockSelect = (e) => {
-  selectedBlock.value = e
+const onBlockSelect = (block: TTrackBlock) => {
+  activeBlockStore.activeBlock(block)
 }
 const onDragStart = (e) => {
   console.log("drag start")
@@ -82,7 +95,7 @@ const onDragEnd = (e) => {
       :is-virtual="true"
       :unit-width="unitWidth"
       :block="virtualBlock"
-      @click="confirmVirtualBlock"
+      @click.prevent="confirmVirtualBlock"
     />
   </div>
 </template>
