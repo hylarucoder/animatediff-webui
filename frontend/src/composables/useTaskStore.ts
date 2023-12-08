@@ -5,9 +5,7 @@ export enum TStatus {
   ERROR = "ERROR",
 }
 
-const video_url = ref()
 const status = ref(TStatus.SUCCESS)
-const videoRef = ref<HTMLVideoElement | null>(null)
 
 type TProgress = {
   description: string
@@ -27,14 +25,9 @@ const progress = ref<{
   tasks: [],
 })
 
-export const usePlayer = () => {
+export const useTaskStore = () => {
   return {
     status,
-    video_url,
-    videoRef,
     progress,
-    reloadVideo: () => {
-      videoRef?.value?.load()
-    },
   }
 }

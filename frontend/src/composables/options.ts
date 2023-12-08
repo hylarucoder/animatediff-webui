@@ -1,4 +1,5 @@
 import { getOptions } from "~/client"
+import { ensureSpaceAfterComma } from "~/utils/t"
 
 export interface TPromptBlock {
   start: number
@@ -99,7 +100,7 @@ export const useFormStore = defineStore("form", () => {
       weight: 0.7,
     },
   ])
-  const { promptBlocks } = storeToRefs(useTimeline())
+  const { promptBlocks } = storeToRefs(useTimelineStore())
   const loadPreset = (_preset: TPreset) => {
     preset.value = _preset.name
     checkpoint.value = _preset.checkpoint
@@ -114,8 +115,8 @@ export const useFormStore = defineStore("form", () => {
     cameraControl.value = _preset.cameraControl
     performance.value = _preset.performance
     aspectRatio.value = _preset.aspectRatio
-    prompt.value = _preset.prompt
-    negativePrompt.value = _preset.negativePrompt
+    prompt.value = ensureSpaceAfterComma(_preset.prompt)
+    negativePrompt.value = ensureSpaceAfterComma(_preset.negativePrompt)
     fps.value = _preset.fps
     duration.value = _preset.duration
     promptBlocks.value = _preset.promptBlocks

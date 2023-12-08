@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const timelineStore = useTimeline()
-const { optTimelines, unitWidth, fps } = timelineStore
+const timelineStore = useTimelineStore()
+const { refTimeline } = storeToRefs(timelineStore)
 </script>
 <template>
-  <div class="relative w-full">
+  <div ref="refTimeline" class="relative w-full">
     <VTimelineTracksHeader />
 
     <div class="relative w-full space-y-[1px]">

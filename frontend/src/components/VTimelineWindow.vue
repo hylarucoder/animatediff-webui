@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const timeline = useTimeline()
-const { refTimeline } = storeToRefs(timeline)
+const timeline = useTimelineStore()
 onBeforeMount(() => {
   timeline.initBlocks()
 })
@@ -11,7 +10,7 @@ onBeforeMount(() => {
   >
     <!--  VTimeToolbar  -->
     <VTimelineToolbar />
-    <div ref="refTimeline" class="flex">
+    <div class="flex w-full">
       <!--  VTimelineTrackLeftPanel -->
       <VTimelineTrackLeftPanel />
       <!--  VTimelineTracks -->

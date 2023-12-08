@@ -10,13 +10,8 @@ const props = defineProps({
   },
 })
 const emit = defineEmits(["update:value"])
-const ensureSpaceAfterComma = (text) => {
-  // let newText = text.replace(/,\s*/g, ",")
-  // newText = newText.replace(/,/g, ", ")
-  return text
-}
 const value = computed({
-  get: () => ensureSpaceAfterComma(props.value),
+  get: () => props.value,
   set: (newValue) => emit("update:value", newValue),
 })
 

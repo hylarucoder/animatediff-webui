@@ -1,13 +1,21 @@
 <script setup lang="ts">
-const timelineStore = useTimeline()
-const { duration, unitWidth, fps, isMouseOutside, rulerPos, leftPanelWidth } = storeToRefs(timelineStore)
+const timelineStore = useTimelineStore()
+const { duration, refRuler, unitWidth, fps, isMouseOutside, rulerPos } = storeToRefs(timelineStore)
+const videoPlayerStore = useVideoPlayer()
+const playAxis = usePlayAxis()
+const { style, x: timeStartPx, el } = storeToRefs(playAxis)
+
+const play = useThrottleFn(() => {
+  videoPlayerStore.seek(timeStartPx.value / 200)
+}, 500)
+watch(timeStartPx, () => {
+  play()
+})
+
+// `style` will be a helper computed for `left: ?px; top: ?px;`
 </script>
 <template>
-  <div
-    v-show="!isMouseOutside && rulerPos >= leftPanelWidth"
-    :style="{ left: `${rulerPos - leftPanelWidth}px` }"
-    class="absolute z-[1000] h-full w-px bg-red-500"
-  >
+  <div ref="el" :style="style" class="absolute z-[900] h-full w-px cursor-pointer bg-red-500">
     <svg
       class="absolute -left-[12px] -top-3 h-6 w-6 fill-current text-red-500"
       xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +26,18 @@ const { duration, unitWidth, fps, isMouseOutside, rulerPos, leftPanelWidth } = s
       />
     </svg>
   </div>
-  <div class="timeline relative h-[40px] border-b-[1px]">
+  <div :style="{ left: `${rulerPos}px` }" v-show="!isMouseOutside" class="absolute z-[1000] h-full w-px bg-red-500">
+    <svg
+      class="absolute -left-[12px] -top-3 h-6 w-6 fill-current text-gray-500"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 50 50"
+    >
+      <path
+        d="M25 3C14.4 3 6 11.4 6 22c0 7.4 5 13.7 12 16.6V47c0 1.7 1.3 3 3 3s3-1.3 3-3v-1h2v1c0 1.7 1.3 3 3 3s3-1.3 3-3V38.6c7-2.9 12-9.1 12-16.6 0-10.6-8.4-19-14-19z"
+      />
+    </svg>
+  </div>
+  <div class="timeline relative h-[40px] select-none border-b-[1px]" ref="refRuler">
     <div
       v-for="i in duration * fps"
       :key="i"

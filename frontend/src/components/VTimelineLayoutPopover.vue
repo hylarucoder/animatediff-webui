@@ -7,7 +7,7 @@ const wrapperCol = { span: 14 }
 const cleanLabel = (label) => {
   return label.replaceAll("controlnet_", "")
 }
-const timelineStore = useTimeline()
+const timelineStore = useTimelineStore()
 const { timeline } = storeToRefs(timelineStore)
 </script>
 <template>
