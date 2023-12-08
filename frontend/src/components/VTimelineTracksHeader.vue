@@ -5,17 +5,20 @@ const videoPlayerStore = useVideoPlayer()
 const playAxis = usePlayAxis()
 const { style, x: timeStartPx, el } = storeToRefs(playAxis)
 
-const play = useThrottleFn(() => {
+const seek = useThrottleFn(() => {
   videoPlayerStore.seek(timeStartPx.value / 200)
 }, 500)
 watch(timeStartPx, () => {
-  play()
+  seek()
 })
 
+const onClickAAA = () => {
+  console.log("onClickAAA")
+}
 // `style` will be a helper computed for `left: ?px; top: ?px;`
 </script>
 <template>
-  <div ref="el" :style="style" class="absolute z-[900] h-full w-px cursor-pointer bg-red-500">
+  <div ref="el" :style="style" class="absolute z-[1000] h-full w-px cursor-move bg-red-500">
     <svg
       class="absolute -left-[12px] -top-3 h-6 w-6 fill-current text-red-500"
       xmlns="http://www.w3.org/2000/svg"
@@ -26,7 +29,12 @@ watch(timeStartPx, () => {
       />
     </svg>
   </div>
-  <div :style="{ left: `${rulerPos}px` }" v-show="!isMouseOutside" class="absolute z-[1000] h-full w-px bg-red-500">
+  <div
+    v-show="!isMouseOutside"
+    :style="{ left: `${rulerPos}px` }"
+    class="absolute z-[900] h-full w-px bg-red-500"
+    @click="onClickAAA"
+  >
     <svg
       class="absolute -left-[12px] -top-3 h-6 w-6 fill-current text-gray-500"
       xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +45,7 @@ watch(timeStartPx, () => {
       />
     </svg>
   </div>
-  <div class="timeline relative h-[40px] select-none border-b-[1px]" ref="refRuler">
+  <div ref="refRuler" class="timeline relative h-[40px] select-none border-b-[1px]">
     <div
       v-for="i in duration * fps"
       :key="i"

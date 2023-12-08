@@ -279,7 +279,7 @@ def is_valid_controlnet_type(type_str: str, is_sdxl: bool):
 def load_animatediff_controlnet(addr, torch_dtype=torch.float16):
     prepare_animatediff_controlnet()
     controlnet_state_dict = torch.load(
-        path_mgr.controlnet / "animatediff_controlnet" / addr, map_location="cpu", weights_only=True
+        path_mgr.controlnet / "animatediff_controlnet" / addr, map_location="cuda", weights_only=True
     )
     model = ControlNetModel(cross_attention_dim=768)
     missing, _ = model.load_state_dict(controlnet_state_dict["state_dict"], strict=False)
