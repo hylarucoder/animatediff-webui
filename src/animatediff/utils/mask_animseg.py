@@ -12,6 +12,7 @@ from rembg import new_session, remove
 from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
+from animatediff.utils.torch_compact import get_execution_providers
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def animseg_create_fg(
         kernel = np.ones((abs(mask_padding), abs(mask_padding)), np.uint8)
     kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
-    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    providers = get_execution_providers()
     rmbg_model = rt.InferenceSession(path_mgr.anime_seg / "isnetis.onnx", providers=providers)
 
     def get_mask(img, s=1024):

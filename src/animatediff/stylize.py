@@ -186,15 +186,6 @@ def create_config(
             help="img2img or not(txt2img).",
         ),
     ] = False,
-    low_vram: Annotated[
-        bool,
-        typer.Option(
-            "--low_vram",
-            "-lo",
-            is_flag=True,
-            help="low vram mode",
-        ),
-    ] = False,
 ):
     """Create a config file for video stylization."""
     is_danbooru_format = not is_no_danbooru_format
@@ -214,7 +205,6 @@ def create_config(
     logger.info(f"{with_confidence=}")
     logger.info(f"{is_danbooru_format=}")
     logger.info(f"{is_img2img=}")
-    logger.info(f"{low_vram=}")
 
     project_setting = get_project_setting(config_org)
 
@@ -227,7 +217,7 @@ def create_config(
 
     img2img_dir = save_dir.joinpath("00_img2img")
     img2img_dir.mkdir(parents=True, exist_ok=True)
-    extract_frames(org_movie, fps, img2img_dir, aspect_ratio, duration, offset, size_of_short_edge, low_vram)
+    extract_frames(org_movie, fps, img2img_dir, aspect_ratio, duration, offset, size_of_short_edge, False)
 
     controlnet_img_dir = save_dir.joinpath("00_controlnet_image")
 

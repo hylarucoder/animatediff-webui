@@ -367,6 +367,7 @@ def extract_frames(
 ):
     import ffmpeg
 
+    print(movie_file_path)
     probe = ffmpeg.probe(movie_file_path)
     video = next((stream for stream in probe["streams"] if stream["codec_type"] == "video"), None)
     width = int(video["width"])

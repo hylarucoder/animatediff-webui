@@ -12,6 +12,7 @@ from PIL import Image
 from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
+from animatediff.utils.torch_compact import get_execution_providers, is_macos
 from animatediff.utils.util import prepare_wd14tagger
 
 logger = logging.getLogger(__name__)
@@ -46,15 +47,9 @@ class Tagger:
         self, general_threshold, character_threshold, ignore_tokens, with_confidence, is_danbooru_format, is_cpu
     ):
         prepare_wd14tagger()
-        #        self.model = onnxruntime.InferenceSession("WD14tagger/model.onnx", providers=['CUDAExecutionProvider','CPUExecutionProvider'])
-        if is_cpu:
-            self.model = onnxruntime.InferenceSession(
-                path_mgr.wd14_tagger / "model.onnx", providers=["CPUExecutionProvider"]
-            )
-        else:
-            self.model = onnxruntime.InferenceSession(
-                path_mgr.wd14_tagger / "model.onnx", providers=["CUDAExecutionProvider"]
-            )
+        self.model = onnxruntime.InferenceSession(
+            path_mgr.wd14_tagger / "model.onnx", providers=get_execution_providers()
+        )
         df = pd.read_csv(path_mgr.wd14_tagger / "selected_tags.csv")
         self.tag_names = df["name"].tolist()
         self.rating_indexes = list(np.where(df["category"] == 9)[0])
