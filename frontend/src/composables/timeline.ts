@@ -29,9 +29,11 @@ const controlnets = [
   "controlnet_tile",
 ]
 
-export const useTimeline = defineStore("timeline", () => {
+export const useTimelineStore = defineStore("timeline", () => {
   const refTimeline = ref(null)
-  const { elementX: rulerPos, isOutside: isMouseOutside } = useMouseInElement(refTimeline)
+  const { isOutside: isMouseOutside } = useMouseInElement(refTimeline, {})
+  const refRuler = ref(null)
+  const { elementX: rulerPos } = useMouseInElement(refRuler, {})
   const timeline: UnwrapRef<FormState> = reactive({
     ipAdapter: ["ipadapter"],
     controlnet: ["controlnet_openpose", "controlnet_depth"],
@@ -106,6 +108,7 @@ export const useTimeline = defineStore("timeline", () => {
   }
   const leftPanelWidth = ref(100)
   return {
+    refRuler,
     leftPanelWidth,
     promptBlocks,
     rulerPos,

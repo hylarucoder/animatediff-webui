@@ -10,6 +10,8 @@ from PIL import Image
 from rembg import new_session, remove
 from tqdm.rich import tqdm
 
+from animatediff.utils.torch_compact import get_execution_providers
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ def rembg_create_fg(
         kernel = np.ones((abs(mask_padding), abs(mask_padding)), np.uint8)
     kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
-    session = new_session(providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+    session = new_session(providers=get_execution_providers())
 
     for i, frame in tqdm(enumerate(frame_list), total=len(frame_list), desc="creating mask"):
         frame = Path(frame)

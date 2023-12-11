@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { usePlayer } from "~/composables/usePlayer"
+import { useTaskStore } from "~/composables/useTaskStore"
 
-const { progress } = usePlayer()
+const { progress } = useTaskStore()
 // computed not finished tasks
 const notCompletedTasks = computed(() => {
   console.log("cp", toRaw(progress))

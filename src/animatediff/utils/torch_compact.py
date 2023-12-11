@@ -19,6 +19,15 @@ def auto_half(h):
     return h.half()
 
 
+def get_execution_providers():
+    device = get_torch_device()
+    if is_macos:
+        return ["CoreMLExecutionProvider", "CPUExecutionProvider"]
+    if device == "cuda":
+        return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    return ["CPUExecutionProvider"]
+
+
 def get_torch_device():
     if is_macos() and torch.backends.mps.is_available() and torch.backends.mps.is_built():
         return "mps"

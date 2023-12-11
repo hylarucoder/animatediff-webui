@@ -2,7 +2,7 @@
 import { useActiveBlockStore, useVirtualBlockStore } from "~/composables/block"
 import type { TTrackBlock } from "~/composables/timeline"
 
-const timelineStore = useTimeline()
+const timelineStore = useTimelineStore()
 const { unitWidth, promptBlocks } = storeToRefs(timelineStore)
 const activeBlockStore = useActiveBlockStore()
 const { block: activeBlock } = storeToRefs(activeBlockStore)

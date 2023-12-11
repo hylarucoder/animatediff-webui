@@ -1,6 +1,6 @@
 {
   "name": "sample",
-  "checkpoint": "models/sd/majicmixRealistic_v7.safetensors",
+  "checkpoint": "majicmixRealistic_v7.safetensors",
   "lcm_map": {
     "enable": true,
     "start_scale": 0.15,
@@ -18,7 +18,7 @@
     "noise_add_count": 3
   },
   "vae": "vae-ft-mse-840000-ema-pruned.ckpt",
-  "motion": "models/motion-module/mm_sd_v15_v2.ckpt",
+  "motion": "mm_sd_v15_v2.ckpt",
   "compile": false,
   "seed": [
     341774366206100
@@ -44,6 +44,16 @@
   },
   "motion_lora_map": {
     "models/motion_lora/v2_lora_PanLeft.ckpt": 1.0
+  },
+  "animate_anyone": {
+    "enable": false,
+    "input_video": "./input.mp4",
+    "input_image_dir": "./input_frames",
+    "bg_dir": "./bg",
+    "fg_dir": "./fg",
+    "sam_fg_token": [
+      "person"
+    ]
   },
   "ip_adapter_map": {
     "enable": true,

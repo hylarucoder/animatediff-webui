@@ -11,7 +11,6 @@ from animatediff.adw.exceptions import ApiException, raise_unless
 from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TTask
 from animatediff.adw.service import (
     TParamsRenderVideo,
-    do_render_video,
     get_projects,
     push_task_by_id,
     sub_render_video,

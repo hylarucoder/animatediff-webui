@@ -29,3 +29,9 @@ export function convertToTimeString(ms: number) {
   // Combine the parts into a single time string
   return `${hoursStr}:${minutesStr}:${secondsStr}.${millisecondsStr}`
 }
+
+export const ensureSpaceAfterComma = (text) => {
+  let newText = text.replace(/,\s*/g, ",")
+  newText = newText.replace(/,/g, ", ")
+  return newText
+}

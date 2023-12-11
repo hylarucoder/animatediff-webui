@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { TStatus, usePlayer } from "~/composables/usePlayer"
+import { TStatus, useTaskStore } from "~/composables/useTaskStore"
 import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
 
-const timelineStore = useTimeline()
+const timelineStore = useTimelineStore()
 const { promptBlocks } = timelineStore
 
-const videoPlayerStore = useVideoPlayer()
+// const videoPlayerStore = useVideoPlayer()
 
 const unpackStore = (store) => {
   return {
@@ -19,7 +19,7 @@ const {
   state: { preset, project },
   action: { loadPreset },
 } = unpackStore(formStore)
-const player = usePlayer()
+const player = useTaskStore()
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
 
@@ -38,11 +38,10 @@ const pullVideoPath = async () => {
   if (!res?.task?.videoPath) {
     return
   }
-  player.video_url.value = formatProxyMedia(res.task.videoPath)
   player.status.value = TStatus.SUCCESS
-  videoPlayerStore.loadVideo(formatProxyMedia(res.task.videoPath))
+  // videoPlayerStore.loadVideo(formatProxyMedia(res.task.videoPath))
+  // player.reloadVideo()
   clearInterval(pullInter)
-  player.reloadVideo()
 }
 let pullInter = null
 

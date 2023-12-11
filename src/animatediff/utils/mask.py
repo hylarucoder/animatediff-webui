@@ -15,6 +15,7 @@ from segment_anything_hq.build_sam import build_sam_vit_t
 from tqdm.rich import tqdm
 
 from animatediff.consts import path_mgr
+from animatediff.utils.torch_compact import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class MaskPredictor:
     def __init__(
         self, model_config_path, model_checkpoint_path, device, sam_checkpoint, box_threshold=0.3, text_threshold=0.25
     ):
+        device = get_torch_device()
         self.groundingdino_model = None
         self.sam_predictor = None
 
@@ -54,6 +56,7 @@ class MaskPredictor:
 
     def load_sam_predictor(self):
         s = Path(self.sam_checkpoint)
+        print("sss---->", self.device)
         self.sam_predictor = SamPredictor(build_sam_table[s.stem](checkpoint=self.sam_checkpoint).to(self.device))
 
     def transform_image(self, image_pil):
@@ -360,6 +363,7 @@ def create_fg(
     device="cuda",
 ):
     frame_list = sorted(glob.glob(os.path.join(frame_dir, "[0-9]*.png"), recursive=False))
+    device = get_torch_device()
 
     with torch.no_grad():
         predictor = MaskPredictor(
@@ -462,6 +466,11 @@ def get_ref_index(mid_neighbor_id, neighbor_ids, length, ref_stride=10, ref_num=
                     break
                 ref_index.append(i)
     return ref_index
+
+
+def torch_empty_cache():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def create_bg(
@@ -572,14 +581,14 @@ def create_bg(
 
                 gt_flows_f_list.append(flows_f)
                 gt_flows_b_list.append(flows_b)
-                torch.cuda.empty_cache()
+                torch_empty_cache()
 
             gt_flows_f = torch.cat(gt_flows_f_list, dim=1)
             gt_flows_b = torch.cat(gt_flows_b_list, dim=1)
             gt_flows_bi = (gt_flows_f, gt_flows_b)
         else:
             gt_flows_bi = fix_raft(frames, iters=raft_iter)
-            torch.cuda.empty_cache()
+            torch_empty_cache()
 
         if use_half:
             frames, flow_masks, masks_dilated = frames.half(), flow_masks.half(), masks_dilated.half()
@@ -608,7 +617,7 @@ def create_bg(
 
                 pred_flows_f.append(pred_flows_bi_sub[0][:, pad_len_s : e_f - s_f - pad_len_e])
                 pred_flows_b.append(pred_flows_bi_sub[1][:, pad_len_s : e_f - s_f - pad_len_e])
-                torch.cuda.empty_cache()
+                torch_empty_cache()
 
             pred_flows_f = torch.cat(pred_flows_f, dim=1)
             pred_flows_b = torch.cat(pred_flows_b, dim=1)
@@ -616,7 +625,7 @@ def create_bg(
         else:
             pred_flows_bi, _ = fix_flow_complete.forward_bidirect_flow(gt_flows_bi, flow_masks)
             pred_flows_bi = fix_flow_complete.combine_flow(gt_flows_bi, pred_flows_bi, flow_masks)
-            torch.cuda.empty_cache()
+            torch_empty_cache()
 
         # ---- image propagation ----
         masked_frames = frames * (1 - masks_dilated)
@@ -643,7 +652,7 @@ def create_bg(
 
                 updated_frames.append(updated_frames_sub[:, pad_len_s : e_f - s_f - pad_len_e])
                 updated_masks.append(updated_masks_sub[:, pad_len_s : e_f - s_f - pad_len_e])
-                torch.cuda.empty_cache()
+                torch_empty_cache()
 
             updated_frames = torch.cat(updated_frames, dim=1)
             updated_masks = torch.cat(updated_masks, dim=1)
@@ -654,7 +663,7 @@ def create_bg(
             )
             updated_frames = frames * (1 - masks_dilated) + prop_imgs.view(b, t, 3, h, w) * masks_dilated
             updated_masks = updated_local_masks.view(b, t, 1, h, w)
-            torch.cuda.empty_cache()
+            torch_empty_cache()
 
     ori_frames = frames_inp
     comp_frames = [None] * video_length
@@ -699,7 +708,7 @@ def create_bg(
 
                 comp_frames[idx] = comp_frames[idx].astype(np.uint8)
 
-        torch.cuda.empty_cache()
+        torch_empty_cache()
 
     # save each frame
     for idx in range(video_length):

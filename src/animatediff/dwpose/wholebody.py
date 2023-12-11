@@ -4,13 +4,14 @@ import numpy as np
 import onnxruntime as ort
 
 from ..consts import path_mgr
+from ..utils.torch_compact import get_execution_providers
 from .onnxdet import inference_detector
 from .onnxpose import inference_pose
 
 
 class Wholebody:
     def __init__(self, device="cuda:0"):
-        providers = ["CPUExecutionProvider"] if device == "cpu" else ["CUDAExecutionProvider"]
+        providers = get_execution_providers()
         onnx_det = path_mgr.dwpose / "yolox_l.onnx"
         onnx_pose = path_mgr.dwpose / "dw-ll_ucoco_384.onnx"
 
