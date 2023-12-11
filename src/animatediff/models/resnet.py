@@ -8,7 +8,7 @@ from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
 from einops import rearrange
 from torch import Tensor, nn
 
-from animatediff.utils.torch_compact import auto_scale_float32, is_macos, auto_half
+from animatediff.utils.torch_compact import auto_half, auto_scale_float32, is_macos
 
 
 # class InflatedConv3d(nn.Conv2d):

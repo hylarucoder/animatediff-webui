@@ -3,9 +3,9 @@
 import getopt
 import sys
 
+import numpy
 import PIL
 import PIL.Image
-import numpy
 import torch
 
 from . import softsplat  # the custom softmax splatting layer

@@ -1,9 +1,10 @@
+import json
 import time
 
-from fastapi import FastAPI, HTTPException, Request
-from prometheus_client import make_asgi_app  # type: ignore
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 
@@ -74,11 +75,19 @@ def setup_middleware(app: FastAPI):
         return response
 
     app.add_middleware(BaseHTTPMiddleware, dispatch=add_process_time_header)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 def setup_static_files(app: FastAPI):
-    static_files_app = StaticFiles(directory="static")
-    app.mount(path="static", app=static_files_app, name="static")
+    ...
+    # static_files_app = StaticFiles(directory="static")
+    # app.mount(path="static", app=static_files_app, name="static")
 
 
 def create_app():
@@ -86,6 +95,9 @@ def create_app():
         debug=True,
         title="Animatediff WebUI",
         description="Animatediff WebUI Description",
+    )
+    app.add_exception_handler(
+        ApiException, lambda req, e: Response(status_code=e.status_code, content=json.dumps({"message": e.detail}))
     )
     setup_routers(app)
     setup_static_files(app)
