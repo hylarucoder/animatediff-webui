@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const timelineStore = useTimelineStore()
-const { leftPanelWidth} = storeToRefs(timelineStore)
+const { leftPanelWidth } = storeToRefs(timelineStore)
 const optTimelines = [
   {
     title: "prompt",

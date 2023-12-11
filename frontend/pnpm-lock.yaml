@@ -44,12 +44,27 @@ dependencies:
   '@vueuse/motion':
     specifier: ^2.0.0
     version: 2.0.0(rollup@3.29.2)(vue@3.3.9)
+  cropperjs:
+    specifier: ^1.5.12
+    version: 1.6.1
+  dragselect:
+    specifier: ^2.3.1
+    version: 2.7.4
   katex:
     specifier: ^0.16.9
     version: registry.npmmirror.com/katex@0.16.9
+  microtip:
+    specifier: ^0.2.2
+    version: 0.2.2
+  mitt:
+    specifier: ^3.0.1
+    version: 3.0.1
   pinia:
     specifier: ^2.1.7
     version: registry.npmmirror.com/pinia@2.1.7(typescript@5.3.3)(vue@3.3.9)
+  plupload:
+    specifier: ^2.3.9
+    version: 2.3.9
   prismjs:
     specifier: ^1.29.0
     version: registry.npmmirror.com/prismjs@1.29.0
@@ -71,6 +86,9 @@ dependencies:
   tailwindcss-animate:
     specifier: ^1.0.7
     version: registry.npmmirror.com/tailwindcss-animate@1.0.7(tailwindcss@3.3.6)
+  vanilla-lazyload:
+    specifier: ^17.8.3
+    version: 17.8.5
   video.js:
     specifier: ^8.6.1
     version: 8.6.1
@@ -4117,6 +4135,10 @@ packages:
       readable-stream: 3.6.2
     dev: true
 
+  /cropperjs@1.6.1:
+    resolution: {integrity: sha512-F4wsi+XkDHCOMrHMYjrTEE4QBOrsHHN5/2VsVAaRq8P7E5z7xQpT75S+f/9WikmBEailas3+yo+6zPIomW+NOA==, tarball: https://registry.npmmirror.com/cropperjs/-/cropperjs-1.6.1.tgz}
+    dev: false
+
   /cross-spawn@7.0.3:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==, tarball: https://registry.npmmirror.com/cross-spawn/-/cross-spawn-7.0.3.tgz}
     engines: {node: '>= 8'}
@@ -4310,6 +4332,10 @@ packages:
   /dotenv@16.3.1:
     resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==, tarball: https://registry.npmmirror.com/dotenv/-/dotenv-16.3.1.tgz}
     engines: {node: '>=12'}
+
+  /dragselect@2.7.4:
+    resolution: {integrity: sha512-j0qFl4xvsyImlSTn9erDCCT4SSPUMssgKAYuKqhsPr8WPphLghHfjDd4WR2jLjL91fTQQlbbIJ/7T2qwD2hghQ==, tarball: https://registry.npmmirror.com/dragselect/-/dragselect-2.7.4.tgz}
+    dev: false
 
   /duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==, tarball: https://registry.npmmirror.com/duplexer/-/duplexer-0.1.2.tgz}
@@ -5983,6 +6009,10 @@ packages:
       braces: 3.0.2
       picomatch: 2.3.1
 
+  /microtip@0.2.2:
+    resolution: {integrity: sha512-oah38eH5vSHVFP6yXjbKWOYt92mav++0j3zh844h1vhOscqEg7Rf4agDEIwUTFCcAPPdlhYUQMe6eZfHgD+4oQ==, tarball: https://registry.npmmirror.com/microtip/-/microtip-0.2.2.tgz}
+    dev: false
+
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==, tarball: https://registry.npmmirror.com/mime-db/-/mime-db-1.52.0.tgz}
     engines: {node: '>= 0.6'}
@@ -6116,6 +6146,10 @@ packages:
     dependencies:
       minipass: 3.3.6
       yallist: 4.0.0
+
+  /mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==, tarball: https://registry.npmmirror.com/mitt/-/mitt-3.0.1.tgz}
+    dev: false
 
   /mkdirp@1.0.4:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==, tarball: https://registry.npmmirror.com/mkdirp/-/mkdirp-1.0.4.tgz}
@@ -6872,6 +6906,11 @@ packages:
       jsonc-parser: 3.2.0
       mlly: 1.4.2
       pathe: 1.1.1
+
+  /plupload@2.3.9:
+    resolution: {integrity: sha512-IepB6QEuW0vDrHwXBiKx/c+Kou/2QVUwvddbCC+MxMmN3ThNXJEN9bZU2uaEbagLDAE1l+vWPaNVcE5noD1ojA==, tarball: https://registry.npmmirror.com/plupload/-/plupload-2.3.9.tgz}
+    engines: {node: '>=0.8.0'}
+    dev: false
 
   /popmotion@11.0.5:
     resolution: {integrity: sha512-la8gPM1WYeFznb/JqF4GiTkRRPZsfaj2+kCxqQgr2MJylMmIKUwBfWW8Wa5fml/8gmtlD5yI01MP1QCZPWmppA==, tarball: https://registry.npmmirror.com/popmotion/-/popmotion-11.0.5.tgz}
@@ -8368,6 +8407,10 @@ packages:
     dependencies:
       builtins: 5.0.1
     dev: true
+
+  /vanilla-lazyload@17.8.5:
+    resolution: {integrity: sha512-SQdQztlVUJqCbyU15zobpAcoTucCzdJiDIEfqinZDdwifhZxQ5H2j0BJfHlrFxi0lrVAdFBRsICH51YdPv18DQ==, tarball: https://registry.npmmirror.com/vanilla-lazyload/-/vanilla-lazyload-17.8.5.tgz}
+    dev: false
 
   /video.js@8.6.1:
     resolution: {integrity: sha512-CNYVJ5WWIZ7bOhbkkfcKqLGoc6WsE3Ft2RfS1lXdQTWk8UiSsPW2Ssk2JzPCA8qnIlUG9os/faCFsYWjyu4JcA==, tarball: https://registry.npmmirror.com/video.js/-/video.js-8.6.1.tgz}
