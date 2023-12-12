@@ -18,7 +18,7 @@ const onClickAAA = () => {
 // `style` will be a helper computed for `left: ?px; top: ?px;`
 </script>
 <template>
-  <div ref="el" :style="style" class="absolute z-[1000] h-full w-px cursor-move bg-red-500">
+  <div ref="el" :style="style" class="absolute z-[100] h-full w-px cursor-move bg-red-500">
     <svg
       class="absolute -left-[12px] -top-3 h-6 w-6 fill-current text-red-500"
       xmlns="http://www.w3.org/2000/svg"
@@ -32,7 +32,7 @@ const onClickAAA = () => {
   <div
     v-show="!isMouseOutside"
     :style="{ left: `${rulerPos}px` }"
-    class="absolute z-[900] h-full w-px bg-red-500"
+    class="absolute z-[90] h-full w-px bg-red-500"
     @click="onClickAAA"
   >
     <svg
@@ -49,7 +49,7 @@ const onClickAAA = () => {
     <div
       v-for="i in duration * fps"
       :key="i"
-      class="absolute z-[1000] w-[25px]"
+      class="absolute z-[100] w-[25px]"
       :style="{
         left: i * unitWidth + 'px',
         width: unitWidth + 'px',

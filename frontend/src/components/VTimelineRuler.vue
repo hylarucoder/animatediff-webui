@@ -20,7 +20,7 @@ const fps = ref(props.fps)
 </script>
 <template>
   <div
-    class="absolute z-[1000]"
+    class="absolute z-[10]"
     :style="{
       marginLeft: index * unitWidth + 'px',
       width: unitWidth + 'px',

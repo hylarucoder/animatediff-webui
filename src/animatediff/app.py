@@ -51,7 +51,7 @@ def create_bp(dependencies: list = None) -> FastAPI:
 
 def setup_routers(app: FastAPI):
     create_bp()
-    from animatediff.apps.file_explorer.views import bp as bp_file_explorer
+    from animatediff.apps.finder.views import bp as bp_file_explorer
     from animatediff.apps.user.views import bp as bp_user
 
     app.include_router(bp_user)

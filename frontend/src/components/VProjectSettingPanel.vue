@@ -22,9 +22,9 @@ const advanced = ref({
 const activeKey = ref("1")
 </script>
 <template>
-  <a-tabs v-model:activeKey="activeKey" class="relative z-10">
+  <a-tabs v-model:activeKey="activeKey" class="relative z-0">
     <a-tab-pane key="1" tab="Setting" class="max-w-[500px]">
-      <AForm layout="vertical" class="form-compact">
+      <a-form layout="vertical" class="form-compact">
         <a-form-item label="Performance">
           <a-radio-group v-model:value="performance">
             <a-radio v-for="opt in optPerformances" :key="opt.value" :value="opt.value" :label="opt.label">
@@ -65,7 +65,7 @@ const activeKey = ref("1")
             <a-input-number v-model:value="fps" step="1" min="4" max="16" />
           </a-form-item>
         </div>
-      </AForm>
+      </a-form>
     </a-tab-pane>
     <a-tab-pane key="2" class="w-[300px]" tab="Model">
       <a-form layout="vertical">
