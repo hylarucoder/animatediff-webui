@@ -37,14 +37,12 @@
         rows="10"
       ></textarea>
     </div>
-    <message v-if="message.length" @hidden="message = ''" :error="isError">{{ message }}</message>
+    <v-finder-message v-if="message.length" @hidden="message = ''" :error="isError">{{ message }}</v-finder-message>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import ajax from "../utils/ajax"
-import { useApiUrl } from "../composables/useApiUrl"
-import Message from "../Message.vue"
 
 const emit = defineEmits(["load"])
 const content = ref("")
@@ -62,7 +60,11 @@ const { t } = inject("i18n")
 
 onMounted(() => {
   ajax(apiUrl.value, {
-    params: { q: "preview", adapter: props.selection.adapter, path: props.selection.item.path },
+    params: {
+      q: "preview",
+      adapter: props.selection.adapter,
+      path: props.selection.item.path,
+    },
     json: false,
   }).then((data) => {
     content.value = data

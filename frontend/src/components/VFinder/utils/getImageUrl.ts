@@ -1,4 +1,3 @@
-import { useApiUrl } from "../composables/useApiUrl.js"
 import buildURLQuery from "./buildURLQuery.js"
 const { apiUrl } = useApiUrl()
 

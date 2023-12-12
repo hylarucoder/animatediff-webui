@@ -110,7 +110,7 @@ def index(q: str, path: str = "", adapter="local"):
         path = clean_fs_protocol(path)
         return {
             "adapter": adapter,
-            "storages": ["local", "media"],
+            "storages": ["local"],
             "dirname": f"{adapter}://{path}",
             "files": v_finder.list_files(path),
         }

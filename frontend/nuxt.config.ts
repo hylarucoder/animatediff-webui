@@ -40,6 +40,7 @@ export default defineNuxtConfig({
     "@vueuse/motion/nuxt",
     "@pinia/nuxt",
     "@nuxt/ui",
+    "@nuxtjs/i18n",
     "@nuxt/content",
   ],
   antd: {

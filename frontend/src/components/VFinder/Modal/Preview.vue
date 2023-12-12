@@ -71,7 +71,6 @@
 
 <script setup>
 import buildURLQuery from "../utils/buildURLQuery"
-import { useApiUrl } from "../composables/useApiUrl"
 import filesize from "../utils/filesize"
 import datetimestring from "../utils/datetimestring"
 import VFModalLayout from "./Layout"

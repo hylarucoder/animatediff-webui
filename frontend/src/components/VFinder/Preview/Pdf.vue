@@ -1,7 +1,7 @@
 <template>
   <h3
-    class="mb-2 text-lg font-medium leading-6 text-gray-900 dark:text-gray-400"
     id="modal-title"
+    class="mb-2 text-lg font-medium leading-6 text-gray-900 dark:text-gray-400"
     :aria-label="selection.item.path"
     data-microtip-position="bottom-right"
     role="tooltip"
@@ -21,9 +21,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import buildURLQuery from "../utils/buildURLQuery"
-import { useApiUrl } from "../composables/useApiUrl"
+
 const { apiUrl } = useApiUrl()
 const props = defineProps({
   selection: Object,
@@ -35,7 +35,11 @@ const getPDFUrl = () => {
   return (
     apiUrl.value +
     "?" +
-    buildURLQuery({ q: "preview", adapter: props.selection.adapter, path: props.selection.item.path })
+    buildURLQuery({
+      q: "preview",
+      adapter: props.selection.adapter,
+      path: props.selection.item.path,
+    })
   )
 }
 

@@ -32,7 +32,7 @@
 <script>
 </script>
 
-<script setup>
+<script setup lang="ts">
 const { t } = inject("i18n")
 const props = defineProps({
   error: {

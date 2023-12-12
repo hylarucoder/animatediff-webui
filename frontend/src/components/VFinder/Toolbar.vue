@@ -304,9 +304,7 @@
   </div>
 </template>
 
-<script></script>
-
-<script setup>
+<script setup lang="ts">
 const emitter = inject("emitter")
 
 const usePropDarkMode = inject("usePropDarkMode")

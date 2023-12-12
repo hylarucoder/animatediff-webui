@@ -17,11 +17,8 @@
   </ul>
 </template>
 
-<script></script>
-
-<script setup>
+<script setup lang="ts">
 import buildURLQuery from "./utils/buildURLQuery"
-import { useApiUrl } from "./composables/useApiUrl"
 
 const emitter = inject("emitter")
 const contextmenu = ref(null)

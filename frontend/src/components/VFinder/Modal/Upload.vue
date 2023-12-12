@@ -81,7 +81,6 @@ export default {
 <script setup>
 import plupload from "plupload"
 import VFModalLayout from "./Layout"
-import { useApiUrl } from "../composables/useApiUrl"
 import buildURLQuery from "../utils/buildURLQuery"
 import Message from "../Message"
 import { csrf } from "../utils/ajax"

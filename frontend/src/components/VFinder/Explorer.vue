@@ -283,9 +283,7 @@
   </div>
 </template>
 
-<script></script>
-
-<script setup>
+<script setup lang="ts">
 import DragSelect from "dragselect"
 import LazyLoad from "vanilla-lazyload"
 import datetimestring from "./utils/datetimestring"

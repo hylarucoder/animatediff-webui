@@ -81,7 +81,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const version = "1.0.0"
 
 const props = defineProps({

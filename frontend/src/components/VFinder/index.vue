@@ -7,10 +7,10 @@
       @mousedown="emitter.emit('vf-contextmenu-hide')"
       @touchstart.passive="emitter.emit('vf-contextmenu-hide')"
     >
-      <v-f-toolbar :data="fetchData" />
-      <v-f-breadcrumb :data="fetchData" />
-      <v-f-explorer :view="view" :data="fetchData" />
-      <v-f-statusbar :data="fetchData" />
+      <v-finder-toolbar :data="fetchData" />
+      <v-finder-breadcrumb :data="fetchData" />
+      <v-finder-explorer :view="view" :data="fetchData" />
+      <v-finder-statusbar :data="fetchData" />
     </div>
 
     <template v-if="modal.active">
@@ -26,7 +26,7 @@
       <v-finder-modal-upload v-if="'Upload' == modal.type" :selection="modal.data" :current="fetchData" />
     </template>
 
-    <v-f-context-menu :current="fetchData" />
+    <v-finder-context-menu :current="fetchData" />
     <iframe id="download_frame" style="display: none" />
   </div>
 </template>
@@ -34,14 +34,6 @@
 <script setup lang="ts">
 import mitt from "mitt"
 import ajax from "./utils/ajax"
-import { useStorage } from "./composables/useStorage"
-import { useApiUrl } from "./composables/useApiUrl"
-import VFToolbar from "./Toolbar.vue"
-import VFExplorer from "./Explorer.vue"
-import VFStatusbar from "./Statusbar.vue"
-import VFBreadcrumb from "./Breadcrumb.vue"
-import VFContextMenu from "./ContextMenu.vue"
-import { useI18n } from "./composables/useI18n"
 
 const props = defineProps({
   url: {

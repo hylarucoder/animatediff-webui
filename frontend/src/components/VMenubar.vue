@@ -5,7 +5,7 @@ import { formatProxyMedia, getTaskStatus, submitTask } from "~/client"
 const timelineStore = useTimelineStore()
 const { promptBlocks } = timelineStore
 
-// const videoPlayerStore = useVideoPlayer()
+const videoPlayerStore = useVideoPlayer()
 
 const unpackStore = (store) => {
   return {
@@ -39,7 +39,7 @@ const pullVideoPath = async () => {
     return
   }
   player.status.value = TStatus.SUCCESS
-  // videoPlayerStore.loadVideo(formatProxyMedia(res.task.videoPath))
+  videoPlayerStore.loadVideo(formatProxyMedia(res.task.videoPath))
   // player.reloadVideo()
   clearInterval(pullInter)
 }

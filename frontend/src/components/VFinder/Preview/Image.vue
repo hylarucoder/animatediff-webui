@@ -30,16 +30,14 @@
     />
   </div>
 
-  <message v-if="message.length" @hidden="message = ''" :error="isError">{{ message }}</message>
+  <v-finder-message v-if="message.length" @hidden="message = ''" :error="isError">{{ message }}</v-finder-message>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import "cropperjs/dist/cropper.css"
 import Cropper from "cropperjs"
 import ajax from "../utils/ajax"
 import { getImageUrl } from "../utils/getImageUrl"
-import { useApiUrl } from "../composables/useApiUrl"
-import Message from "../Message.vue"
 
 const emit = defineEmits(["load"])
 

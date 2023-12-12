@@ -1,6 +1,4 @@
-import { ref, watch } from "vue"
-
-export function useStorage(key) {
+export function useStorage(key: string) {
   let storedValues = localStorage.getItem(key + "_storage")
 
   const storage = ref(JSON.parse(storedValues))
@@ -33,5 +31,9 @@ export function useStorage(key) {
     return defaultValue
   }
 
-  return { getStore, setStore, clearStore }
+  return {
+    getStore,
+    setStore,
+    clearStore,
+  }
 }

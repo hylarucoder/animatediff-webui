@@ -18,7 +18,6 @@
 
 <script setup>
 import buildURLQuery from "../utils/buildURLQuery"
-import { useApiUrl } from "../composables/useApiUrl"
 
 const { apiUrl } = useApiUrl()
 const props = defineProps({

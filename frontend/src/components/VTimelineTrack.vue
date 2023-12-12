@@ -4,14 +4,12 @@ import type { TTrackBlock } from "~/composables/timeline"
 
 const timelineStore = useTimelineStore()
 const { unitWidth, promptBlocks } = storeToRefs(timelineStore)
-const { alignBlock } = timelineStore
+const { alignBlock, addPromptBlocks, hasPromptBlocks, removePromptBlocks } = timelineStore
 const activeBlockStore = useActiveBlockStore()
 const { block: activeBlock } = storeToRefs(activeBlockStore)
 
 const virtualBlockStore = useVirtualBlockStore()
 const { block: virtualBlock } = storeToRefs(virtualBlockStore)
-
-const { addPromptBlocks, hasPromptBlocks, removePromptBlocks } = timelineStore
 
 const refTimelineTrack = ref(null)
 
@@ -60,7 +58,7 @@ onKeyStroke("Backspace", (e) => {
   if (!activeBlock.value) {
     return
   }
-  if (activeBlockStore.checkFocused()) {
+  if (activeBlockStore.focused) {
     return
   }
   if (activeBlock.value.start) {

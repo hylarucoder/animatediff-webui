@@ -1,5 +1,3 @@
-import { ref } from "vue"
-
 const apiUrl = ref("")
 
 export function useApiUrl() {
@@ -7,5 +5,8 @@ export function useApiUrl() {
     apiUrl.value = url
   }
 
-  return { apiUrl, setApiUrl }
+  return {
+    apiUrl,
+    setApiUrl,
+  }
 }

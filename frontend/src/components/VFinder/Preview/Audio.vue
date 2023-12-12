@@ -16,9 +16,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import buildURLQuery from "../utils/buildURLQuery"
-import { useApiUrl } from "../composables/useApiUrl"
 const { apiUrl } = useApiUrl()
 const props = defineProps({
   selection: Object,

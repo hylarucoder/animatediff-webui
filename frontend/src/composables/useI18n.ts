@@ -1,5 +1,4 @@
-import { ref } from "vue"
-import { useStorage } from "./useStorage.js"
+import { useStorage } from "./useStorage"
 
 export async function loadLocale(locale) {
   const messages = await import(`../locales/${locale}.json?raw`)
@@ -21,10 +20,16 @@ export function useI18n(id, locale, emitter) {
       })
       .catch((e) => {
         if (defaultLocale) {
-          emitter.emit("vf-toast-push", { label: "The selected locale is not yet supported!", type: "error" })
+          emitter.emit("vf-toast-push", {
+            label: "The selected locale is not yet supported!",
+            type: "error",
+          })
           changeLocale(defaultLocale, null)
         } else {
-          emitter.emit("vf-toast-push", { label: "Locale cannot be loaded!", type: "error" })
+          emitter.emit("vf-toast-push", {
+            label: "Locale cannot be loaded!",
+            type: "error",
+          })
         }
       })
   }
@@ -44,5 +49,8 @@ export function useI18n(id, locale, emitter) {
     return sprintf(key, ...params)
   }
 
-  return { t, changeLocale }
+  return {
+    t,
+    changeLocale,
+  }
 }

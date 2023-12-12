@@ -84,7 +84,8 @@
             class="cursor-pointer rounded px-1.5 py-1 text-slate-700 hover:bg-neutral-100 dark:text-slate-200 dark:hover:bg-gray-800"
             :title="item.basename"
             @click="emitter.emit('vf-fetch', { params: { q: 'index', adapter: data.adapter, path: item.path } })"
-          >{{ item.name }}</span>
+            >{{ item.name }}</span
+          >
         </div>
       </div>
 
@@ -132,7 +133,7 @@
         type="text"
         @keydown.esc="exitSearchMode"
         @blur="handleBlur"
-      >
+      />
       <svg
         class="h-6 w-6 cursor-pointer"
         xmlns="http://www.w3.org/2000/svg"
@@ -148,12 +149,7 @@
   </div>
 </template>
 
-<script>
-</script>
-
-<script setup>
-import useDebouncedRef from "./composables/useDebouncedRef"
-
+<script setup lang="ts">
 const emitter = inject("emitter")
 const { getStore } = inject("storage")
 const adapter = inject("adapter")
@@ -214,7 +210,7 @@ const enterSearchMode = () => {
   nextTick(() => searchInput.value.focus())
 }
 
-const query = useDebouncedRef("", 400)
+const query = useDebounce("", 400)
 
 const isLoading = () => loadingState.value
 
@@ -238,7 +234,10 @@ const handleDropZone = (e) => {
 
   emitter.emit("vf-modal-show", {
     type: "Move",
-    items: { from: draggedItems, to: breadcrumb.value[breadcrumb.value.length - 2] ?? { path: adapter.value + "://" } },
+    items: {
+      from: draggedItems,
+      to: breadcrumb.value[breadcrumb.value.length - 2] ?? { path: adapter.value + "://" },
+    },
   })
 }
 

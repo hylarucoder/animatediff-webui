@@ -47,9 +47,9 @@ const onDragEnd = (e: Event) => {
   target.classList.add("dragend-animation")
 
   // Remove the animation class after the animation duration (0.5s in this case)
-  setTimeout(() => {
-    target.classList.remove("dragend-animation")
-  }, 100)
+  // setTimeout(() => {
+  //   target.classList.remove("dragend-animation")
+  // }, 100)
 
   emit("dragEnd", props.block, relativeMousePosition.x)
 }
