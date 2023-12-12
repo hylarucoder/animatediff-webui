@@ -15,7 +15,7 @@ const optTimelines = [
 </script>
 <template>
   <div
-    class="h-full border-b-[1px] border-r-[1px]"
+    class="h-full select-none border-b-[1px] border-r-[1px]"
     :style="{
       width: leftPanelWidth + 'px',
     }"

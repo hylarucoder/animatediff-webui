@@ -1,5 +1,6 @@
 import type { UnwrapRef } from "vue"
 import type { TPromptBlock } from "~/composables/options"
+import { b } from "ipx"
 
 interface FormState {
   ipAdapter: string[]
@@ -95,6 +96,15 @@ export const useTimelineStore = defineStore("timeline", () => {
   const addPromptBlocks = (block: TPromptBlock) => {
     promptBlocks.value.push(block)
   }
+  const alignBlock = (start, newStart) => {
+    const starts = promptBlocks.value.filter((x) => {
+      return x.start === start
+    })
+    console.log(" starts", starts, promptBlocks)
+    if (starts.length) {
+      starts[0].start = newStart
+    }
+  }
   const hasPromptBlocks = (start: number) => {
     const starts = promptBlocks.value.map((x) => {
       return x.start
@@ -109,6 +119,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   const leftPanelWidth = ref(100)
   return {
     refRuler,
+    alignBlock,
     leftPanelWidth,
     promptBlocks,
     rulerPos,

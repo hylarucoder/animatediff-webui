@@ -17,10 +17,14 @@ const props = defineProps({
 const index = ref(props.index)
 const unitWidth = ref(props.unitWidth)
 const fps = ref(props.fps)
+const onClickRuler = (e) => {
+  console.log("ruler", e)
+}
 </script>
 <template>
   <div
-    class="absolute z-[10]"
+    class="absolute z-[10] select-none"
+    @click="onClickRuler"
     :style="{
       marginLeft: index * unitWidth + 'px',
       width: unitWidth + 'px',

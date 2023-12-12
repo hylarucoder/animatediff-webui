@@ -28,6 +28,31 @@ const onClickBlock = (block: TTrackBlock) => {
   selected.value = true
   emit("blockSelect", block)
 }
+
+const onDragEnd = (e: Event) => {
+  const target = e.target as HTMLElement
+  const parentElement = target.parentElement
+
+  if (!parentElement) {
+    console.error("No parent element found")
+    return
+  }
+
+  const rect = parentElement.getBoundingClientRect()
+  const relativeMousePosition = {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+  }
+
+  target.classList.add("dragend-animation")
+
+  // Remove the animation class after the animation duration (0.5s in this case)
+  setTimeout(() => {
+    target.classList.remove("dragend-animation")
+  }, 100)
+
+  emit("dragEnd", props.block, relativeMousePosition.x)
+}
 </script>
 <template>
   <div
@@ -42,7 +67,7 @@ const onClickBlock = (block: TTrackBlock) => {
     }"
     draggable="true"
     @dragstart="emit('dragStart', block.start)"
-    @dragend="emit('dragEnd', block.start)"
+    @dragend="onDragEnd"
     @click.prevent="onClickBlock(block)"
   >
     <div

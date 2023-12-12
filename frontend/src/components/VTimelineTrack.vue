@@ -4,6 +4,7 @@ import type { TTrackBlock } from "~/composables/timeline"
 
 const timelineStore = useTimelineStore()
 const { unitWidth, promptBlocks } = storeToRefs(timelineStore)
+const { alignBlock } = timelineStore
 const activeBlockStore = useActiveBlockStore()
 const { block: activeBlock } = storeToRefs(activeBlockStore)
 
@@ -70,12 +71,19 @@ onKeyStroke("Backspace", (e) => {
 })
 const onBlockSelect = (block: TTrackBlock) => {
   activeBlockStore.activeBlock(block)
+  virtualBlockStore.deleteBlock()
 }
-const onDragStart = (e) => {
-  console.log("drag start")
+
+const isDragging = ref(false)
+
+const dragStart = () => {
+  isDragging.value = true
 }
-const onDragEnd = (e) => {
-  console.log("drag end", e)
+
+const dragEnd = (block, newStart) => {
+  const start = Math.floor((newStart * 5) / 125) * 125
+  alignBlock(block.start, start)
+  isDragging.value = false
 }
 </script>
 <template>
@@ -87,11 +95,11 @@ const onDragEnd = (e) => {
       :unit-width="unitWidth"
       :block="block"
       @block-select="onBlockSelect"
-      @drag-start="onDragStart"
-      @drag-end="onDragEnd"
+      @drag-end="dragEnd"
+      @drag-start="dragStart"
     />
     <VTimelineBlock
-      v-if="virtualBlock"
+      v-if="virtualBlock && !isDragging"
       :is-virtual="true"
       :unit-width="unitWidth"
       :block="virtualBlock"
@@ -99,3 +107,10 @@ const onDragEnd = (e) => {
     />
   </div>
 </template>
+
+<style>
+.dragend-animation {
+  transition: all 0.1s ease-out;
+  transform: scale(1.2);
+}
+</style>

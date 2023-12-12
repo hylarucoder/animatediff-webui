@@ -75,6 +75,10 @@ const props = defineProps({
     type: Object,
     default: {},
   },
+  rootDir: {
+    type: String,
+    default: "",
+  },
 })
 const emitter = mitt()
 const { setStore, getStore } = useStorage(props.id)

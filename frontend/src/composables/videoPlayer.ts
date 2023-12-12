@@ -10,6 +10,7 @@ export const usePlayAxis = defineStore("playAxis", () => {
     axis: "x",
     containerElement: () => el.value?.parentElement,
   })
+
   return {
     el,
     x,
@@ -20,6 +21,8 @@ export const usePlayAxis = defineStore("playAxis", () => {
 
 export const useVideoPlayer = defineStore("video", () => {
   // we won't expose this element directly
+  const playAxis = usePlayAxis()
+  const { x } = storeToRefs(playAxis)
   const videoRef = ref<HTMLVideoElement>()
   const src = ref("")
   const { playing, waiting, duration, seeking, volume, currentTime, togglePictureInPicture } = useMediaControls(
@@ -29,8 +32,16 @@ export const useVideoPlayer = defineStore("video", () => {
     },
   )
 
-  watch(currentTime, () => {
-    console.log("---->", currentTime.value)
+  watch([currentTime, playing], (value, oldValue) => {
+    if (value[1] && !oldValue[1]) {
+      // onStartPlay()
+      console.log("---->", value, oldValue)
+    }
+    if (!value[1] && oldValue[1]) {
+      // onStopPlay()
+      console.log("---->", value, oldValue)
+    }
+    x.value = value[0] * 200
   })
 
   function loadVideo(_src: string) {
@@ -39,7 +50,6 @@ export const useVideoPlayer = defineStore("video", () => {
   }
 
   const seek = (sec: number) => {
-    console.log("seeking", sec)
     currentTime.value = sec
   }
   const play = () => {
