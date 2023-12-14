@@ -44,7 +44,7 @@ watch(selectedValue, (newVal, oldVal) => {
         :mouse-enter-delay="0.02"
         style="z-index: 1000"
         class="rounded-xl p-0"
-        placement="left"
+        placement="right"
       >
         <template #content>
           <img class="max-w-[300px]" :src="formatProxyMedia(opt.thumbnail)" />

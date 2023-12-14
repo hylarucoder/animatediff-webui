@@ -25,7 +25,7 @@ def get_task_by_id(task_id: int):
 def push_task_by_id(task_id: int):
     task = TTask(
         task_id=task_id,
-        status=TStatusEnum.pending,
+        status=TStatusEnum.PENDING,
     )
     tasks_store.append(task)
     return task
@@ -96,23 +96,23 @@ def sub_render_video(data, task_id):
 
     def on_config_start():
         pbar.init_pbar(task_id)
-        bg_task.status = TStatusEnum.running
+        bg_task.status = TStatusEnum.RUNNING
         ...
 
     def on_config_end():
         pbar.pbar_config.update(100)
 
     def on_render_start():
-        pbar.pbar.update(10)
+        pbar.update(10)
         ...
 
     def on_render_success(path):
         bg_task.video_path = path
-        bg_task.status = TStatusEnum.success
+        bg_task.status = TStatusEnum.SUCCESS
         ...
 
     def on_render_failed():
-        bg_task.status = TStatusEnum.error
+        bg_task.status = TStatusEnum.ERROR
 
     def on_render_end():
         ...

@@ -8,11 +8,13 @@
   --window-width: 90vw;
   --window-height: 90vh;
   --header-height: 50px;
+  --player-bar-height: 40px;
   --timeline-height: 250px;
   --timeline-toolbar-height: 30px;
   --timeline-track-height: 40px;
   --right-sidebar-width: 300px;
   --workspace-height: calc(100% - var(--header-height) - var(--timeline-height));
+  --workspace-main-height: calc(100% - var(--header-height) - var(--timeline-height) - var(--timeline-track-height));
   --window-content-width: calc(100% - var(--right-sidebar-width));
 }
 

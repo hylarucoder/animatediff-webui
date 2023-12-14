@@ -50,8 +50,8 @@ export const submitTask = async (data: any): Promise<any> => {
   return await client.post("/tasks/submit", data)
 }
 
-export const getTaskStatus = async (): Promise<any> => {
-  return await client.get("/tasks/status")
+export const getTaskStatus = async (data: any): Promise<any> => {
+  return await client.post("/tasks/status", data)
 }
 
 export const interruptTask = async (): Promise<any> => {

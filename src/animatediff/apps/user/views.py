@@ -12,7 +12,7 @@ from animatediff.adw.service import (
     get_projects,
     push_task_by_id,
     sub_render_video,
-    tasks_store,
+    tasks_store, get_task_by_id,
 )
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
@@ -128,12 +128,12 @@ def serialize_task(task: TTask):
 
 @bp.post("/api/tasks/submit")
 def render_submit(
-    data: TParamsRenderVideo,
-    background_tasks: BackgroundTasks,
+        data: TParamsRenderVideo,
+        background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(
-        filter(lambda x: x.status in [TStatusEnum.pending, TStatusEnum.running], tasks_store)
+        filter(lambda x: x.status in [TStatusEnum.PENDING, TStatusEnum.RUNNING], tasks_store)
     )
     if pending_or_running_tasks:
         return pending_or_running_tasks[-1]
@@ -145,25 +145,24 @@ def render_submit(
     }
 
 
-@bp.get("/api/tasks/status")
-def render_status():
-    if not tasks_store:
-        return {
-            "task": None,
-            "progress": None,
-        }
+class TTasksStatusData(PtBaseModel):
+    task_id: int
+
+
+@bp.post("/api/tasks/status")
+def render_status(data: TTasksStatusData) -> TTask | dict:
+    bg_task = get_task_by_id(data.task_id)
+    if not bg_task:
+        return {}
     bg_task = tasks_store[-1]
-    return {
-        "task": {
-            "taskId": bg_task.task_id,
-            "status": bg_task.status,
-            "completed": bg_task.completed,
-            "total": bg_task.total,
-            "subtasks": bg_task.subtasks,
-            "videoPath": bg_task.video_path,
-        },
-        "progress": {"main": pbar.status[0] if pbar.status else None, "tasks": pbar.status[1:]},
-    }
+    return TTask(
+        task_id=bg_task.task_id,
+        status=bg_task.status,
+        video_path=str(bg_task.video_path),
+        completed=bg_task.completed,
+        total=bg_task.total,
+        subtasks=bg_task.subtasks,
+    )
 
 
 @bp.get("/api/tasks/interrupt")
@@ -194,7 +193,6 @@ async def image_proxy(path: str, request: Request):
         range_header = request.headers.get("Range", None)
         if range_header:
             range_value = range_header.strip("Range: bytes=")
-            byte1, byte2 = 0, None
             if "-" in range_value:
                 byte1, byte2 = range_value.split("-")
                 byte1 = int(byte1)

@@ -25,28 +25,25 @@ const activeKey = ref("1")
             <v-preview-select v-model:value="checkpoint" :options="optCheckpoints" />
           </a-form-item>
         </a-form>
-        <a-form size="small" layout="vertical">
-          <a-form-item v-for="(opt, idx) in loras" :key="idx" class="form-item-thin-margin" :label="`LoRA ${idx + 1}`">
-            <div class="flex">
-              <v-preview-select v-model:value="opt.name" class="w-[150px] min-w-[150px]" :options="optLoras" />
-              <a-input-number v-model:value="opt.weight" size="small" min="0" max="2" step="0.1" class="ml-2" />
+        <a-form layout="vertical">
+          <a-form-item label="LoRAs">
+            <div v-for="(opt, idx) in loras" :key="idx" class="mb-2 flex">
+              <v-preview-select v-model:value="opt.name" class="w-[120px] min-w-[120px]" :options="optLoras" />
+              <a-input-number v-model:value="opt.weight" min="0" max="2" step="0.1" class="ml-2" />
             </div>
           </a-form-item>
         </a-form>
       </a-form>
     </a-tab-pane>
     <a-tab-pane key="2" tab="Advanced">
-      <a-form-item label="cfg" size="small">
-        <a-slider v-model:value="advanced.cfg" />
-      </a-form-item>
-      <a-form-item label="Seed">
-        <a-input-number v-model:value="seed" step="1" />
-      </a-form-item>
-      <div class="flex space-x-5">
+      <a-form layout="vertical" class="form-compact mt-4">
+        <a-form-item label="Seed">
+          <a-input-number v-model:value="seed" step="1" />
+        </a-form-item>
         <a-form-item label="FPS">
           <a-input-number v-model:value="fps" step="1" min="4" max="16" />
         </a-form-item>
-      </div>
+      </a-form>
     </a-tab-pane>
   </a-tabs>
 </template>

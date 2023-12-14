@@ -184,7 +184,7 @@ def generate(
     logger.info(f"Will save outputs to ./{path_from_cwd(save_dir)}")
 
     pbar.pbar_preprocess_image.update(10)
-    pbar.pbar.update(10)
+    pbar.update(10)
 
     controlnet_image_map, controlnet_type_map, controlnet_ref_map = controlnet_preprocess(
         project_dir,
@@ -230,7 +230,7 @@ def generate(
     pbar.pbar_load_model.update(80)
     load_controlnet_models(project_dir, pipe=g_pipeline, project_setting=project_setting, is_sdxl=is_sdxl)
     pbar.pbar_load_model.update(100)
-    pbar.pbar.update(10)
+    pbar.update(10)
 
     if g_pipeline.device == torch_device:
         logger.info("Pipeline already on the correct device, skipping device transfer")
@@ -277,7 +277,7 @@ def generate(
 
     gen_num = 0  # global generation index
 
-    pbar.pbar.update(20)
+    pbar.update(20)
     pbar.pbar_animate.update(0)
     # repeat the prompts if we're doing multiple runs
     for _ in range(repeats):
@@ -342,7 +342,7 @@ def generate(
         merged_output = torch.concat(outputs, dim=0)
         save_video(merged_output, save_dir.joinpath("final.gif"))
     pbar.pbar_make_video.update(100)
-    pbar.pbar.update(100)
+    pbar.update(100)
 
     logger.info("Done, exiting...")
     return save_dir

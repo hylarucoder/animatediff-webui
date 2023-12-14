@@ -6,22 +6,22 @@ from animatediff.adw.contrib import PtBaseModel
 
 
 class TStatusEnum(str, enum.Enum):
-    pending = "pending"
-    running = "running"
-    error = "error"
-    success = "success"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    ERROR = "ERROR"
+    SUCCESS = "SUCCESS"
 
 
 class TSubtask(PtBaseModel):
     description: str = ""
     completed: int = 0
     total: int = 100
-    status: TStatusEnum = TStatusEnum.pending
+    status: TStatusEnum = TStatusEnum.PENDING
 
 
 class TTask(PtBaseModel):
     task_id: int
-    status: TStatusEnum = TStatusEnum.pending
+    status: TStatusEnum = TStatusEnum.PENDING
     completed: int = 0
     total: int = 100
     subtasks: list[TSubtask] = pt.Field(default_factory=list)

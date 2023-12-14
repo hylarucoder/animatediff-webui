@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useVideoExportStore } from "~/composables/videoExport"
+
 const formStore = useFormStore()
 const { preset, project } = storeToRefs(formStore)
 const { loadPreset } = formStore
 const optionsStore = useOptionsStore()
 const { optPresets, optProjects, options } = optionsStore
+const videoExportStore = useVideoExportStore()
+const { modalVisible } = storeToRefs(videoExportStore)
 
 const changePresets = (value: string) => {
   const _preset = options.presets.find((p) => p.name === value)
@@ -12,7 +16,6 @@ const changePresets = (value: string) => {
   }
   loadPreset(_preset)
 }
-const modalExportVisible = ref(false)
 </script>
 
 <template>
@@ -33,8 +36,8 @@ const modalExportVisible = ref(false)
     </div>
 
     <div class="flex items-center justify-center space-x-3">
-      <v-modal-export v-if="modalExportVisible" @close-modal="modalExportVisible = false" />
-      <a-button @click="modalExportVisible = true"> Export</a-button>
+      <v-modal-export v-if="modalVisible" @close-modal="videoExportStore.hideModal()" />
+      <a-button @click="videoExportStore.showModal()"> Export</a-button>
     </div>
   </div>
 </template>

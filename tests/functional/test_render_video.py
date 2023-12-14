@@ -42,11 +42,11 @@ def test_video_prompt():
 
     def on_render_success(path):
         bg_task.video_path = path
-        bg_task.status = TStatusEnum.success
+        bg_task.status = TStatusEnum.SUCCESS
         ...
 
     def on_render_failed():
-        bg_task.status = TStatusEnum.error
+        bg_task.status = TStatusEnum.ERROR
 
     def on_render_end():
         ...
@@ -61,7 +61,7 @@ def test_video_prompt():
         on_render_end=on_render_end(),
     )
 
-    assert bg_task.status == TStatusEnum.success
+    assert bg_task.status == TStatusEnum.SUCCESS
     print(bg_task.video_path)
 
 
@@ -92,11 +92,11 @@ def test_video_test_cn_ipadapter():
 
     def on_render_success(path):
         bg_task.video_path = path
-        bg_task.status = TStatusEnum.success
+        bg_task.status = TStatusEnum.SUCCESS
         ...
 
     def on_render_failed():
-        bg_task.status = TStatusEnum.error
+        bg_task.status = TStatusEnum.ERROR
 
     def on_render_end():
         ...
@@ -111,5 +111,5 @@ def test_video_test_cn_ipadapter():
         on_render_end=on_render_end(),
     )
 
-    assert bg_task.status == TStatusEnum.success
+    assert bg_task.status == TStatusEnum.SUCCESS
     print(bg_task.video_path)
