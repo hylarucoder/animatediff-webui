@@ -4,13 +4,12 @@ import type { TTrackBlock } from "~/composables/timeline"
 
 const timelineStore = useTimelineStore()
 const { unitWidth, promptBlocks } = storeToRefs(timelineStore)
+const { alignBlock, addPromptBlocks, hasPromptBlocks, removePromptBlocks } = timelineStore
 const activeBlockStore = useActiveBlockStore()
 const { block: activeBlock } = storeToRefs(activeBlockStore)
 
 const virtualBlockStore = useVirtualBlockStore()
 const { block: virtualBlock } = storeToRefs(virtualBlockStore)
-
-const { addPromptBlocks, hasPromptBlocks, removePromptBlocks } = timelineStore
 
 const refTimelineTrack = ref(null)
 
@@ -59,7 +58,7 @@ onKeyStroke("Backspace", (e) => {
   if (!activeBlock.value) {
     return
   }
-  if (activeBlockStore.checkFocused()) {
+  if (activeBlockStore.focused) {
     return
   }
   if (activeBlock.value.start) {
@@ -70,16 +69,23 @@ onKeyStroke("Backspace", (e) => {
 })
 const onBlockSelect = (block: TTrackBlock) => {
   activeBlockStore.activeBlock(block)
+  virtualBlockStore.deleteBlock()
 }
-const onDragStart = (e) => {
-  console.log("drag start")
+
+const isDragging = ref(false)
+
+const dragStart = () => {
+  isDragging.value = true
 }
-const onDragEnd = (e) => {
-  console.log("drag end", e)
+
+const dragEnd = (block, newStart) => {
+  const start = Math.floor((newStart * 5) / 125) * 125
+  alignBlock(block.start, start)
+  isDragging.value = false
 }
 </script>
 <template>
-  <div ref="refTimelineTrack" class="relative flex h-[40px] rounded border-b-[1px] text-white">
+  <div ref="refTimelineTrack" class="relative flex h-[--timeline-track-height] rounded border-b-[1px] text-white">
     <VTimelineBlock
       v-for="(block, key) in promptBlocks"
       :key="key"
@@ -87,11 +93,11 @@ const onDragEnd = (e) => {
       :unit-width="unitWidth"
       :block="block"
       @block-select="onBlockSelect"
-      @drag-start="onDragStart"
-      @drag-end="onDragEnd"
+      @drag-end="dragEnd"
+      @drag-start="dragStart"
     />
     <VTimelineBlock
-      v-if="virtualBlock"
+      v-if="virtualBlock && !isDragging"
       :is-virtual="true"
       :unit-width="unitWidth"
       :block="virtualBlock"
@@ -99,3 +105,10 @@ const onDragEnd = (e) => {
     />
   </div>
 </template>
+
+<style>
+.dragend-animation {
+  transition: all 0.1s ease-out;
+  transform: scale(1.2);
+}
+</style>

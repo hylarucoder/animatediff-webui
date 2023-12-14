@@ -24,7 +24,7 @@ export default defineNuxtConfig({
       },
     },
   },
-  css: ["~/assets/scss/index.scss"],
+  css: ["~/assets/css/tailwind.css", "~/assets/scss/index.scss"],
   runtimeConfig: {
     public: {
       LATEST_COMMIT_DATE: getGitCommitDateYMD(),
@@ -32,21 +32,22 @@ export default defineNuxtConfig({
     },
   },
   modules: [
-    "nuxt-simple-sitemap",
     "@nuxt/image",
     "@ant-design-vue/nuxt",
     "@nuxtjs/device",
     "@vueuse/nuxt",
     "@vueuse/motion/nuxt",
     "@pinia/nuxt",
-    "@nuxt/ui",
     "@nuxt/content",
   ],
   antd: {
     // Options
   },
-  ui: {
-    icons: ["mdi", "lucide", "vscode-icons", "fa6-brands"],
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
   },
 
   experimental: {
@@ -55,18 +56,7 @@ export default defineNuxtConfig({
     typescriptBundlerResolution: true,
   },
 
-  colorMode: {
-    classSuffix: "",
-  },
   app: {
-    pageTransition: {
-      name: "fade",
-      mode: "out-in", // default
-    },
-    layoutTransition: {
-      name: "slide",
-      mode: "out-in", // default
-    },
     head: {
       htmlAttrs: {
         lang: "en",
@@ -110,50 +100,10 @@ export default defineNuxtConfig({
       Inter: true,
     },
   },
-  content: {
-    highlight: {
-      theme: {
-        default: "github-light",
-        dark: "github-dark",
-        sepia: "monokai",
-      },
-    },
-  },
-
-  image: {
-    domains: ["image.simpleaiart.com", "simpleaiart.com"],
-    presets: {
-      logo: {
-        modifiers: {
-          fit: "cover",
-          format: "webp",
-          width: 50,
-          sizes: "50px sm:100px",
-        },
-      },
-      avatar: {
-        modifiers: {
-          fit: "cover",
-          format: "webp",
-          width: 300,
-        },
-      },
-      error: {
-        modifiers: {
-          fit: "cover",
-          format: "jpg",
-          width: 600,
-          sizes: "100vw sm:50vw",
-          loading: "lazy",
-        },
-      },
-    },
-  },
 
   devtools: {
     enabled: true,
   },
-  extends: "@nuxt-themes/typography",
   vite: {
     build: {
       rollupOptions: {

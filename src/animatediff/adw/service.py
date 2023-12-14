@@ -25,7 +25,7 @@ def get_task_by_id(task_id: int):
 def push_task_by_id(task_id: int):
     task = TTask(
         task_id=task_id,
-        status=TStatusEnum.pending,
+        status=TStatusEnum.PENDING,
     )
     tasks_store.append(task)
     return task
@@ -37,7 +37,7 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i: i + n]
+        yield l[i : i + n]
 
 
 def lora_arr():
@@ -47,7 +47,7 @@ def lora_arr():
 class TParamsRenderVideo(PtBaseModel):
     project: str
     performance: TPerformance = TPerformance.SPEED
-    aspect_radio: str = "432x768 | 9:16"
+    aspect_radio: str = "9:16"
     prompt: str = "masterpiece, best quality"
     prompt_blocks: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
@@ -61,7 +61,15 @@ class TParamsRenderVideo(PtBaseModel):
 
 
 def get_width_height(aspect_radio: str):
-    w, h = aspect_radio.split("|")[0].strip().split("x")
+    a = {
+        "16:9": "768x432",
+        "4:3": "768x576",
+        "1:1": "600x600",
+        "3:4": "576x768",
+        "9:16": "432x768",
+    }[aspect_radio]
+
+    w, h = a.split("x")
     return int(w), int(h)
 
 
@@ -88,22 +96,23 @@ def sub_render_video(data, task_id):
 
     def on_config_start():
         pbar.init_pbar(task_id)
+        bg_task.status = TStatusEnum.RUNNING
         ...
 
     def on_config_end():
         pbar.pbar_config.update(100)
 
     def on_render_start():
-        pbar.pbar.update(10)
+        pbar.update(10)
         ...
 
     def on_render_success(path):
         bg_task.video_path = path
-        bg_task.status = TStatusEnum.success
+        bg_task.status = TStatusEnum.SUCCESS
         ...
 
     def on_render_failed():
-        bg_task.status = TStatusEnum.error
+        bg_task.status = TStatusEnum.ERROR
 
     def on_render_end():
         ...
@@ -120,13 +129,13 @@ def sub_render_video(data, task_id):
 
 
 def do_render_video(
-        data: TParamsRenderVideo,
-        on_config_start=lambda: None,
-        on_config_end=lambda: None,
-        on_render_start=lambda: None,
-        on_render_success=lambda: None,
-        on_render_failed=lambda: None,
-        on_render_end=lambda: None,
+    data: TParamsRenderVideo,
+    on_config_start=lambda: None,
+    on_config_end=lambda: None,
+    on_render_start=lambda: None,
+    on_render_success=lambda: None,
+    on_render_failed=lambda: None,
+    on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()

@@ -6,22 +6,22 @@ from animatediff.adw.contrib import PtBaseModel
 
 
 class TStatusEnum(str, enum.Enum):
-    pending = "pending"
-    running = "running"
-    error = "error"
-    success = "success"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    ERROR = "ERROR"
+    SUCCESS = "SUCCESS"
 
 
 class TSubtask(PtBaseModel):
     description: str = ""
     completed: int = 0
     total: int = 100
-    status: TStatusEnum = TStatusEnum.pending
+    status: TStatusEnum = TStatusEnum.PENDING
 
 
 class TTask(PtBaseModel):
     task_id: int
-    status: TStatusEnum = TStatusEnum.pending
+    status: TStatusEnum = TStatusEnum.PENDING
     completed: int = 0
     total: int = 100
     subtasks: list[TSubtask] = pt.Field(default_factory=list)
@@ -36,6 +36,14 @@ class TPerformance(str, enum.Enum):
     SPEED = "SPEED"
     QUALITY = "QUALITY"
     EXTREME_SPEED = "EXTREME_SPEED"
+
+
+class TAspectRatio(str, enum.Enum):
+    AR_16_9 = "16:9"
+    AR_4_3 = "4:3"
+    AR_1_1 = "1:1"
+    AR_3_4 = "3:4"
+    AR_9_16 = "9:16"
 
 
 class TPromptBlock(PtBaseModel):
@@ -68,7 +76,7 @@ class TCameraControl(PtBaseModel):
 class TPreset(PtBaseModel):
     name: str
     performance: TPerformance = TPerformance.SPEED
-    aspect_ratio: str = "432x768 | 9:16"
+    aspect_ratio: TAspectRatio = TAspectRatio.AR_9_16
     high_res: bool = False
     head_prompt: str = "masterpiece, best quality"
     prompt: str = "1girl"

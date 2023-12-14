@@ -2,7 +2,8 @@
 import { useActiveBlockStore } from "~/composables/block"
 
 const activeBlock = useActiveBlockStore()
-const { block } = storeToRefs(activeBlock)
+const { block, refInput } = storeToRefs(activeBlock)
+const { onFocus, onBlur } = activeBlock
 </script>
 <template>
   <div class="timeline-track-block-editor min-h-full w-full p-5">
@@ -12,7 +13,7 @@ const { block } = storeToRefs(activeBlock)
       <a-form layout="vertical">
         <a-form-item label="Time"> {{ block.start / 1000 }}s</a-form-item>
         <a-form-item label="Prompt">
-          <v-prompt-input ref="refInput" auto-focus v-model:value="block.prompt" />
+          <v-prompt-input ref="refInput" @focus="onFocus" @blur="onBlur" auto-focus v-model:value="block.prompt" />
         </a-form-item>
         <a-button @click.prevent="activeBlock.deleteBlock()">Save</a-button>
       </a-form>

@@ -100,29 +100,7 @@ onMounted(() => {
     ref="inputRef"
     v-model:value="value"
     :rows="3"
-    @keydown.shift.up.prevent="addWeight"
-    @keydown.shift.down.prevent="subWeight"
+    @keydown.prevent.shift.up="addWeight"
+    @keydown.prevent.shift.down="subWeight"
   />
-  <!--  <div class="ant-form-item-control-input">-->
-  <!--    <div class="ant-form-item-control-input-content">-->
-  <!--      <div class="ant-input textarea-like rounded px-2 text-sm" contenteditable="true">-->
-  <!--        This is some-->
-  <!--        <mark>highlighted</mark>-->
-  <!--        text.-->
-  <!--      </div>-->
-  <!--    </div>-->
-  <!--  </div>-->
 </template>
-
-<style>
-.textarea-like {
-  border: 1px solid #ccc;
-  font-family: monospace;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  padding: 5px;
-  overflow: auto;
-  width: 100%;
-  height: 100px;
-}
-</style>

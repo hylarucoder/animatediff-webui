@@ -7,11 +7,14 @@
   --second: #e7f8ff;
   --window-width: 90vw;
   --window-height: 90vh;
-  --header-height: 60px;
-  --timeline-height: 300px;
+  --header-height: 50px;
+  --player-bar-height: 40px;
+  --timeline-height: 250px;
+  --timeline-toolbar-height: 30px;
+  --timeline-track-height: 40px;
   --right-sidebar-width: 300px;
-  --status-bar-height: 30px;
   --workspace-height: calc(100% - var(--header-height) - var(--timeline-height));
+  --workspace-main-height: calc(100% - var(--header-height) - var(--timeline-height) - var(--timeline-track-height));
   --window-content-width: calc(100% - var(--right-sidebar-width));
 }
 
@@ -34,6 +37,10 @@ html {
   font-variation-settings: normal;
 }
 
+* {
+  border-style: solid;
+  border-width: 0;
+}
 
 html,
 body,
@@ -43,6 +50,10 @@ body,
   margin: 0;
   padding: 0;
   color: black;
+}
+
+div {
+  box-sizing: border-box;
 }
 
 #__nuxt {
@@ -76,3 +87,7 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 
+.ant-tabs-tab {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}

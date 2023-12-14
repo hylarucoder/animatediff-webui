@@ -1,11 +1,13 @@
 import tqdm
 
+from animatediff.adw.schema import TTask
+
 
 class ProgressBar:
-
     """two level depth."""
 
     pbar: tqdm.tqdm | None = None
+    bg_task: TTask | None = None
 
     # 当前步骤
 
@@ -18,6 +20,11 @@ class ProgressBar:
         self.pbar_image_2_image = None
         self.pbar_config = None
         self.pbar_preprocess_image = None
+
+    def update(self, n):
+        self.pbar.update(n)
+        if self.bg_task:
+            self.bg_task.completed = n
 
     def init_pbar(self, task_id):
         from animatediff.adw.service import get_task_by_id
@@ -38,14 +45,21 @@ class ProgressBar:
 
     @property
     def status(self):
-        return []
-        # return [
-        #     {
-        #         "description": t.description,
-        #         "completed": t.completed,
-        #         "total": t.total,
-        #     } for t in self.pbar.total
-        # ] if self.pbar else []
+        return [
+            {
+                "description": t.description,
+                "completed": t.completed,
+                "total": t.total,
+            } for t in [
+                self.pbar_config,
+                self.pbar_preprocess_image,
+                self.pbar_image_2_image,
+                self.pbar_load_model,
+                self.pbar_animate,
+                self.pbar_unload_models,
+                self.pbar_make_video,
+            ]
+        ]
 
 
 pbar = ProgressBar()
