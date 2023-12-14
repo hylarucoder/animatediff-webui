@@ -44,7 +44,8 @@ export interface TOptions {
   performances: string[]
 }
 
-export const aspectRatios = ["768x432 | 16:9", "768x576 | 4:3", "600x600 | 1:1", "432x768 | 9:16", "576x768 | 3:4"]
+// export const aspectRatios = ["768x432 | 16:9", "768x576 | 4:3", "600x600 | 1:1", "432x768 | 9:16", "576x768 | 3:4"]
+export const aspectRatios = ["16:9", "4:3", "1:1", "9:16", "3:4"]
 
 const performanceMapping = new Map([
   ["Speed", "SPEED"],
@@ -52,6 +53,31 @@ const performanceMapping = new Map([
   ["Extreme Speed", "EXTREME_SPEED"],
 ])
 export const performances = [...performanceMapping.keys()]
+
+const x2res = (res: string) => {
+  const arr = res.split("x")
+  return parseInt(arr[0]) * 2 + "x" + parseInt(arr[1]) * 2
+}
+
+const calcSizeOpts = (v) => {
+  const ar = {
+    "16:9": "768x432",
+    "4:3": "768x576",
+    "1:1": "600x600",
+    "3:4": "576x768",
+    "9:16": "432x768",
+  }[v]
+  return [
+    {
+      label: ar,
+      value: ar,
+    },
+    {
+      label: x2res(ar),
+      value: x2res(ar),
+    },
+  ]
+}
 
 export const useFormStore = defineStore("form", () => {
   const videoUrl = ref("")
@@ -121,7 +147,20 @@ export const useFormStore = defineStore("form", () => {
     duration.value = _preset.duration
     promptBlocks.value = _preset.promptBlocks
   }
+  const c = calcSizeOpts(aspectRatio.value)
+  const sizeOpts = ref(c)
+  const size = ref(c[0].value)
+  watch(aspectRatio, (v) => {
+    const c = calcSizeOpts(v)
+    sizeOpts.value = c
+    size.value = c[0].value
+  })
+  watch(size, (v) => {
+    highRes.value = v === sizeOpts.value?.[1]?.value
+  })
   return {
+    size,
+    sizeOpts,
     videoUrl,
     videoStatus,
     checkpoint,
@@ -170,7 +209,10 @@ const unflattenCheckpoint = (arr: any[]) => {
 }
 
 function unflattenKV(map) {
-  return Array.from(map, ([label, value]) => ({ label, value }))
+  return Array.from(map, ([label, value]) => ({
+    label,
+    value,
+  }))
 }
 
 export const useOptionsStore = defineStore("options", () => {

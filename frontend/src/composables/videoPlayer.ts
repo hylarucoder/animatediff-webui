@@ -31,6 +31,7 @@ export const useVideoPlayer = defineStore("video", () => {
       src,
     },
   )
+  const { isFullscreen, enter, exit, toggle } = useFullscreen(videoRef)
 
   watch([currentTime, playing], (value, oldValue) => {
     if (value[1] && !oldValue[1]) {
@@ -60,6 +61,7 @@ export const useVideoPlayer = defineStore("video", () => {
   }
 
   return {
+    toggle,
     duration,
     videoRef,
     src,

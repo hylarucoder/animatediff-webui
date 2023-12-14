@@ -47,7 +47,7 @@ def lora_arr():
 class TParamsRenderVideo(PtBaseModel):
     project: str
     performance: TPerformance = TPerformance.SPEED
-    aspect_radio: str = "432x768 | 9:16"
+    aspect_radio: str = "9:16"
     prompt: str = "masterpiece, best quality"
     prompt_blocks: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
@@ -61,7 +61,15 @@ class TParamsRenderVideo(PtBaseModel):
 
 
 def get_width_height(aspect_radio: str):
-    w, h = aspect_radio.split("|")[0].strip().split("x")
+    a = {
+        "16:9": "768x432",
+        "4:3": "768x576",
+        "1:1": "600x600",
+        "3:4": "576x768",
+        "9:16": "432x768",
+    }[aspect_radio]
+
+    w, h = a.split("x")
     return int(w), int(h)
 
 

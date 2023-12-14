@@ -85,7 +85,7 @@ const dragEnd = (block, newStart) => {
 }
 </script>
 <template>
-  <div ref="refTimelineTrack" class="relative flex h-[40px] rounded border-b-[1px] text-white">
+  <div ref="refTimelineTrack" class="relative flex h-[--timeline-track-height] rounded border-b-[1px] text-white">
     <VTimelineBlock
       v-for="(block, key) in promptBlocks"
       :key="key"

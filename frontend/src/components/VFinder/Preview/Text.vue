@@ -23,7 +23,7 @@
   <div>
     <pre
       v-if="!showEdit"
-      class="max-h-[60vh] min-h-[200px] overflow-auto whitespace-pre-wrap rounded border border-gray-200 p-2 text-xs font-normal dark:border-gray-700/50 dark:text-gray-200"
+      class="max-h-[60vh] min-h-[200px] overflow-auto whitespace-pre-wrap rounded border border-zinc-100 p-2 text-xs font-normal dark:border-gray-700/50 dark:text-gray-200"
       >{{ content }}</pre
     >
     <div v-else>

@@ -21,7 +21,7 @@ def test_video_prompt():
     params = TParamsRenderVideo(
         project=project,
         duration=1,
-        aspect_radio="432x768 | 9:16",
+        aspect_radio="9:16",
         prompt="masterpiece, best quality, 1girl, walk,",
     )
     task_id = 1
@@ -70,7 +70,7 @@ def test_video_test_cn_ipadapter():
     params = TParamsRenderVideo(
         project=project,
         duration=1,
-        aspect_radio="432x768 | 9:16",
+        aspect_radio="9:16",
         prompt="masterpiece, best quality, 1girl, walk,",
     )
     task_id = 1

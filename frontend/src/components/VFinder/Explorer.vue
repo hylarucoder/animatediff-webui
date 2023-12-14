@@ -2,7 +2,7 @@
   <div class="relative flex flex-auto flex-col overflow-hidden">
     <div
       v-if="view === 'list' || searchQuery.length"
-      class="grid select-none grid-cols-12 border-b border-gray-200 border-neutral-300 text-xs dark:border-gray-700"
+      class="grid select-none grid-cols-12 border-b border-neutral-300 border-zinc-100 text-xs dark:border-gray-700"
     >
       <div
         class="col-span-7 flex items-center bg-neutral-50 py-1 pl-1 leading-6 hover:bg-neutral-100 dark:bg-gray-800 dark:hover:bg-gray-700/10"

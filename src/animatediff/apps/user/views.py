@@ -43,7 +43,7 @@ def gen_presets():
     preset_lcm = TPreset(
         name="default - lcm",
         performance=TPerformance.EXTREME_SPEED,
-        aspect_radio="768x432 | 16:9",
+        aspect_radio="16:9",
     )
     preset_color = TPreset(
         name="lcm + motion-lora + color fashion",
@@ -128,8 +128,8 @@ def serialize_task(task: TTask):
 
 @bp.post("/api/tasks/submit")
 def render_submit(
-        data: TParamsRenderVideo,
-        background_tasks: BackgroundTasks,
+    data: TParamsRenderVideo,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_tasks = list(
@@ -191,12 +191,12 @@ async def image_proxy(path: str, request: Request):
 
     if suffix == "mp4":
         file_size = os.path.getsize(absolute_path)
-        range_header = request.headers.get('Range', None)
+        range_header = request.headers.get("Range", None)
         if range_header:
-            range_value = range_header.strip('Range: bytes=')
+            range_value = range_header.strip("Range: bytes=")
             byte1, byte2 = 0, None
-            if '-' in range_value:
-                byte1, byte2 = range_value.split('-')
+            if "-" in range_value:
+                byte1, byte2 = range_value.split("-")
                 byte1 = int(byte1)
                 byte2 = int(byte2) if byte2 else file_size - 1
             else:
@@ -205,12 +205,12 @@ async def image_proxy(path: str, request: Request):
 
             byte2 = min(byte2, file_size - 1)
             length = byte2 + 1 - byte1
-            with open(absolute_path, 'rb') as f:
+            with open(absolute_path, "rb") as f:
                 f.seek(byte1)
                 data = f.read(length)
             response = Response(content=data, media_type="video/mp4", status_code=206)
-            response.headers['Content-Range'] = f'bytes {byte1}-{byte2}/{file_size}'
-            response.headers['Accept-Ranges'] = 'bytes'
+            response.headers["Content-Range"] = f"bytes {byte1}-{byte2}/{file_size}"
+            response.headers["Accept-Ranges"] = "bytes"
             return response
         else:
             return FileResponse(str(absolute_path), media_type="video/mp4")

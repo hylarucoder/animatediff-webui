@@ -30,10 +30,10 @@ const onClickRuler = (e) => {
       width: unitWidth + 'px',
     }"
   >
-    <span v-if="index % fps" class="block text-[10px] font-semibold text-gray-400" :style="{ width: unitWidth + 'px' }">
+    <span v-if="index % fps" class="block text-[8px] font-semibold text-gray-400" :style="{ width: unitWidth + 'px' }">
       |
     </span>
-    <span v-else class="text-ms block font-semibold text-gray-600" :style="{ width: unitWidth + 'px' }">
+    <span v-else class="block text-[10px] font-semibold text-gray-600" :style="{ width: unitWidth + 'px' }">
       {{ index / fps }}s
     </span>
   </div>

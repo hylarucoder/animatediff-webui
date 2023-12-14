@@ -37,7 +37,11 @@ watch([timeStartPx, isDragging], (value) => {
       <polygon points="25,40 0,10 50,10" fill="black" />
     </svg>
   </div>
-  <div ref="refRuler" class="timeline relative h-[40px] select-none border-b-[1px]" @click.prevent="onClickRule">
+  <div
+    ref="refRuler"
+    class="timeline relative h-[40px] select-none border-b-[1px] border-zinc-200"
+    @click.prevent="onClickRule"
+  >
     <div
       v-for="i in duration * fps"
       :key="i"

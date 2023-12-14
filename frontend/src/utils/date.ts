@@ -25,3 +25,16 @@ export function formatDateString(dateString: string): string {
     return `${year}/${month}/${day}`
   }
 }
+
+export const formatDurationHHMMSS = (duration: number): string => {
+  const hours = Math.floor(duration / 3600)
+  const minutes = Math.floor((duration % 3600) / 60)
+  const seconds = duration % 60
+
+  // Pad the minutes and seconds with leading zeros, if required
+  const paddedHours = hours.toString().padStart(2, "0")
+  const paddedMinutes = minutes.toString().padStart(2, "0")
+  const formattedSeconds = seconds < 10 ? "0" + seconds.toFixed(3) : seconds.toFixed(3)
+
+  return `${paddedHours}:${paddedMinutes}:${formattedSeconds}`
+}

@@ -29,8 +29,7 @@
   </div>
 </template>
 
-<script>
-</script>
+<script></script>
 
 <script setup lang="ts">
 const { t } = inject("i18n")
