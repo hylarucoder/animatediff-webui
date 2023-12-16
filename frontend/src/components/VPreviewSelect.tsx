@@ -26,7 +26,7 @@ export default defineComponent({
     watch(selectedValue, (newVal) => {
       emit("update:modelValue", newVal)
     })
-    console.log("selectedValue", selectedValue.value, props.options)
+    // console.log("selectedValue", selectedValue.value, props.options)
 
     return () => (
       <ASelect v-model={selectedValue.value} showSearch>

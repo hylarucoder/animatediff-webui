@@ -28,7 +28,7 @@ export default defineComponent({
               <div class="flex w-1/2">
                 <AForm layout="vertical">
                   <AFormItem label="Performance" required>
-                    <ARadioGroup value={performance.value} onChange={(val) => (performance.value = val)}>
+                    <ARadioGroup value={performance.value} onUpdate:value={(val) => (performance.value = val)}>
                       {optPerformances.map((opt) => (
                         <ARadio key={opt.value} value={opt.value} label={opt.label}>
                           {opt.label}
@@ -37,10 +37,14 @@ export default defineComponent({
                     </ARadioGroup>
                   </AFormItem>
                   <AFormItem label="Duration(s)" required>
-                    <AInputNumber value={duration.value} class="text-left" onChange={(val) => (duration.value = val)} />
+                    <AInputNumber
+                      value={duration.value}
+                      class="text-left"
+                      onUpdate:value={(val) => (duration.value = val)}
+                    />
                   </AFormItem>
                   <AFormItem label="Output Size" required>
-                    <ARadioGroup value={size.value} onChange={(val) => (size.value = val)}>
+                    <ARadioGroup value={size.value} onUpdate:value={(val) => (size.value = val)}>
                       {sizeOpts.value.map((opt) => (
                         <ARadio key={opt.value} value={opt.value} label={opt.label}>
                           {opt.label}

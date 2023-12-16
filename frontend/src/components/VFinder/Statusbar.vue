@@ -17,11 +17,11 @@
           />
         </svg>
       </div>
-      <a-select size="small" style="width: 100px" v-model="adapter" @change="handleStorageSelect">
+      <ASelect size="small" style="width: 100px" v-model="adapter" @change="handleStorageSelect">
         <option v-for="storage in data.storages" :value="storage">
           {{ storage }}
         </option>
-      </a-select>
+      </ASelect>
 
       <div class="ml-3">
         <span v-if="searchQuery.length">{{ data.files.length }} items found. </span>
@@ -29,13 +29,13 @@
       </div>
     </div>
     <div class="flex items-center leading-5">
-      <a-select v-model="locale" size="small" style="width: 100px" @change="changeLocale($event.target.value)">
-        <a-select-option value="" disabled>
+      <ASelect v-model="locale" size="small" style="width: 100px" @change="changeLocale($event.target.value)">
+        <ASelectOption value="" disabled>
           {{ t("Language") }}
-        </a-select-option>
-        <a-select-option value="en">English</a-select-option>
-        <a-select-option value="ru">Russian</a-select-option>
-      </a-select>
+        </ASelectOption>
+        <ASelectOption value="en">English</ASelectOption>
+        <ASelectOption value="ru">Russian</ASelectOption>
+      </ASelect>
 
       <span
         class="mr-1"

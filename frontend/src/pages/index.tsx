@@ -1,15 +1,15 @@
 import { ASpin, VMainPlayer, VMenubar, VRightSidebar, VTimelineWindow } from "#components"
 
 export default defineComponent({
-  setup() {
+  async setup() {
     const optionsStore = useOptionsStore()
     const { optionLoaded } = toRefs(optionsStore)
     const activeBlock = useActiveBlockStore()
 
-    // Initialize options store
-    onMounted(async () => {
-      await optionsStore.init()
-    })
+    // // Initialize options store
+    // onMounted(async () => {
+    //   await optionsStore.init()
+    // })
 
     // Clean block handler
     const cleanBlock = useThrottleFn(() => {
@@ -36,6 +36,7 @@ export default defineComponent({
     onUnmounted(() => {
       document.removeEventListener("click", handleClickOutside)
     })
+    await optionsStore.init()
 
     return () => (
       <>

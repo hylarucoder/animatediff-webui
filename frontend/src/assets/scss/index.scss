@@ -107,3 +107,34 @@ body {
 .ant-tabs-nav {
   margin-bottom: 0px !important;
 }
+.ant-form-item-no-mb .ant-form-item {
+  margin-bottom: 0 !important;
+}
+.form-item-thin-margin.ant-form-item {
+  margin-bottom: 5px !important;
+}
+
+.form-compact {
+  .ant-form-item-label {
+    margin-bottom: 0 !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 8px !important;
+  }
+}
+
+.camera-control-title {
+  .ant-form-item-label {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .ant-form-item {
+    margin-bottom: 0 !important;
+
+    label {
+      font-size: 12px !important;
+    }
+  }
+}
