@@ -29,7 +29,13 @@ export default defineComponent({
     // console.log("selectedValue", selectedValue.value, props.options)
 
     return () => (
-      <ASelect v-model={selectedValue.value} showSearch>
+      <ASelect
+        value={selectedValue.value}
+        onUpdate:value={(v) => {
+          selectedValue.value = v
+        }}
+        showSearch
+      >
         {props.options.map((opt) => (
           <ASelectOption
             key={opt.value}

@@ -1,13 +1,11 @@
 import { AForm, AFormItem, AInputNumber, ATabPane, ATabs, VPreviewSelect, VPromptInput } from "#components"
-import { algorithms } from "iron-webcrypto"
 
 export default defineComponent({
   setup() {
     const optionsStore = useOptionsStore()
     const { optLoras, optCheckpoints } = storeToRefs(optionsStore)
     const formStore = useFormStore()
-    const { highRes, checkpoint, prompt, negativePrompt, seed, duration, fps, loras, cameraControl } =
-      storeToRefs(formStore)
+    const { checkpoint, prompt, negativePrompt, seed, fps, loras } = storeToRefs(formStore)
 
     const advanced = ref({
       cfg: 1,
@@ -25,14 +23,30 @@ export default defineComponent({
         <ATabPane key="1" tab="Setting" class="max-w-[500px]">
           <AForm layout="vertical" class="form-compact mt-4">
             <AFormItem label="Prompt">
-              <VPromptInput v-model={[prompt.value, "value"]} />
+              <VPromptInput
+                v-model:value={prompt.value}
+                onUpdate:value={(value) => {
+                  prompt.value = value
+                }}
+              />
             </AFormItem>
             <AFormItem label="Negative Prompt">
-              <VPromptInput v-model={[negativePrompt.value, "value"]} />
+              <VPromptInput
+                value={negativePrompt.value}
+                onUpdate:value={(value) => {
+                  negativePrompt.value = value
+                }}
+              />
             </AFormItem>
             <AForm layout="vertical">
               <AFormItem label="Checkpoint">
-                <VPreviewSelect v-model={[checkpoint.value, "value"]} options={optCheckpoints.value} />
+                <VPreviewSelect
+                  value={checkpoint.value}
+                  onUpdate:value={(value) => {
+                    checkpoint.value = value
+                  }}
+                  options={optCheckpoints.value}
+                />
               </AFormItem>
             </AForm>
             <AForm layout="vertical">
@@ -40,11 +54,23 @@ export default defineComponent({
                 {loras.value.map((opt, idx) => (
                   <div key={idx} class="mb-2 flex">
                     <VPreviewSelect
-                      v-model={[opt.name, "value"]}
+                      value={opt.name}
+                      onUpdate:value={(value) => {
+                        opt.name = value
+                      }}
                       class="w-[120px] min-w-[120px]"
                       options={optLoras.value}
                     />
-                    <AInputNumber v-model={[opt.weight, "value"]} min={0} max={2} step={0.1} class="ml-2" />
+                    <AInputNumber
+                      value={opt.weight}
+                      onUpdate:value={(value) => {
+                        opt.weight = value
+                      }}
+                      min={0}
+                      max={2}
+                      step={0.1}
+                      class="ml-2"
+                    />
                   </div>
                 ))}
               </AFormItem>
@@ -54,10 +80,24 @@ export default defineComponent({
         <ATabPane key="2" tab="Advanced">
           <AForm layout="vertical" class="form-compact mt-4">
             <AFormItem label="Seed">
-              <AInputNumber v-model={[seed.value, "value"]} step={1} />
+              <AInputNumber
+                value={seed.value}
+                onUpdate:value={(v) => {
+                  seed.value = v
+                }}
+                step={1}
+              />
             </AFormItem>
             <AFormItem label="FPS">
-              <AInputNumber v-model={[fps.value, "value"]} step={1} min={4} max={16} />
+              <AInputNumber
+                value={fps.value}
+                onUpdate:value={(v) => {
+                  fps.value = v
+                }}
+                step={1}
+                min={4}
+                max={16}
+              />
             </AFormItem>
           </AForm>
         </ATabPane>

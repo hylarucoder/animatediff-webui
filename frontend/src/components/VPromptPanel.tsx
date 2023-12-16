@@ -1,4 +1,4 @@
-import { AForm, AFormItem, VPromptInput } from "#components"
+import { AButton, AForm, AFormItem, VPromptInput } from "#components"
 
 export default defineComponent({
   setup() {
@@ -26,7 +26,10 @@ export default defineComponent({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   autoFocus
-                  v-model_value={block.value.prompt}
+                  value={block.value.prompt}
+                  onUpdate:value={(v) => {
+                    block.value.prompt = v
+                  }}
                 />
               </AFormItem>
               <AButton onClick={deleteBlock}>Save</AButton>

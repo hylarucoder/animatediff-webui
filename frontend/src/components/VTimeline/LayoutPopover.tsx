@@ -1,5 +1,3 @@
-import { defineComponent, toRefs } from "vue"
-import { useTimelineStore } from "~/composables/timeline" // Assumed import
 import { CONTROLNETS } from "~/consts"
 import { ACheckbox, ACheckboxGroup, AForm } from "#components"
 
@@ -13,22 +11,32 @@ export default defineComponent({
     }
 
     const timelineStore = useTimelineStore()
-    const { timeline } = toRefs(timelineStore)
+    const { timeline } = storeToRefs(timelineStore)
 
     return () => (
       <div class="w-[400px]">
         <AForm layout="vertical" model={timeline.value} labelCol={labelCol} wrapperCol={wrapperCol}>
           <AForm-item label="controlnet">
-            <ACheckbox-group v-model={timeline.value.controlnet}>
+            <ACheckboxGroup
+              value={timeline.value.controlnet}
+              onUpdate:value={(v) => {
+                timeline.value.controlnet = v
+              }}
+            >
               {CONTROLNETS.map((cn) => (
                 <ACheckbox value={cn} name="controlnet">
                   {cleanLabel(cn)}
                 </ACheckbox>
               ))}
-            </ACheckbox-group>
+            </ACheckboxGroup>
           </AForm-item>
           <AForm-item label="ip-adapter">
-            <ACheckboxGroup v-model={timeline.value.ipAdapter}>
+            <ACheckboxGroup
+              onUpdate:value={(v) => {
+                timeline.value.ipAdapter = v
+              }}
+              value={timeline.value.ipAdapter}
+            >
               <ACheckbox value="ipadapter" name="type">
                 IPAdapter
               </ACheckbox>

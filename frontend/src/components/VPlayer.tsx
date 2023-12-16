@@ -1,5 +1,43 @@
 import { formatProxyMedia } from "~/client"
-import { AButton, APopover, ASlider, ASpin } from "#components"
+import { AButton, APopover, ARadio, ARadioGroup, ASlider, ASpin } from "#components"
+import type { PropType } from "vue"
+
+const VCameraControlItem = defineComponent({
+  props: {
+    icon: {
+      type: String as PropType<string>,
+      required: true,
+    },
+    layout: {
+      type: String as PropType<"left" | "right">,
+      required: true,
+    },
+  },
+  setup(props, { slots }) {
+    // Use `toRefs` to create a reactive reference for each prop
+    const { icon, layout } = storeToRefs(props)
+
+    return () => (
+      <div class="flex w-1/2">
+        {layout.value === "left" ? (
+          <>
+            <div class="mr-2 flex items-center justify-center">
+              <span class={[icon.value, "h-5 w-5 text-sm leading-6 text-zinc-600"]} />
+            </div>
+            {slots.default ? slots.default() : null}
+          </>
+        ) : (
+          <>
+            {slots.default ? slots.default() : null}
+            <div class="ml-2 flex items-center justify-center">
+              <span class={[icon.value, "h-5 w-5 text-sm leading-6 text-zinc-600"]} />
+            </div>
+          </>
+        )}
+      </div>
+    )
+  },
+})
 
 export default defineComponent({
   setup() {
@@ -107,19 +145,24 @@ export default defineComponent({
               </AButton>
               <APopover placement="topLeft">
                 {{
+                  default: () => <AButton class="w-[60px] text-zinc-600">{aspectRatio.value}</AButton>,
                   content: () => (
                     <div class="max-w-[180px]">
-                      <h4 class="text-md my-1">Aspect Ratio</h4>
-                      <a-radio-group v-model:value={aspectRatio.value}>
+                      <h4 class="text-md mb-1 mt-0">Aspect Ratio</h4>
+                      <ARadioGroup
+                        onUpdate:value={(v) => {
+                          aspectRatio.value = v
+                        }}
+                        value={aspectRatio.value}
+                      >
                         {optAspectRadios.map((ar) => (
-                          <a-radio key="ar.value" class="font-mono text-zinc-800" value="ar.value" label="ar.label">
+                          <ARadio key={ar.value} class="font-mono text-zinc-800" value={ar.value} label={ar.label}>
                             {ar.value}
-                          </a-radio>
+                          </ARadio>
                         ))}
-                      </a-radio-group>
+                      </ARadioGroup>
                     </div>
                   ),
-                  default: () => <AButton class="w-[60px] text-zinc-600">{aspectRatio.value}</AButton>,
                 }}
               </APopover>
               <APopover placement="topLeft">
@@ -131,91 +174,85 @@ export default defineComponent({
                   ),
                   content: () => (
                     <div class="max-w-[300px]">
-                      <h4 class="text-md my-1">Camera Control</h4>
+                      <h4 class="text-md mb-1 mt-0">Camera Control</h4>
                       <div class="mt-1 flex justify-between space-x-3">
-                        <v-camera-control-item layout="left" icon="i-lucide-arrow-left">
+                        <VCameraControlItem layout="left" icon="i-lucide-arrow-left">
                           <ASlider
                             style="width: 100px"
-                            v-model:value={cameraControl.value.panLeft}
-                            min="0"
-                            max="1"
-                            step="0.1"
+                            value={cameraControl.value.panLeft}
+                            min={0}
+                            max={1}
+                            step={0.1}
                             reverse
                           />
-                        </v-camera-control-item>
-                        <v-camera-control-item layout="right" icon="i-lucide-arrow-right">
+                        </VCameraControlItem>
+                        <VCameraControlItem layout="right" icon="i-lucide-arrow-right">
                           <ASlider
                             style="width: 100px"
-                            v-model:value={cameraControl.value.panRight}
-                            min="0"
-                            max="1"
-                            step="0.1"
+                            value={cameraControl.value.panRight}
+                            min={0}
+                            max={1}
+                            step={0.1}
                           />
-                        </v-camera-control-item>
+                        </VCameraControlItem>
                       </div>
 
                       {/* <div class="flex justify-between space-x-3"> */}
-                      {/*   <v-camera-control-item layout="left" icon="i-lucide-arrow-down"> */}
-                      {/*     <a-slider */}
+                      {/*   <VCameraControlItem layout="left" icon="i-lucide-arrow-down"> */}
+                      {/*     <ASlider */}
                       {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.tileDown" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
+                      {/*       value={cameraControl.value.tileDown} */}
+                      {/*       min={0} */}
+                      {/*       max={1} */}
+                      {/*       step={0.1} */}
                       {/*       reverse */}
                       {/*     /> */}
-                      {/*   </v-camera-control-item> */}
-                      {/*   <v-camera-control-item layout="right" icon="i-lucide-arrow-up"> */}
-                      {/*     <a-slider */}
-                      {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.tileUp" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
-                      {/*     /> */}
-                      {/*   </v-camera-control-item> */}
+                      {/*   </VCameraControlItem> */}
+                      {/*   <VCameraControlItem layout="right" icon="i-lucide-arrow-up"> */}
+                      {/*     <ASlider style="width: 100px" value={cameraControl.value.tileUp} min={0} max={1} step={0.1} /> */}
+                      {/*   </VCameraControlItem> */}
                       {/* </div> */}
                       {/* <div class="flex justify-between space-x-3"> */}
-                      {/*   <v-camera-control-item layout="left" icon="i-lucide-rotate-ccw"> */}
-                      {/*     <a-slider */}
+                      {/*   <VCameraControlItem layout="left" icon="i-lucide-rotate-ccw"> */}
+                      {/*     <ASlider */}
                       {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.rollingClockwise" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
+                      {/*       value={cameraControl.value.rollingClockwise} */}
+                      {/*       min={0} */}
+                      {/*       max={1} */}
+                      {/*       step={0.1} */}
                       {/*       reverse */}
                       {/*     /> */}
-                      {/*   </v-camera-control-item> */}
-                      {/*   <v-camera-control-item layout="right" icon="i-lucide-rotate-cw"> */}
-                      {/*     <a-slider */}
+                      {/*   </VCameraControlItem> */}
+                      {/*   <VCameraControlItem layout="right" icon="i-lucide-rotate-cw"> */}
+                      {/*     <ASlider */}
                       {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.rollingAnticlockwise" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
+                      {/*       value={cameraControl.value.rollingAnticlockwise} */}
+                      {/*       min={0} */}
+                      {/*       max={1} */}
+                      {/*       step={0.1} */}
                       {/*     /> */}
-                      {/*   </v-camera-control-item> */}
+                      {/*   </VCameraControlItem> */}
                       {/* </div> */}
                       {/* <div class="flex justify-between space-x-3"> */}
-                      {/*   <v-camera-control-item layout="left" icon="i-lucide-zoom-in"> */}
-                      {/*     <a-slider */}
+                      {/*   <VCameraControlItem layout="left" icon="i-lucide-zoom-in"> */}
+                      {/*     <ASlider */}
                       {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.zoomIn" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
+                      {/*       value={cameraControl.value.zoomIn} */}
+                      {/*       min={0} */}
+                      {/*       max={1} */}
+                      {/*       step={0.1} */}
                       {/*       reverse */}
                       {/*     /> */}
-                      {/*   </v-camera-control-item> */}
-                      {/*   <v-camera-control-item layout="right" icon="i-lucide-zoom-out"> */}
-                      {/*     <a-slider */}
+                      {/*   </VCameraControlItem> */}
+                      {/*   <VCameraControlItem layout="right" icon="i-lucide-zoom-out"> */}
+                      {/*     <ASlider */}
                       {/*       style="width: 100px" */}
-                      {/*       v-model:value="cameraControl.zoomOut" */}
-                      {/*       min="0" */}
-                      {/*       max="1" */}
-                      {/*       step="0.1" */}
+                      {/*       value={cameraControl.value.zoomOut} */}
+                      {/*       min={0} */}
+                      {/*       max={1} */}
+                      {/*       step={0.1} */}
                       {/*     /> */}
-                      {/*   </v-camera-control-item> */}
+                      {/*   </VCameraControlItem> */}
                       {/* </div> */}
                     </div>
                   ),

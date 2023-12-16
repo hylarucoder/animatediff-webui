@@ -1,4 +1,4 @@
-import { ASpin, VMainPlayer, VMenubar, VRightSidebar, VTimelineWindow } from "#components"
+import { ASpin, VMainPlayer, VMenubar, VRightSidebar, VTimeline } from "#components"
 
 export default defineComponent({
   async setup() {
@@ -49,7 +49,7 @@ export default defineComponent({
               <VMainPlayer />
               <VRightSidebar />
             </div>
-            <VTimelineWindow />
+            <VTimeline />
           </div>
         )}
       </>

@@ -103,6 +103,9 @@ export default defineComponent({
       <ATextarea
         ref={inputRef}
         value={value.value}
+        onUpdate:value={(v) => {
+          value.value = v
+        }}
         rows={3}
         onKeydown={(event) => {
           if (event.shiftKey && event.key === "ArrowUp") {
