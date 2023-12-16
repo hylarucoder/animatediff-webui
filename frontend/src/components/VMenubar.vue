@@ -5,17 +5,18 @@ const formStore = useFormStore()
 const { preset, project } = storeToRefs(formStore)
 const { loadPreset } = formStore
 const optionsStore = useOptionsStore()
-const { optPresets, optProjects, options } = optionsStore
+const { optPresets, optProjects, options } = storeToRefs(optionsStore)
 const videoExportStore = useVideoExportStore()
 const { modalVisible } = storeToRefs(videoExportStore)
 
 const changePresets = (value: string) => {
-  const _preset = options.presets.find((p) => p.name === value)
+  const _preset = options.value.presets.find((p) => p.name === value)
   if (!_preset) {
     return
   }
   loadPreset(_preset)
 }
+console.log(optProjects, optPresets)
 </script>
 
 <template>

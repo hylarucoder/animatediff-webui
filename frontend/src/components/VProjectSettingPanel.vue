@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const optionsStore = useOptionsStore()
-const { optLoras, optCheckpoints } = optionsStore
+const { optLoras, optCheckpoints } = storeToRefs(optionsStore)
 const formStore = useFormStore()
 const { highRes, checkpoint, prompt, negativePrompt, seed, duration, fps, loras, cameraControl } =
   storeToRefs(formStore)
@@ -9,6 +9,7 @@ const advanced = ref({
   cfg: 1,
 })
 const activeKey = ref("1")
+console.log("op cp", optCheckpoints)
 </script>
 <template>
   <a-tabs v-model:activeKey="activeKey" class="relative z-0">

@@ -193,20 +193,3 @@ const size = computed(() => {
     </div>
   </div>
 </template>
-<style>
-.ant-tabs-content.ant-tabs-content-top {
-  height: 100%;
-}
-
-.ant-tabs.ant-tabs-top {
-  height: 100%;
-}
-
-.tab-main .ant-tabs-nav-list {
-  @apply pl-5;
-}
-
-.ant-tabs-nav {
-  margin-bottom: 0px !important;
-}
-</style>

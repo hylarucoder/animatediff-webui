@@ -91,3 +91,19 @@ body {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
 }
+
+.ant-tabs-content.ant-tabs-content-top {
+  height: 100%;
+}
+
+.ant-tabs.ant-tabs-top {
+  height: 100%;
+}
+
+.tab-main .ant-tabs-nav-list {
+  @apply pl-5;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 0px !important;
+}
