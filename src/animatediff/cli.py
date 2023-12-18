@@ -13,7 +13,6 @@ from diffusers import DiffusionPipeline
 from diffusers.utils.logging import set_verbosity_error as set_diffusers_verbosity_error
 from packaging import version
 from rich.logging import RichHandler
-from rich.progress import Progress
 
 from animatediff import __version__, console, get_dir
 from animatediff.consts import path_mgr
@@ -34,8 +33,8 @@ from animatediff.pipelines import load_text_embeddings
 from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, get_infer_config, get_project_setting
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
-from animatediff.utils.pipeline import get_context_params, send_to_device
-from animatediff.utils.progressbar import pbar
+from animatediff.utils.pipeline import send_to_device
+from animatediff.globals import g
 from animatediff.utils.util import (
     is_sdxl_checkpoint,
     is_v2_motion_module,
@@ -140,6 +139,7 @@ def generate(
     """Do the thing. Make the animation happen. Waow."""
     # be quiet, diffusers. we care not for your safety checker
     set_diffusers_verbosity_error()
+    pbar = g.pipeline.progress_bar
 
     # torch.set_flush_denormal(True)
 
@@ -330,10 +330,9 @@ def generate(
             # increment the generation number
             gen_num += 1
 
-    pbar.pbar_animate.update(100)
+    pbar.pbar_animate.update(1)
     pbar.pbar_unload_models.update(50)
     unload_controlnet_models(pipe=g_pipeline)
-    pbar.pbar_unload_models.update(100)
 
     logger.info("Generation complete!")
     pbar.pbar_make_video.update(50)

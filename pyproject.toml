@@ -7,7 +7,6 @@ authors = [
 ]
 dependencies = [
     "colorama>=0.4.6",
-    "accelerate>=0.24.1",
     "cmake>=3.27.7",
     "diffusers>=0.21.2",
     "einops>=0.7.0",
@@ -33,7 +32,7 @@ dependencies = [
     "gradio>=4.1.2",
     "httpx>=0.25.1",
     "socksio>=1.0.0",
-    "segment-anything-hq>=0.3",
+    "werkzeug>=3.0.1",
 ]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"

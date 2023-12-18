@@ -1,7 +1,6 @@
 # Adapted from https://github.com/showlab/Tune-A-Video/blob/main/tuneavideo/pipelines/pipeline_tuneavideo.py
 
 import inspect
-import itertools
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -23,7 +22,7 @@ from diffusers.schedulers import (
     PNDMScheduler,
 )
 from diffusers.utils import BaseOutput, deprecate, is_accelerate_available, is_accelerate_version
-from diffusers.utils.torch_utils import is_compiled_module, randn_tensor
+from diffusers.utils.torch_utils import randn_tensor
 from einops import rearrange
 from packaging import version
 from tqdm.rich import tqdm
@@ -38,14 +37,11 @@ from animatediff.models.unet_blocks import CrossAttnDownBlock3D, CrossAttnUpBloc
 from animatediff.pipelines.context import get_context_scheduler, get_total_steps
 from animatediff.schema import TGradualLatentHiresFixMap
 from animatediff.utils.model import nop_train
-from animatediff.utils.pipeline import get_memory_format
-from animatediff.utils.progressbar import pbar
+from animatediff.globals import g
 from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
-    end_profile,
     get_tensor_interpolation_method,
     show_gpu,
-    start_profile,
     stopwatch_record,
     stopwatch_start,
     stopwatch_stop,
@@ -2682,12 +2678,13 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         timesteps_len = len(timesteps)
+        pbar = g.pipeline.progress_bar
         with self.progress_bar(total=total_steps) as progress_bar:
             i = 0
             real_i = 0
             while i < len(timesteps):
                 t = timesteps[i]
-                pbar.pbar_animate.update(100 / timesteps_len * i)
+                pbar.update(100 / timesteps_len * i)
                 stopwatch_start()
                 cur_gradient_latent_size = gradual_latent_size((real_i + 1) / len(timesteps))
                 # if self.lcm:

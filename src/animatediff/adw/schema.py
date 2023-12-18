@@ -19,8 +19,8 @@ class TSubtask(PtBaseModel):
     status: TStatusEnum = TStatusEnum.PENDING
 
 
-class TTask(PtBaseModel):
-    task_id: int
+class TPipeline(PtBaseModel):
+    pid: int
     status: TStatusEnum = TStatusEnum.PENDING
     completed: int = 0
     total: int = 100
@@ -50,6 +50,7 @@ class TPromptBlock(PtBaseModel):
     # ms
     start: int = 0
     prompt: str = ""
+    duration: int = 125
 
 
 def default_prompt_points():

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useVideoExportStore } from "~/composables/videoExport"
+import VProgressMini from "~/components/VProgressMini.vue"
 
 const storeVideoExport = useVideoExportStore()
 const { task, isActive } = storeToRefs(storeVideoExport)
@@ -11,16 +12,40 @@ const { sizeOpts, size, duration, performance } = storeToRefs(formStore)
 const emit = defineEmits<{
   (e: "closeModal"): void
 }>()
+const refSubtasks = ref<HTMLElement | null>(null)
+watch(
+  task,
+  () => {
+    nextTick(() => {
+      if (refSubtasks?.value.length) {
+        refSubtasks?.value[refSubtasks.value.length - 1].scrollIntoView({ behavior: "smooth" })
+      }
+    })
+  },
+  {
+    deep: true,
+  },
+)
 </script>
 <template>
   <a-modal centered :open="true" title="Export" @close="emit('closeModal')">
     <div class="flex h-[400px] w-[500px] select-none">
-      <div class="flex w-1/2 pr-5 pt-2">
-        <div class="flex h-full w-full items-center justify-center bg-zinc-300">
-          <div class="flex-col">
-            <div>rendering</div>
-            <div>{{ task }}</div>
-          </div>
+      <div class="flex w-1/2 flex-col pr-5 pt-2 drop-shadow">
+        <div class="flex h-full w-full flex-col items-center justify-center bg-zinc-200 px-5">
+          <a-progress type="circle" :percent="task.completed" status="active" />
+        </div>
+        <div ref="refStatusBar" class="h-[100px] overflow-y-scroll bg-zinc-100 p-4">
+          <template>
+            <div
+              v-for="sub in task.subtasks"
+              :key="sub.description"
+              ref="refSubtasks"
+              class="flex flex-col py-0 font-mono"
+            >
+              <VProgressMini :completed="sub.completed" :description="sub.description" />
+              <span>{{ sub.completed }}</span>
+            </div>
+          </template>
         </div>
       </div>
       <div class="flex w-1/2">
@@ -46,15 +71,8 @@ const emit = defineEmits<{
       </div>
     </div>
     <template #footer>
-      <a-button key="back" @click="emit('closeModal')">
-        Return
-      </a-button>
-      <a-button
-        key="submit"
-        type="primary"
-        :loading="isActive"
-        @click="storeVideoExport.submitExport()"
-      >
+      <a-button key="back" @click="emit('closeModal')"> Return</a-button>
+      <a-button key="submit" type="primary" :loading="isActive" @click="storeVideoExport.submitExport()">
         Export
       </a-button>
     </template>

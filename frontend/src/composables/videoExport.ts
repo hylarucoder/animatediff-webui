@@ -10,13 +10,14 @@ export enum TStatus {
 
 type TSubtask = {
   status: TStatus
+  description: string
   completed: number
   total: number
   videoPath: string
 }
 
 type TOverallTask = {
-  taskId: number
+  pid: number
   status: TStatus
   completed: number
   total: number
@@ -31,7 +32,7 @@ export const useVideoExportStore = defineStore("videoExport", () => {
   const { promptBlocks } = timelineStore
   const videoPlayerStore = useVideoPlayer()
   const task = ref<TOverallTask>({
-    taskId: 0,
+    pid: 0,
     status: TStatus.PENDING,
     completed: 0,
     total: 100,
@@ -47,16 +48,17 @@ export const useVideoExportStore = defineStore("videoExport", () => {
 
   const { pause, resume, isActive } = useIntervalFn(async () => {
     const res = (await getTaskStatus({
-      taskId: task.value.taskId,
+      pid: task.value.pid,
     })) as TOverallTask
-    if (!res?.taskId) {
+    if (!res?.pid) {
       task.value.status = TStatus.ERROR
       return
     }
-    task.value.taskId = res.taskId
+    task.value.pid = res.pid
     task.value.status = res.status
     task.value.completed = res.completed
     task.value.total = res.total
+    task.value.subtasks = res.subtasks
 
     if (!res?.videoPath) {
       return
@@ -70,11 +72,12 @@ export const useVideoExportStore = defineStore("videoExport", () => {
   onMounted(() => pause())
 
   const submitExport = async () => {
-    task.value.taskId = 0
+    task.value.pid = 0
     task.value.status = TStatus.PENDING
     task.value.completed = 0
     task.value.total = 100
     task.value.videoPath = ""
+    task.value.subtasks = []
 
     const data = {
       project: formStore.project,
@@ -99,8 +102,8 @@ export const useVideoExportStore = defineStore("videoExport", () => {
     }
     try {
       const res = await submitTask(data)
-      console.log("generate res", res.task.taskId)
-      task.value.taskId = res.task.taskId
+      console.log("generate res", res.pipeline.pid)
+      task.value.pid = res.pipeline.pid
       resume()
     } catch (e) {
       console.log("generate error", e)

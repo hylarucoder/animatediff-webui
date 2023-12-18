@@ -2,9 +2,24 @@
 
 import { API_URL, MEDIA_URL } from "~/consts"
 
+async function nfetch(resource: string, options = {}) {
+  const { timeout = 5000 } = options
+
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeout)
+
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal,
+  })
+  clearTimeout(id)
+
+  return response
+}
+
 class ApiClient {
   async get(path: string, params?: any) {
-    const res = await fetch(API_URL + path, {
+    const res = await nfetch(API_URL + path, {
       method: "GET",
     })
     if (res.status >= 400 && res.status < 500) {
@@ -16,7 +31,7 @@ class ApiClient {
   }
 
   async post(path: string, data?: any, params?: any) {
-    const res = await fetch(API_URL + path, {
+    const res = await nfetch(API_URL + path, {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
@@ -47,13 +62,13 @@ export const getOptions = async (): Promise<any> => {
 }
 
 export const submitTask = async (data: any): Promise<any> => {
-  return await client.post("/tasks/submit", data)
+  return await client.post("/pipeline/submit", data)
 }
 
 export const getTaskStatus = async (data: any): Promise<any> => {
-  return await client.post("/tasks/status", data)
+  return await client.post("/pipeline/status", data)
 }
 
 export const interruptTask = async (): Promise<any> => {
-  return await client.post("/tasks/interrupt")
+  return await client.post("/pipeline/interrupt")
 }

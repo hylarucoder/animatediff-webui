@@ -1,9 +1,9 @@
 import os
 
 from animatediff.adw.schema import TStatusEnum
-from animatediff.adw.service import TParamsRenderVideo, do_render_video, get_task_by_id, push_task_by_id
+from animatediff.adw.service import TParamsRenderVideo, do_render_video
 from animatediff.consts import path_mgr
-from animatediff.utils.progressbar import pbar
+from animatediff.globals import pbar, set_global_pipeline, get_pipeline_by_id
 
 os.chdir(path_mgr.repo)
 
@@ -25,8 +25,8 @@ def test_video_prompt():
         prompt="masterpiece, best quality, 1girl, walk,",
     )
     task_id = 1
-    push_task_by_id(task_id)
-    bg_task = get_task_by_id(task_id)
+    set_global_pipeline(task_id)
+    bg_task = get_pipeline_by_id(task_id)
     clean_draft_cache(project)
 
     def on_config_start():
@@ -37,7 +37,7 @@ def test_video_prompt():
         pbar.pbar_config.update(100)
 
     def on_render_start():
-        pbar.pbar.update(10)
+        pbar.update(10)
         ...
 
     def on_render_success(path):
@@ -74,8 +74,8 @@ def test_video_test_cn_ipadapter():
         prompt="masterpiece, best quality, 1girl, walk,",
     )
     task_id = 1
-    push_task_by_id(task_id)
-    bg_task = get_task_by_id(task_id)
+    set_global_pipeline(task_id)
+    bg_task = get_pipeline_by_id(task_id)
 
     clean_draft_cache(project)
 
