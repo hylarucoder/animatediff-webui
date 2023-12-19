@@ -58,7 +58,7 @@ export const useVideoExportStore = defineStore("videoExport", () => {
     task.value.status = res.status
     task.value.completed = res.completed
     task.value.total = res.total
-    task.value.subtasks = res.subtasks
+    task.value.subtasks = res.subtasks.filter((x) => x.completed > 0)
 
     if (!res?.videoPath) {
       return

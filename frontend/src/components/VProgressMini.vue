@@ -15,10 +15,10 @@ const status = computed(() => {
 })
 </script>
 <template>
-  <div class="flex flex-col py-0 font-mono">
-    <span class="my-0 line-clamp-1 w-[150px] text-[10px]">
+  <div class="flex w-[200px] items-center text-left">
+    <span class="line-clamp-1 text-[10px]">
       {{ description }}
     </span>
-    <a-progress class="pgr-sm" :show-info="false" :stroke-width="4" :percent="completed" :status="status" />
   </div>
+  <a-progress class="pgr-sm" :show-info="false" :stroke-width="4" :percent="completed" :status="status" />
 </template>

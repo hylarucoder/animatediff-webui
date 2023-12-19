@@ -30,7 +30,6 @@ def test_video_prompt():
     clean_draft_cache(project)
 
     def on_config_start():
-        pbar.init_pbar(task_id)
         ...
 
     def on_config_end():
@@ -80,7 +79,6 @@ def test_video_test_cn_ipadapter():
     clean_draft_cache(project)
 
     def on_config_start():
-        pbar.init_pbar(task_id)
         ...
 
     def on_config_end():

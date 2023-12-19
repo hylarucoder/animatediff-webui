@@ -10,14 +10,6 @@ function getGitCommitDateYMD() {
 export default defineNuxtConfig({
   srcDir: "src/",
   nitro: {
-    routeRules: {
-      "/": {
-        isr: true,
-      },
-      "/posts/**": {
-        // experimentalNoScripts: true,
-      },
-    },
     esbuild: {
       options: {
         target: "esnext",

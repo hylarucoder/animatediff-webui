@@ -19,7 +19,7 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 def lora_arr():
@@ -85,7 +85,6 @@ def sub_render_video(data, task_id):
     pipeline.progress_bar = pbar
 
     def on_config_start():
-        pbar.init_pbar(task_id)
         pipeline.pipeline.status = TStatusEnum.RUNNING
         ...
 
@@ -94,11 +93,13 @@ def sub_render_video(data, task_id):
 
     def on_render_start():
         pbar.update(10)
+        pipeline.pipeline.completed = 10
         ...
 
     def on_render_success(path):
         pipeline.pipeline.video_path = path
         pipeline.pipeline.status = TStatusEnum.SUCCESS
+        pipeline.pipeline.completed = 100
         ...
 
     def on_render_failed():
@@ -119,13 +120,13 @@ def sub_render_video(data, task_id):
 
 
 def do_render_video(
-    data: TParamsRenderVideo,
-    on_config_start=lambda: None,
-    on_config_end=lambda: None,
-    on_render_start=lambda: None,
-    on_render_success=lambda: None,
-    on_render_failed=lambda: None,
-    on_render_end=lambda: None,
+        data: TParamsRenderVideo,
+        on_config_start=lambda: None,
+        on_config_end=lambda: None,
+        on_render_start=lambda: None,
+        on_render_success=lambda: None,
+        on_render_failed=lambda: None,
+        on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()
