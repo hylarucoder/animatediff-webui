@@ -1,22 +1,20 @@
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import FileResponse, Response
 
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import raise_unless
-from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TTask
+from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TPipeline
 from animatediff.adw.service import (
     TParamsRenderVideo,
     get_projects,
-    push_task_by_id,
     sub_render_video,
-    tasks_store, get_task_by_id,
 )
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
-from animatediff.utils.progressbar import pbar
+from animatediff.globals import g, set_global_pipeline, pipeline_queue, get_pipeline_by_id, GPipeline
 
 bp = APIRouter(prefix="")
 
@@ -43,13 +41,13 @@ def gen_presets():
     preset_lcm = TPreset(
         name="default - lcm",
         performance=TPerformance.EXTREME_SPEED,
-        aspect_radio="16:9",
+        aspect_ratio="16:9",
     )
     preset_color = TPreset(
         name="lcm + motion-lora + color fashion",
         performance=TPerformance.EXTREME_SPEED,
         head_prompt="masterpiece,best quality, 1girl, walk,",
-        tail_prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
+        prompt="photorealistic,realistic,photography,ultra-detailed,1girl,full body,water,dress,looking at viewer,red dress,white hair,md colorful",
         lcm=True,
         duration=2,
     )
@@ -115,53 +113,68 @@ def validate_data(data: TParamsRenderVideo):
     # motion loras
 
 
-def serialize_task(task: TTask):
+def serialize_pipeline(p: GPipeline):
     return {
-        "taskId": task.task_id,
-        "status": task.status,
-        "completed": task.completed,
-        "total": task.total,
-        "subtasks": task.subtasks,
-        "videoPath": task.video_path,
+        "pid": p.pid,
+        "status": p.pipeline.status,
+        "completed": p.pipeline.completed,
+        "total": p.pipeline.total,
+        "subtasks": p.pipeline.subtasks,
+        "videoPath": p.pipeline.video_path,
     }
 
 
-@bp.post("/api/tasks/submit")
+@bp.post("/api/pipeline/submit")
 def render_submit(
-        data: TParamsRenderVideo,
-        background_tasks: BackgroundTasks,
+    data: TParamsRenderVideo,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
-    pending_or_running_tasks = list(
-        filter(lambda x: x.status in [TStatusEnum.PENDING, TStatusEnum.RUNNING], tasks_store)
+    pending_or_running_pipelines = list(
+        filter(lambda x: x.pipeline.status in [TStatusEnum.PENDING, TStatusEnum.RUNNING], pipeline_queue)
     )
-    if pending_or_running_tasks:
-        return pending_or_running_tasks[-1]
-    task_id = len(tasks_store) + 1
-    bg_task = push_task_by_id(task_id)
-    background_tasks.add_task(sub_render_video, data, task_id)
+    if pending_or_running_pipelines:
+        return pending_or_running_pipelines[-1]
+    pid = len(pipeline_queue) + 1
+    pipeline = set_global_pipeline(pid)
+    background_tasks.add_task(sub_render_video, data, pid)
     return {
-        "task": serialize_task(bg_task),
+        "pipeline": serialize_pipeline(pipeline),
     }
 
 
 class TTasksStatusData(PtBaseModel):
-    task_id: int
+    pid: int
 
 
-@bp.post("/api/tasks/status")
-def render_status(data: TTasksStatusData) -> TTask | dict:
-    bg_task = get_task_by_id(data.task_id)
-    if not bg_task:
+@bp.post("/api/pipeline/status")
+def render_status(data: TTasksStatusData) -> TPipeline | dict:
+    pipeline = get_pipeline_by_id(data.pid)
+    if not pipeline:
         return {}
-    bg_task = tasks_store[-1]
-    return TTask(
-        task_id=bg_task.task_id,
-        status=bg_task.status,
-        video_path=str(bg_task.video_path),
-        completed=bg_task.completed,
-        total=bg_task.total,
-        subtasks=bg_task.subtasks,
+    pbar = pipeline.progress_bar
+    return TPipeline(
+        pid=pipeline.pid,
+        status=pipeline.pipeline.status,
+        video_path=str(pipeline.pipeline.video_path),
+        completed=pipeline.pipeline.completed,
+        total=pipeline.pipeline.total,
+        subtasks=[
+            {
+                "description": p.desc,
+                "total": p.total,
+                "completed": p.n,
+            }
+            for p in [
+                pbar.pbar_config,
+                pbar.pbar_preprocess_image,
+                pbar.pbar_image_2_image,
+                pbar.pbar_load_model,
+                pbar.pbar_animate,
+                pbar.pbar_unload_models,
+                pbar.pbar_make_video,
+            ]
+        ],
     )
 
 

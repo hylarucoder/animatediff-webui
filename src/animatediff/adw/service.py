@@ -3,32 +3,14 @@ import logging
 import pydantic as pt
 
 from animatediff.adw.contrib import PtBaseModel
-from animatediff.adw.schema import TCameraControl, TPerformance, TPromptBlock, TStatusEnum, TTask, default_prompt_points
+from animatediff.adw.schema import TCameraControl, TPerformance, TPromptBlock, TStatusEnum, default_prompt_points
 from animatediff.consts import path_mgr
 from animatediff.schema import TProjectSetting
-from animatediff.utils.progressbar import pbar
+from animatediff.globals import g, get_pipeline_by_id, ProgressBar
 from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import read_json
 
 logger = logging.getLogger(__name__)
-
-tasks_store: list[TTask] = []
-
-
-def get_task_by_id(task_id: int):
-    for task in tasks_store:
-        if task.task_id == task_id:
-            return task
-    return None
-
-
-def push_task_by_id(task_id: int):
-    task = TTask(
-        task_id=task_id,
-        status=TStatusEnum.PENDING,
-    )
-    tasks_store.append(task)
-    return task
 
 
 def get_projects():
@@ -37,17 +19,22 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i : i + n]
+        yield l[i: i + n]
 
 
 def lora_arr():
-    return [[None, 0.7] for _ in range(5)]
+    return [TLoraInput(name=None, weight=0.7) for _ in range(5)]
+
+
+class TLoraInput(PtBaseModel):
+    name: str | None = ""
+    weight: float = 0.7
 
 
 class TParamsRenderVideo(PtBaseModel):
     project: str
     performance: TPerformance = TPerformance.SPEED
-    aspect_radio: str = "9:16"
+    aspect_ratio: str = "9:16"
     prompt: str = "masterpiece, best quality"
     prompt_blocks: list[TPromptBlock] = pt.Field(default_factory=default_prompt_points)
     negative_prompt: str = "(worst quality, low quality:1.4),nudity,simple background,border,text, patreon,bed,bedroom,white background,((monochrome)),sketch,(pink body:1.4),7 arms,8 arms,4 arms"
@@ -57,17 +44,17 @@ class TParamsRenderVideo(PtBaseModel):
     camera_control: TCameraControl = pt.Field(default_factory=lambda: TCameraControl())
     seed: int = -1
     checkpoint: str = "majicmix/majicmixRealistic_v7.safetensors"
-    lora_items: list[list] = pt.Field(default_factory=lora_arr)
+    loras: list[TLoraInput] = pt.Field(default_factory=lora_arr)
 
 
-def get_width_height(aspect_radio: str):
+def get_width_height(aspect_ratio: str):
     a = {
         "16:9": "768x432",
         "4:3": "768x576",
         "1:1": "600x600",
         "3:4": "576x768",
         "9:16": "432x768",
-    }[aspect_radio]
+    }[aspect_ratio]
 
     w, h = a.split("x")
     return int(w), int(h)
@@ -92,11 +79,13 @@ def resize_to_768(width, height):
 
 
 def sub_render_video(data, task_id):
-    bg_task = get_task_by_id(task_id)
+    pipeline = get_pipeline_by_id(task_id)
+    g.pipeline = pipeline
+    pbar = ProgressBar()
+    pipeline.progress_bar = pbar
 
     def on_config_start():
-        pbar.init_pbar(task_id)
-        bg_task.status = TStatusEnum.RUNNING
+        pipeline.pipeline.status = TStatusEnum.RUNNING
         ...
 
     def on_config_end():
@@ -104,15 +93,17 @@ def sub_render_video(data, task_id):
 
     def on_render_start():
         pbar.update(10)
+        pipeline.pipeline.completed = 10
         ...
 
     def on_render_success(path):
-        bg_task.video_path = path
-        bg_task.status = TStatusEnum.SUCCESS
+        pipeline.pipeline.video_path = path
+        pipeline.pipeline.status = TStatusEnum.SUCCESS
+        pipeline.pipeline.completed = 100
         ...
 
     def on_render_failed():
-        bg_task.status = TStatusEnum.ERROR
+        pipeline.pipeline.status = TStatusEnum.ERROR
 
     def on_render_end():
         ...
@@ -129,13 +120,13 @@ def sub_render_video(data, task_id):
 
 
 def do_render_video(
-    data: TParamsRenderVideo,
-    on_config_start=lambda: None,
-    on_config_end=lambda: None,
-    on_render_start=lambda: None,
-    on_render_success=lambda: None,
-    on_render_failed=lambda: None,
-    on_render_end=lambda: None,
+        data: TParamsRenderVideo,
+        on_config_start=lambda: None,
+        on_config_end=lambda: None,
+        on_render_start=lambda: None,
+        on_render_success=lambda: None,
+        on_render_failed=lambda: None,
+        on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()
@@ -143,7 +134,8 @@ def do_render_video(
     project_setting = TProjectSetting(**read_json(path_mgr.demo_prompt_json))
     project_dir.mkdir(exist_ok=True)
     performance = data.performance
-    width, height = get_width_height(data.aspect_radio)
+    width, height = get_width_height(data.aspect_ratio)
+    logger.info(f"{width=} {height=} {data.aspect_ratio}")
     if performance == TPerformance.SPEED:
         # TODO: use lcm map
         project_setting.lcm_lora_scale = 1
@@ -170,7 +162,7 @@ def do_render_video(
     project_setting.tail_prompt = data.prompt
     project_setting.n_prompt = [data.negative_prompt]
 
-    project_setting.lora_map = {lora[0]: lora[1] for lora in data.lora_items if lora[0]}
+    project_setting.lora_map = {lora.name: lora.weight for lora in data.loras if lora.name}
     project_setting.seed = [data.seed]
     project_setting.checkpoint = data.checkpoint
     project_setting.motion = "mm_sd_v15_v2.ckpt"
