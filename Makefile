@@ -18,5 +18,5 @@ help:
 format: ## lint
 	pdm run ruff --target-version py310 --fix format .
 	
-test: ## lint
-  pytest tests/functional/test_render_video.py -s
+test: ## lint 
+	pytest tests/functional/test_render_video.py -s
