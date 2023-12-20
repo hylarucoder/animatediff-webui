@@ -29,6 +29,7 @@ from tqdm.rich import tqdm
 from transformers import CLIPImageProcessor, CLIPTokenizer
 
 from animatediff.consts import path_mgr
+from animatediff.globals import g
 from animatediff.ip_adapter import IPAdapter, IPAdapterFull, IPAdapterPlus
 from animatediff.models.attention import BasicTransformerBlock
 from animatediff.models.clip import CLIPSkipTextModel
@@ -37,7 +38,6 @@ from animatediff.models.unet_blocks import CrossAttnDownBlock3D, CrossAttnUpBloc
 from animatediff.pipelines.context import get_context_scheduler, get_total_steps
 from animatediff.schema import TGradualLatentHiresFixMap
 from animatediff.utils.model import nop_train
-from animatediff.globals import g
 from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import (
     get_tensor_interpolation_method,
@@ -3073,6 +3073,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                     counter[:, :, context] = counter[:, :, context] + 1
                     progress_bar.update()
                     pbar.update(pbar_unit)
+                    g.pipeline.throw_exception_if_processing_interrupted()
 
                 # perform guidance
                 noise_size = prompt_encoder.get_condi_size()

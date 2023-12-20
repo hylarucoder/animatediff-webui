@@ -1,13 +1,16 @@
 import dataclasses
-from contextvars import ContextVar
+import functools
+import threading
+from typing import Any, Callable
 
 import tqdm
-from werkzeug.local import Local, LocalProxy
+from werkzeug.local import Local
 
 from animatediff.adw.schema import TPipeline, TStatusEnum
 
 
 class ProgressBar:
+
     """two level depth."""
 
     def __init__(self):
@@ -47,11 +50,43 @@ class ProgressBar:
         ]
 
 
+class InterruptProcessingException(Exception):
+    pass
+
+
 @dataclasses.dataclass
 class GPipeline:
     pid: int
     pipeline: TPipeline
     progress_bar: ProgressBar | None
+    interrupt_processing = False
+    interrupt_processing_mutex = threading.RLock()
+
+    def interrupt_current_processing(self, value=True):
+        with self.interrupt_processing_mutex:
+            self.interrupt_processing = value
+
+    def processing_interrupted(self):
+        with self.interrupt_processing_mutex:
+            return self.interrupt_processing
+
+    def throw_exception_if_processing_interrupted(self):
+        with self.interrupt_processing_mutex:
+            if self.interrupt_processing:
+                self.interrupt_processing = False
+                raise InterruptProcessingException()
+
+
+def check_interrupted(func: Callable) -> Callable:
+    """装饰器，用于检查处理是否被中断，并在中断时抛出异常。
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs) -> Any:
+        g.pipeline.throw_exception_if_processing_interrupted()
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 g = Local()

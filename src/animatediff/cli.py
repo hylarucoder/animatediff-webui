@@ -29,12 +29,12 @@ from animatediff.generate import (
     unload_controlnet_models,
     wild_card_conversion,
 )
+from animatediff.globals import g
 from animatediff.pipelines import load_text_embeddings
 from animatediff.settings import CKPT_EXTENSIONS, InferenceConfig, get_infer_config, get_project_setting
 from animatediff.utils.civitai2config import generate_config_from_civitai_info
 from animatediff.utils.model import checkpoint_to_pipeline, fix_checkpoint_if_needed, get_base_model
 from animatediff.utils.pipeline import send_to_device
-from animatediff.globals import g
 from animatediff.utils.util import (
     is_sdxl_checkpoint,
     is_v2_motion_module,
