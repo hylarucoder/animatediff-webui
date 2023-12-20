@@ -3,7 +3,7 @@ import os
 from animatediff.adw.schema import TStatusEnum
 from animatediff.adw.service import TParamsRenderVideo, do_render_video
 from animatediff.consts import path_mgr
-from animatediff.globals import get_global_pipeline, set_global_pipeline, get_pipeline_by_id, ProgressBar, g
+from animatediff.globals import ProgressBar, g, get_global_pipeline, get_pipeline_by_id, set_global_pipeline
 
 os.chdir(path_mgr.repo)
 

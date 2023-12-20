@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, Response
 
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.exceptions import raise_unless
-from animatediff.adw.schema import TPerformance, TPreset, TStatusEnum, TPipeline
+from animatediff.adw.schema import TPerformance, TPipeline, TPreset, TStatusEnum
 from animatediff.adw.service import (
     TParamsRenderVideo,
     get_projects,
@@ -14,7 +14,7 @@ from animatediff.adw.service import (
 )
 from animatediff.adw.utils import get_models_endswith
 from animatediff.consts import path_mgr
-from animatediff.globals import g, set_global_pipeline, pipeline_queue, get_pipeline_by_id, GPipeline
+from animatediff.globals import GPipeline, g, get_pipeline_by_id, pipeline_queue, set_global_pipeline
 
 bp = APIRouter(prefix="")
 
@@ -126,8 +126,8 @@ def serialize_pipeline(p: GPipeline):
 
 @bp.post("/api/pipeline/submit")
 def render_submit(
-    data: TParamsRenderVideo,
-    background_tasks: BackgroundTasks,
+        data: TParamsRenderVideo,
+        background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_pipelines = list(
@@ -159,6 +159,8 @@ def render_status(data: TTasksStatusData) -> TPipeline | dict:
         video_path=str(pipeline.pipeline.video_path),
         completed=pipeline.pipeline.completed,
         total=pipeline.pipeline.total,
+        interrupt_processing=pipeline.interrupt_processing,
+        processing_interrupted=pipeline.processing_interrupted(),
         subtasks=[
             {
                 "description": p.desc,
@@ -178,9 +180,15 @@ def render_status(data: TTasksStatusData) -> TPipeline | dict:
     )
 
 
-@bp.get("/api/tasks/interrupt")
-def render_interrupt():
-    return {"message": "Hello World"}
+class TTasksStatusData(PtBaseModel):
+    pid: int
+
+
+@bp.post("/api/pipeline/interrupt")
+def render_interrupt(data: TTasksStatusData):
+    pipeline = get_pipeline_by_id(data.pid)
+    pipeline.interrupt_current_processing()
+    return {}
 
 
 @bp.get("/api/tasks/skip")

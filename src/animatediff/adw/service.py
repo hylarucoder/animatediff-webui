@@ -5,8 +5,8 @@ import pydantic as pt
 from animatediff.adw.contrib import PtBaseModel
 from animatediff.adw.schema import TCameraControl, TPerformance, TPromptBlock, TStatusEnum, default_prompt_points
 from animatediff.consts import path_mgr
+from animatediff.globals import ProgressBar, g, get_pipeline_by_id
 from animatediff.schema import TProjectSetting
-from animatediff.globals import g, get_pipeline_by_id, ProgressBar
 from animatediff.utils.torch_compact import get_torch_device
 from animatediff.utils.util import read_json
 

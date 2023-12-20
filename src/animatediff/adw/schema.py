@@ -26,6 +26,8 @@ class TPipeline(PtBaseModel):
     total: int = 100
     subtasks: list[TSubtask] = pt.Field(default_factory=list)
     video_path: str = ""
+    interrupt_processing: bool = False
+    processing_interrupted: bool = True
 
 
 def lora_arr():
