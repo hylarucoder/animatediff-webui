@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import torch
-from torch.fft import fftn, fftshift, ifftshift, ifftn
+from torch.fft import fftn, fftshift, ifftn, ifftshift
 
 
 def fourier_filter(x_in: torch.Tensor, threshold: int, scale: int) -> torch.Tensor:
@@ -25,7 +25,7 @@ def fourier_filter(x_in: torch.Tensor, threshold: int, scale: int) -> torch.Tens
     mask = torch.ones((B, C, H, W), device=x.device)
 
     crow, ccol = H // 2, W // 2
-    mask[..., crow - threshold: crow + threshold, ccol - threshold: ccol + threshold] = scale
+    mask[..., crow - threshold : crow + threshold, ccol - threshold : ccol + threshold] = scale
     x_freq = x_freq * mask
 
     # IFFT
@@ -36,8 +36,7 @@ def fourier_filter(x_in: torch.Tensor, threshold: int, scale: int) -> torch.Tens
 
 
 def fourier_filter_3d(x_in: torch.Tensor, threshold: int, scale: int) -> torch.Tensor:
-    """Fourier filter for 3D data as introduced in FreeU (https://arxiv.org/abs/2309.11497).
-    """
+    """Fourier filter for 3D data as introduced in FreeU (https://arxiv.org/abs/2309.11497)."""
     x = x_in
     B, C, D, H, W = x.shape
 
@@ -54,8 +53,9 @@ def fourier_filter_3d(x_in: torch.Tensor, threshold: int, scale: int) -> torch.T
 
     cd, crow, ccol = D // 2, H // 2, W // 2
     # Apply threshold to create a cube of ones in the center of the mask
-    mask[..., cd - threshold: cd + threshold, crow - threshold: crow + threshold,
-    ccol - threshold: ccol + threshold] = scale
+    mask[
+        ..., cd - threshold : cd + threshold, crow - threshold : crow + threshold, ccol - threshold : ccol + threshold
+    ] = scale
     x_freq = x_freq * mask
 
     # IFFT
@@ -67,12 +67,13 @@ def fourier_filter_3d(x_in: torch.Tensor, threshold: int, scale: int) -> torch.T
 
 
 def apply_freeu(
-        resolution_idx: int, hidden_states: torch.Tensor, res_hidden_states: torch.Tensor, **freeu_kwargs
+    resolution_idx: int, hidden_states: torch.Tensor, res_hidden_states: torch.Tensor, **freeu_kwargs
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies the FreeU mechanism as introduced in https:
     //arxiv.org/abs/2309.11497. Adapted from the official code repository: https://github.com/ChenyangSi/FreeU.
 
     Args:
+    ----
         resolution_idx (`int`): Integer denoting the UNet block where FreeU is being applied.
         hidden_states (`torch.Tensor`): Inputs to the underlying block.
         res_hidden_states (`torch.Tensor`): Features from the skip block corresponding to the underlying block.

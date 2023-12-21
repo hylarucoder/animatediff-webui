@@ -16,9 +16,7 @@ class ProgressBar:
     def __init__(self):
         self.pbar = tqdm.tqdm(desc="Video Rendering...", total=100)
         self.pbar_config = tqdm.tqdm(desc="S01: Checking Configuration", total=100)
-        self.pbar_preprocess_image = tqdm.tqdm(
-            desc="S02: Preprocessing Images Controlnet & IPAdapter", total=100
-        )
+        self.pbar_preprocess_image = tqdm.tqdm(desc="S02: Preprocessing Images Controlnet & IPAdapter", total=100)
         self.pbar_image_2_image = tqdm.tqdm(desc="S03: Preprocessing Img 2 Img", total=100)
         self.pbar_load_model = tqdm.tqdm(
             desc="S04: Load Models: Ckpt, tokenizer, text encoder, vae, unet, Controlnet", total=100
@@ -78,8 +76,7 @@ class GPipeline:
 
 
 def check_interrupted(func: Callable) -> Callable:
-    """装饰器，用于检查处理是否被中断，并在中断时抛出异常。
-    """
+    """装饰器，用于检查处理是否被中断，并在中断时抛出异常。"""
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs) -> Any:

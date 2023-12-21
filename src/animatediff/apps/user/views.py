@@ -126,8 +126,8 @@ def serialize_pipeline(p: GPipeline):
 
 @bp.post("/api/pipeline/submit")
 def render_submit(
-        data: TParamsRenderVideo,
-        background_tasks: BackgroundTasks,
+    data: TParamsRenderVideo,
+    background_tasks: BackgroundTasks,
 ):
     validate_data(data)
     pending_or_running_pipelines = list(
