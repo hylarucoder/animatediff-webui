@@ -19,7 +19,7 @@ def get_projects():
 
 def group_by_n(l, n):
     for i in range(0, len(l), n):
-        yield l[i: i + n]
+        yield l[i : i + n]
 
 
 def lora_arr():
@@ -120,13 +120,13 @@ def sub_render_video(data, task_id):
 
 
 def do_render_video(
-        data: TParamsRenderVideo,
-        on_config_start=lambda: None,
-        on_config_end=lambda: None,
-        on_render_start=lambda: None,
-        on_render_success=lambda: None,
-        on_render_failed=lambda: None,
-        on_render_end=lambda: None,
+    data: TParamsRenderVideo,
+    on_config_start=lambda: None,
+    on_config_end=lambda: None,
+    on_render_start=lambda: None,
+    on_render_success=lambda: None,
+    on_render_failed=lambda: None,
+    on_render_end=lambda: None,
 ):
     if on_config_start:
         on_config_start()
@@ -166,6 +166,7 @@ def do_render_video(
     project_setting.seed = [data.seed]
     project_setting.checkpoint = data.checkpoint
     project_setting.motion = "mm_sd_v15_v2.ckpt"
+    project_setting.performance = data.performance
     camera_control = data.camera_control
 
     def filter_zero_dict(d):
@@ -199,7 +200,6 @@ def do_render_video(
 
     video_len = data.fps * data.duration
     context = 16 if video_len > 16 else 8
-    # context = 8 if video_len > 8 else 8
     if on_render_start:
         on_render_start()
     try:

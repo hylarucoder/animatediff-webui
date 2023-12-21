@@ -8,6 +8,7 @@ from torch import nn
 from animatediff.models.attention import Transformer3DModel
 from animatediff.models.motion_module import get_motion_module
 from animatediff.models.resnet import Downsample3D, ResnetBlock3D, Upsample3D
+from animatediff.utils.freeu_util import apply_freeu
 
 
 def get_down_block(
@@ -94,6 +95,7 @@ def get_up_block(
     resnet_eps,
     resnet_act_fn,
     attn_num_head_channels,
+    resolution_idx: Optional[int] = None,
     resnet_groups=None,
     cross_attention_dim=None,
     dual_cross_attention=False,
@@ -121,6 +123,7 @@ def get_up_block(
             resnet_act_fn=resnet_act_fn,
             resnet_groups=resnet_groups,
             resnet_time_scale_shift=resnet_time_scale_shift,
+            resolution_idx=resolution_idx,
             use_inflated_groupnorm=use_inflated_groupnorm,
             use_motion_module=use_motion_module,
             motion_module_type=motion_module_type,
@@ -146,6 +149,7 @@ def get_up_block(
             only_cross_attention=only_cross_attention,
             upcast_attention=upcast_attention,
             resnet_time_scale_shift=resnet_time_scale_shift,
+            resolution_idx=resolution_idx,
             unet_use_cross_frame_attention=unet_use_cross_frame_attention,
             unet_use_temporal_attention=unet_use_temporal_attention,
             use_inflated_groupnorm=use_inflated_groupnorm,
@@ -583,6 +587,7 @@ class CrossAttnUpBlock3D(nn.Module):
         use_linear_projection=False,
         only_cross_attention=False,
         upcast_attention=False,
+        resolution_idx: Optional[int] = None,
         unet_use_cross_frame_attention=None,
         unet_use_temporal_attention=None,
         use_inflated_groupnorm=None,
@@ -654,6 +659,7 @@ class CrossAttnUpBlock3D(nn.Module):
             self.upsamplers = None
 
         self.gradient_checkpointing = False
+        self.resolution_idx = resolution_idx
 
     def forward(
         self,
@@ -666,10 +672,26 @@ class CrossAttnUpBlock3D(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
     ):
+        is_freeu_enabled = (
+            getattr(self, "s1", None)
+            and getattr(self, "s2", None)
+            and getattr(self, "b1", None)
+            and getattr(self, "b2", None)
+        )
         for resnet, attn, motion_module in zip(self.resnets, self.attentions, self.motion_modules):
             # pop res hidden states
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+            if is_freeu_enabled:
+                hidden_states, res_hidden_states = apply_freeu(
+                    self.resolution_idx,
+                    hidden_states,
+                    res_hidden_states,
+                    s1=self.s1,
+                    s2=self.s2,
+                    b1=self.b1,
+                    b2=self.b2,
+                )
             hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
 
             if self.training and self.gradient_checkpointing:
@@ -735,6 +757,7 @@ class UpBlock3D(nn.Module):
         resnet_pre_norm: bool = True,
         output_scale_factor=1.0,
         add_upsample=True,
+        resolution_idx: Optional[int] = None,
         use_inflated_groupnorm=None,
         use_motion_module=None,
         motion_module_type=None,
@@ -782,6 +805,7 @@ class UpBlock3D(nn.Module):
             self.upsamplers = None
 
         self.gradient_checkpointing = False
+        self.resolution_idx = resolution_idx
 
     def forward(
         self,

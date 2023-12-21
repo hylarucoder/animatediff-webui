@@ -5,6 +5,8 @@ from typing import Any, Union
 import pydantic as pt
 from pydantic import BaseModel, Field
 
+from animatediff.adw.schema import TPerformance
+
 
 def normal_scale_list():
     return [0.5, 0.4, 0.3, 0.2, 0.1]
@@ -349,6 +351,7 @@ class TGradualLatentHiresFixMap(BaseModel):
 
 
 class TProjectSetting(BaseModel):
+    performance: TPerformance = TPerformance.SPEED
     apply_lcm_lora: bool = False
     lcm_lora_scale: float = 1.0
     region_map: dict[str, float] = Field(default_factory=dict)

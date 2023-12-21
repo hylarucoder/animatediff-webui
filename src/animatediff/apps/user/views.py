@@ -148,7 +148,7 @@ class TTasksStatusData(PtBaseModel):
 
 
 @bp.post("/api/pipeline/status")
-def render_status(data: TTasksStatusData) -> TPipeline | dict:
+async def render_status(data: TTasksStatusData) -> TPipeline | dict:
     pipeline = get_pipeline_by_id(data.pid)
     if not pipeline:
         return {}
