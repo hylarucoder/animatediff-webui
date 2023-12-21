@@ -42,6 +42,7 @@ from transformers import (
 )
 
 from animatediff import get_dir
+from animatediff.adw.schema import TPerformance
 from animatediff.consts import CACHE_DIR, MODELS_DIR, path_mgr
 from animatediff.dwpose import DWposeDetector
 from animatediff.globals import check_interrupted
@@ -648,6 +649,10 @@ def create_pipeline(
         feature_extractor=feature_extractor,
         controlnet_map=None,
     )
+    # project_setting.
+
+    if project_setting.performance == TPerformance.QUALITY:
+        pipeline.enable_freeu(0.9, 0.2, 1.5, 1.6)
 
     if project_setting.apply_lcm_lora:
         prepare_lcm_lora()

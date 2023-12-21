@@ -22,7 +22,7 @@ from diffusers.schedulers import (
     PNDMScheduler,
 )
 from diffusers.utils import BaseOutput, deprecate, is_accelerate_available, is_accelerate_version
-from diffusers.utils.torch_utils import randn_tensor
+from diffusers.utils.torch_utils import randn_tensor, apply_freeu
 from einops import rearrange
 from packaging import version
 from tqdm.rich import tqdm
@@ -532,6 +532,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             controlnet_map: Optional[Dict[str, ControlNetModel]] = None,
     ):
         super().__init__()
+        # self.unet.enable_adapters()
 
         if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
             deprecation_message = (
@@ -2109,6 +2110,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
                 self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, encoder_hidden_states=None
         ):
             eps = 1e-6
+
             for i, (resnet, motion_module) in enumerate(zip(self.resnets, self.motion_modules)):
                 # pop res hidden states
                 res_hidden_states = res_hidden_states_tuple[-1]
@@ -2668,7 +2670,7 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
             noise_add_count = gradual_latent_map.noise_add_count
             total_steps = (
                                   (total_steps / num_inference_steps) * (
-                                      reverse_steps * (len(gradual_latent_map.scale.keys()) - 1))
+                                  reverse_steps * (len(gradual_latent_map.scale.keys()) - 1))
                           ) + total_steps
             total_steps = int(total_steps)
             logger.warning(
@@ -3229,4 +3231,33 @@ class AnimationPipeline(DiffusionPipeline, TextualInversionLoaderMixin):
 
         _ = self.vae.eval()
         self.vae = self.vae.requires_grad_(False)
+
         self.vae.train = nop_train
+
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_freeu
+    def enable_freeu(self, s1: float, s2: float, b1: float, b2: float):
+        r"""Enables the FreeU mechanism as in https://arxiv.org/abs/2309.11497.
+
+        The suffixes after the scaling factors represent the stages where they are being applied.
+
+        Please refer to the [official repository](https://github.com/ChenyangSi/FreeU) for combinations of the values
+        that are known to work well for different pipelines such as Stable Diffusion v1, v2, and Stable Diffusion XL.
+
+        Args:
+            s1 (`float`):
+                Scaling factor for stage 1 to attenuate the contributions of the skip features. This is done to
+                mitigate "oversmoothing effect" in the enhanced denoising process.
+            s2 (`float`):
+                Scaling factor for stage 2 to attenuate the contributions of the skip features. This is done to
+                mitigate "oversmoothing effect" in the enhanced denoising process.
+            b1 (`float`): Scaling factor for stage 1 to amplify the contributions of backbone features.
+            b2 (`float`): Scaling factor for stage 2 to amplify the contributions of backbone features.
+        """
+        if not hasattr(self, "unet"):
+            raise ValueError("The pipeline must have `unet` for using FreeU.")
+        self.unet.enable_freeu(s1=s1, s2=s2, b1=b1, b2=b2)
+
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_freeu
+    def disable_freeu(self):
+        """Disables the FreeU mechanism if enabled."""
+        self.unet.disable_freeu()

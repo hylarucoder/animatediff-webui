@@ -166,6 +166,7 @@ def do_render_video(
     project_setting.seed = [data.seed]
     project_setting.checkpoint = data.checkpoint
     project_setting.motion = "mm_sd_v15_v2.ckpt"
+    project_setting.performance = data.performance
     camera_control = data.camera_control
 
     def filter_zero_dict(d):
@@ -199,7 +200,6 @@ def do_render_video(
 
     video_len = data.fps * data.duration
     context = 16 if video_len > 16 else 8
-    # context = 8 if video_len > 8 else 8
     if on_render_start:
         on_render_start()
     try:
